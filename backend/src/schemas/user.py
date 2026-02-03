@@ -2,20 +2,20 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserBase(BaseModel):
     """Base user schema."""
 
     email: EmailStr
-    name: str
+    name: str = Field(..., min_length=1, max_length=100)
 
 
 class UserCreate(UserBase):
     """Schema for creating a user."""
 
-    password: str
+    password: str = Field(..., min_length=8, max_length=100)
 
 
 class UserUpdate(BaseModel):

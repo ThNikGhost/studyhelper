@@ -7,7 +7,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import settings
-from src.routers import auth
+from src.routers import auth, semesters
 
 
 @asynccontextmanager
@@ -52,5 +52,6 @@ async def health() -> dict[str, str]:
 # API v1 router
 api_v1 = APIRouter(prefix="/api/v1")
 api_v1.include_router(auth.router, prefix="/auth", tags=["Auth"])
+api_v1.include_router(semesters.router, prefix="/semesters", tags=["Semesters"])
 
 app.include_router(api_v1)

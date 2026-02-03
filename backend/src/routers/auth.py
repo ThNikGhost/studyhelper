@@ -21,7 +21,7 @@ from src.services.auth import (
 router = APIRouter()
 
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/register", response_model=UserResponse, status_code=201)
 async def register(
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db),
