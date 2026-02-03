@@ -1,9 +1,14 @@
 """User model."""
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from src.models.work import WorkStatus
 
 
 class User(Base, TimestampMixin):
@@ -16,6 +21,11 @@ class User(Base, TimestampMixin):
     password_hash: Mapped[str] = mapped_column(String(255))
     name: Mapped[str] = mapped_column(String(100))
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Relationships
+    work_statuses: Mapped[list["WorkStatus"]] = relationship(
+        "WorkStatus", back_populates="user", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         """String representation."""

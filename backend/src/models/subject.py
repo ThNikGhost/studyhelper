@@ -9,6 +9,7 @@ from src.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from src.models.semester import Semester
+    from src.models.work import Work
 
 
 class Subject(Base, TimestampMixin):
@@ -26,11 +27,9 @@ class Subject(Base, TimestampMixin):
 
     # Relationships
     semester: Mapped["Semester"] = relationship("Semester", back_populates="subjects")
-
-    # Works relationship will be added when Work model is created
-    # works: Mapped[list["Work"]] = relationship(
-    #     "Work", back_populates="subject", cascade="all, delete-orphan"
-    # )
+    works: Mapped[list["Work"]] = relationship(
+        "Work", back_populates="subject", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         """String representation."""

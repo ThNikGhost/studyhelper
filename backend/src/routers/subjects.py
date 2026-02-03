@@ -6,8 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.dependencies import get_current_user, get_db
 from src.models.user import User
 from src.schemas.subject import SubjectCreate, SubjectResponse, SubjectUpdate
+from src.schemas.work import WorkStatusResponse, WorkWithStatusResponse
 from src.services import semester as semester_service
 from src.services import subject as subject_service
+from src.services import work as work_service
 
 router = APIRouter()
 
@@ -100,8 +102,29 @@ async def delete_subject(
     await subject_service.delete_subject(db, subject)
 
 
-# Works endpoint will be added when Work model is created
-# @router.get("/{subject_id}/works", response_model=list[WorkResponse])
-# async def get_subject_works(...):
-#     """Get all works for a subject."""
-#     pass
+@router.get("/{subject_id}/works", response_model=list[WorkWithStatusResponse])
+async def get_subject_works(
+    subject_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[WorkWithStatusResponse]:
+    """Get all works for a subject."""
+    subject = await subject_service.get_subject_by_id(db, subject_id)
+    if not subject:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Subject not found",
+        )
+
+    works = await work_service.get_works(db, subject_id=subject_id)
+
+    result = []
+    for work in works:
+        work_dict = WorkWithStatusResponse.model_validate(work)
+        for ws in work.statuses:
+            if ws.user_id == current_user.id:
+                work_dict.my_status = WorkStatusResponse.model_validate(ws)
+                break
+        result.append(work_dict)
+
+    return result
