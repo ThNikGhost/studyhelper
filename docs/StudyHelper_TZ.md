@@ -15,17 +15,17 @@
 ```
 StudyHelper/
 ├── CLAUDE.md                 # Обнови под актуальную информацию проекта
-├── Current_task.md           # Текущая задача
-├── Decisions.md              # Архитектурные решения
-├── project_status.md         # Статус проекта
-├── plans/
-│   ├── MVP_plan.md           # План MVP
-│   ├── full_plan.md          # Полный план разработки
-│   └── future_features.md    # Планы на будущее
 ├── docs/
-│   ├── API.md                # Документация API
-│   ├── database_schema.md    # Схема БД
-│   └── deployment.md         # Инструкции по деплою
+    ├── API.md                # Документация API
+    ├── database_schema.md    # Схема БД
+    ├── deployment.md         # Инструкции по деплою
+    ├── Current_task.md           # Текущая задача
+    ├── Decisions.md              # Архитектурные решения
+    ├── project_status.md         # Статус проекта
+    └── plans/
+        ├── MVP_plan.md           # План MVP
+        ├── full_plan.md          # Полный план разработки
+        └── future_features.md    # Планы на будущее
 ├── frontend/                 # PWA Frontend
 ├── backend/                  # Python Backend
 └── docker/                   # Docker конфигурация
@@ -34,6 +34,7 @@ StudyHelper/
 ### 2. Заполни файлы
 
 #### CLAUDE.md
+обнови документ, не удаляй лишнее
 Должен содержать:
 - Название проекта и краткое описание (1-2 предложения)
 - Технический стек (frontend, backend, БД)
