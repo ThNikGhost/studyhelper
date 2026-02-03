@@ -7,7 +7,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import settings
-from src.routers import auth, semesters, subjects, works
+from src.routers import auth, semesters, subjects, teachers, works
 
 
 @asynccontextmanager
@@ -55,5 +55,6 @@ api_v1.include_router(auth.router, prefix="/auth", tags=["Auth"])
 api_v1.include_router(semesters.router, prefix="/semesters", tags=["Semesters"])
 api_v1.include_router(subjects.router, prefix="/subjects", tags=["Subjects"])
 api_v1.include_router(works.router, prefix="/works", tags=["Works"])
+api_v1.include_router(teachers.router, prefix="/teachers", tags=["Teachers"])
 
 app.include_router(api_v1)
