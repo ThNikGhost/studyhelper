@@ -1,0 +1,31 @@
+{
+
+
+  "enableAllProjectMcpServers": true,
+
+  "permissions": {
+    "allow": [
+      "Bash(uv:*)",
+      "Bash(pytest:*)",
+      "Bash(python:*)",
+      "Bash(ruff:*)",
+      "Bash(alembic:*)",
+      "Bash(uvicorn:*)",
+      "Edit(src/**)",
+      "Edit(tests/**)",
+      "Edit(docs/**)",
+      "Edit(scripts/**)",
+      "mcp__github__*",
+      "mcp__ssh__*",
+      "mcp__postgres__*",
+      "mcp__filesystem__*",
+      "mcp__sequential-thinking__*"
+    ],
+
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/secrets/**)"
+    ]
+  }
+}
