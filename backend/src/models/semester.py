@@ -1,9 +1,14 @@
 """Semester model."""
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from src.models.subject import Subject
 
 
 class Semester(Base, TimestampMixin):
@@ -18,10 +23,10 @@ class Semester(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     is_current: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    # Relationships - will be populated when Subject model is created
-    # subjects: Mapped[list["Subject"]] = relationship(
-    #     "Subject", back_populates="semester", cascade="all, delete-orphan"
-    # )
+    # Relationships
+    subjects: Mapped[list["Subject"]] = relationship(
+        "Subject", back_populates="semester", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         """String representation."""
