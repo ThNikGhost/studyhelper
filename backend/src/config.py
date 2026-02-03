@@ -12,7 +12,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # Database (use 127.0.0.1 instead of localhost to avoid Windows encoding issues)
+    # Database (asyncpg for local PostgreSQL)
     database_url: str = (
         "postgresql+asyncpg://studyhelper:studyhelper@127.0.0.1:5432/studyhelper"
     )

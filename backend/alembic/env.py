@@ -14,9 +14,8 @@ from src.models.base import Base
 config = context.config
 
 # Convert async URL to sync URL for Alembic migrations
-# asyncpg -> psycopg (psycopg3, modern Python driver)
 sync_database_url = settings.database_url.replace(
-    "postgresql+asyncpg://", "postgresql+psycopg://"
+    "postgresql+asyncpg://", "postgresql+psycopg2://"
 )
 config.set_main_option("sqlalchemy.url", sync_database_url)
 

@@ -1,12 +1,12 @@
 # Статус проекта StudyHelper
 
 ## Последнее обновление
-- **Дата**: 2026-02-03
-- **Сессия**: Backend MVP завершён
+- **Дата**: 2026-02-04
+- **Сессия**: Frontend MVP — базовая структура и авторизация
 
 ## Общий прогресс
 **Фаза**: MVP разработка
-**Прогресс**: ~50% (backend готов, frontend не начат)
+**Прогресс**: ~65% (backend готов, frontend базовый готов)
 
 ---
 
@@ -20,7 +20,8 @@
 - [x] plans/future_features.md — планы на будущее
 
 ### Инфраструктура
-- [x] Docker Compose (PostgreSQL 16, Redis 7, Adminer)
+- [x] Docker Compose (PostgreSQL 16, Redis 7, Adminer) — для Linux/Mac
+- [x] Локальный PostgreSQL — для Windows
 - [x] .env.example — переменные окружения
 - [x] GitHub repository
 
@@ -28,7 +29,7 @@
 - [x] Инициализация проекта (pyproject.toml, uv)
 - [x] Конфигурация (pydantic-settings)
 - [x] База данных (SQLAlchemy 2.0 async)
-- [x] Alembic миграции (7 миграций применено)
+- [x] Alembic миграции (8 миграций применено)
 
 #### Модули:
 | Модуль | Модель | Схемы | Сервис | Роутер | Тесты |
@@ -42,27 +43,29 @@
 | Classmates | ✅ | ✅ | ✅ | ✅ | ✅ 20 |
 | Schedule | ✅ ScheduleEntry, ScheduleSnapshot | ✅ | ✅ | ✅ | ✅ 26 |
 
-#### API Endpoints:
-- `/api/v1/auth/*` — аутентификация (register, login, refresh, logout, me)
-- `/api/v1/semesters/*` — семестры (CRUD + set-current)
-- `/api/v1/subjects/*` — предметы (CRUD + works by subject)
-- `/api/v1/works/*` — работы (CRUD + status, history, upcoming)
-- `/api/v1/teachers/*` — преподаватели (CRUD)
-- `/api/v1/university/departments/*` — кафедры (CRUD)
-- `/api/v1/university/buildings/*` — корпуса (CRUD)
-- `/api/v1/classmates/*` — одногруппники (CRUD)
-- `/api/v1/schedule/*` — расписание (week, today, current, entries CRUD, snapshots)
+### Frontend (В ПРОЦЕССЕ)
+- [x] Инициализация Vite + React 18 + TypeScript
+- [x] Tailwind CSS v4 настроен
+- [x] UI компоненты (Button, Input, Card, Label)
+- [x] API клиент (axios с interceptors для JWT)
+- [x] Auth store (Zustand)
+- [x] Роутинг (react-router-dom)
+- [x] Защищённые маршруты (ProtectedRoute)
+- [x] Страницы: LoginPage, RegisterPage, DashboardPage
+- [ ] Страница расписания (SchedulePage)
+- [ ] Страница предметов (SubjectsPage)
+- [ ] Страница работ (WorksPage)
+- [ ] Страница одногруппников (ClassmatesPage)
 
 ---
 
 ## Что в работе
 
-### Следующая задача: Frontend
-- [ ] Инициализация Vite + React + TypeScript
-- [ ] Настройка Tailwind CSS + shadcn/ui
-- [ ] Страницы: Login, Register
-- [ ] Защищённые роуты
-- [ ] Dashboard
+### Следующая задача: Страницы фронтенда
+- [ ] SchedulePage — просмотр расписания
+- [ ] SubjectsPage — список предметов
+- [ ] WorksPage — задания и дедлайны
+- [ ] ClassmatesPage — контакты группы
 
 ---
 
@@ -85,13 +88,17 @@
 
 ## Известные проблемы
 
-### Windows + PostgreSQL драйверы
-На Windows есть проблемы с кодировкой при подключении Python драйверов к PostgreSQL.
+### Windows + Docker + asyncpg
+На Windows есть критические проблемы с asyncpg при подключении к PostgreSQL в Docker:
+- ConnectionResetError из-за asyncio ProactorEventLoop
+- Проблемы с кодировкой сообщений об ошибках (cp1251 vs UTF-8)
 
-**Решение**: Запускать миграции через `docker exec`:
-```bash
-docker compose exec db psql -U studyhelper -d studyhelper -c "SQL_QUERY"
-```
+**Решение**: Использовать локальный PostgreSQL вместо Docker на Windows.
+
+### Windows + Vite + localhost
+Vite на Windows может не слушать на правильном адресе из-за IPv6/IPv4 резолвинга.
+
+**Решение**: Явно указать `host: '127.0.0.1'` в vite.config.ts
 
 ---
 
@@ -102,6 +109,7 @@ docker compose exec db psql -U studyhelper -d studyhelper -c "SQL_QUERY"
 - **Аутентификация**: JWT (access 15min, refresh 7days), макс 2 пользователя
 - **База данных**: PostgreSQL + aiosqlite для тестов
 - **Расписание**: поддержка чётных/нечётных недель (week_type)
+- **Frontend**: Vite + React 18 + TypeScript + Tailwind v4 + Zustand
 
 ---
 
@@ -113,5 +121,6 @@ docker compose exec db psql -U studyhelper -d studyhelper -c "SQL_QUERY"
 | Покрытие тестами | 79% |
 | API endpoints | ~50 |
 | Моделей | 13 |
-| Миграций | 7 |
+| Миграций | 8 |
 | Линтер | ✅ Ruff проходит |
+| Frontend страниц | 3 (Login, Register, Dashboard) |

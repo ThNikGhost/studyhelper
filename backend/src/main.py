@@ -1,5 +1,13 @@
 """FastAPI application entry point."""
 
+import sys
+
+# Fix for asyncpg on Windows - use SelectorEventLoop instead of ProactorEventLoop
+if sys.platform == "win32":
+    import asyncio
+
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 

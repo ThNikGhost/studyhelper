@@ -1,49 +1,38 @@
 # Текущая задача
 
 ## Задача
-Инициализация проекта и настройка окружения
+Frontend MVP — страницы основных разделов
 
 ## Описание
-Создание базовой структуры проекта StudyHelper: настройка frontend (React + Vite), backend (FastAPI), Docker-конфигурации и документации.
+Создание страниц для основных разделов приложения: расписание, предметы, работы, одногруппники.
 
 ## Критерии готовности
-- [x] Создана структура папок проекта
-- [x] Заполнена документация (CLAUDE.md, Decisions.md, планы)
-- [ ] Инициализирован frontend (Vite + React + TypeScript)
-- [ ] Инициализирован backend (FastAPI + структура)
-- [ ] Создан docker-compose.yml для локальной разработки
-- [ ] Создан .env.example с переменными окружения
-- [ ] Создана схема БД (docs/database_schema.md)
-- [ ] Тесты настроены и проходят
-- [ ] Линтеры настроены и проходят
+- [ ] SchedulePage — отображение расписания на неделю/сегодня
+- [ ] SubjectsPage — список предметов текущего семестра
+- [ ] WorksPage — список заданий с фильтрацией и статусами
+- [ ] ClassmatesPage — контакты одногруппников
+- [ ] Все страницы используют API бэкенда
+- [ ] Базовая обработка ошибок
 
 ## Прогресс
-- [x] Создать структуру папок
-- [x] Заполнить CLAUDE.md
-- [x] Заполнить Current_task.md
-- [x] Заполнить Decisions.md
-- [x] Заполнить project_status.md
-- [x] Создать plans/MVP_plan.md
-- [x] Создать plans/full_plan.md
-- [x] Создать plans/future_features.md
-- [ ] Инициализировать frontend/
-- [ ] Инициализировать backend/
-- [ ] Создать docker-compose.yml
-- [ ] Создать .env.example
-- [ ] Создать docs/database_schema.md
-- [ ] Создать docs/API.md (базовая структура)
-- [ ] Создать docs/deployment.md
+- [ ] SchedulePage
+- [ ] SubjectsPage
+- [ ] WorksPage
+- [ ] ClassmatesPage
 
 ## Заметки по реализации
-1. Frontend: использовать `npm create vite@latest . -- --template react-ts`
-2. Backend: структура с разделением на routers, services, models, schemas
-3. Docker: PostgreSQL, Redis, Backend, Frontend (dev режим)
+1. Использовать TanStack Query для запросов к API
+2. Создать API сервисы для каждого раздела
+3. Добавить состояния загрузки и ошибок
+4. Реализовать базовую навигацию между страницами
 
 ## Блокеры / Вопросы
 — Нет —
 
-## Следующие шаги
-1. Инициализировать frontend с Vite + React + TypeScript
-2. Настроить Tailwind CSS и shadcn/ui
-3. Инициализировать backend с FastAPI
-4. Настроить Docker Compose
+## Что готово из предыдущей сессии
+- Vite + React + TypeScript + Tailwind v4 настроены
+- UI компоненты: Button, Input, Card, Label
+- Auth: LoginPage, RegisterPage, authStore
+- DashboardPage с навигацией
+- Защищённые маршруты (ProtectedRoute)
+- API клиент с JWT interceptors

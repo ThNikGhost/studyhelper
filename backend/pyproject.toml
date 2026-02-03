@@ -21,6 +21,7 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4",
     "python-multipart>=0.0.12",
     "aiosqlite>=0.22.1",
+    "aiopg>=1.4.0",
 ]
 
 [project.optional-dependencies]
