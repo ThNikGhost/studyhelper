@@ -22,15 +22,16 @@ const TIME_SLOTS = [
 // Day names
 const DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
-// Colors for lesson types - vibrant colors for better readability
+// Custom colors for lesson types
+// Red: #ED9AA2, Blue: #86B6FE, Green: #8DC3A9
 const lessonTypeColors: Record<LessonType, string> = {
-  [LessonType.LECTURE]: 'bg-blue-200 dark:bg-blue-800 border-blue-400 dark:border-blue-600 text-blue-900 dark:text-blue-100',
-  [LessonType.PRACTICE]: 'bg-green-200 dark:bg-green-800 border-green-400 dark:border-green-600 text-green-900 dark:text-green-100',
-  [LessonType.LAB]: 'bg-orange-200 dark:bg-orange-800 border-orange-400 dark:border-orange-600 text-orange-900 dark:text-orange-100',
-  [LessonType.SEMINAR]: 'bg-purple-200 dark:bg-purple-800 border-purple-400 dark:border-purple-600 text-purple-900 dark:text-purple-100',
-  [LessonType.EXAM]: 'bg-red-200 dark:bg-red-800 border-red-400 dark:border-red-600 text-red-900 dark:text-red-100',
-  [LessonType.CONSULTATION]: 'bg-slate-200 dark:bg-slate-700 border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100',
-  [LessonType.OTHER]: 'bg-slate-200 dark:bg-slate-700 border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100',
+  [LessonType.LECTURE]: 'bg-[#86B6FE] border-[#5a9afd] text-gray-900',
+  [LessonType.PRACTICE]: 'bg-[#8DC3A9] border-[#6db38a] text-gray-900',
+  [LessonType.LAB]: 'bg-[#ED9AA2] border-[#e07a84] text-gray-900',
+  [LessonType.SEMINAR]: 'bg-[#86B6FE] border-[#5a9afd] text-gray-900',
+  [LessonType.EXAM]: 'bg-[#ED9AA2] border-[#e07a84] text-gray-900',
+  [LessonType.CONSULTATION]: 'bg-gray-200 border-gray-400 text-gray-900',
+  [LessonType.OTHER]: 'bg-gray-200 border-gray-400 text-gray-900',
 }
 
 // Format date as "DD.MM"

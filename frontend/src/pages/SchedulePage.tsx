@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, RefreshCw, Calendar, ArrowLeft } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { ChevronLeft, ChevronRight, RefreshCw, Calendar, ArrowLeft, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -23,6 +23,7 @@ function getToday(): string {
 export function SchedulePage() {
   const [targetDate, setTargetDate] = useState<string | undefined>(undefined)
   const today = getToday()
+  const queryClient = useQueryClient()
 
   // Fetch week schedule
   const {
@@ -41,6 +42,20 @@ export function SchedulePage() {
     queryFn: () => scheduleService.getCurrentLesson(),
     refetchInterval: 60000, // 1 minute
   })
+
+  // Mutation for refreshing schedule from OmGU
+  const refreshMutation = useMutation({
+    mutationFn: () => scheduleService.refreshSchedule(false),
+    onSuccess: () => {
+      // Invalidate all schedule queries to refetch fresh data
+      queryClient.invalidateQueries({ queryKey: ['schedule'] })
+    },
+  })
+
+  // Handle refresh button click
+  const handleRefresh = () => {
+    refreshMutation.mutate()
+  }
 
   // Navigation handlers
   const goToPreviousWeek = () => {
@@ -123,8 +138,18 @@ export function SchedulePage() {
             </Button>
           </Link>
           <h1 className="text-2xl font-bold flex-1">Расписание</h1>
-          <Button variant="ghost" size="icon" onClick={() => refetch()} title="Обновить">
-            <RefreshCw className="h-5 w-5" />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={refreshMutation.isPending}
+            title="Обновить с сайта ОмГУ"
+          >
+            {refreshMutation.isPending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <RefreshCw className="h-5 w-5" />
+            )}
           </Button>
         </div>
 
