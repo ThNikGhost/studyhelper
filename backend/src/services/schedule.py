@@ -1,8 +1,13 @@
 """Schedule service."""
 
-from datetime import UTC, date, datetime, timedelta
+from __future__ import annotations
 
-from sqlalchemy import and_, select
+import json
+import logging
+from datetime import UTC, date, datetime, timedelta
+from typing import TYPE_CHECKING, Any
+
+from sqlalchemy import and_, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.schedule import ScheduleEntry, ScheduleSnapshot
@@ -16,6 +21,11 @@ from src.schemas.schedule import (
     ScheduleSnapshotCreate,
     WeekScheduleResponse,
 )
+
+if TYPE_CHECKING:
+    from src.parser.omsu_parser import ParseResult
+
+logger = logging.getLogger(__name__)
 
 DAY_NAMES_RU = {
     1: "Понедельник",
@@ -114,7 +124,14 @@ async def update_schedule_entry(
     """Update schedule entry."""
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
-        if field == "day_of_week" and value is not None or field == "week_type" and value is not None or field == "lesson_type" and value is not None:
+        if (
+            field == "day_of_week"
+            and value is not None
+            or field == "week_type"
+            and value is not None
+            or field == "lesson_type"
+            and value is not None
+        ):
             value = value.value
         setattr(entry, field, value)
     await db.commit()
@@ -139,7 +156,9 @@ async def get_today_schedule(
     day_of_week = target_date.isoweekday()
     week_type = "odd" if is_odd_week(target_date) else "even"
 
-    entries = await get_schedule_entries(db, day_of_week=day_of_week, week_type=week_type)
+    entries = await get_schedule_entries(
+        db, day_of_week=day_of_week, week_type=week_type
+    )
 
     return DayScheduleResponse(
         date=target_date,
@@ -242,7 +261,9 @@ async def get_snapshots(db: AsyncSession, limit: int = 10) -> list[ScheduleSnaps
 async def get_latest_snapshot(db: AsyncSession) -> ScheduleSnapshot | None:
     """Get the most recent schedule snapshot."""
     result = await db.execute(
-        select(ScheduleSnapshot).order_by(ScheduleSnapshot.snapshot_date.desc()).limit(1)
+        select(ScheduleSnapshot)
+        .order_by(ScheduleSnapshot.snapshot_date.desc())
+        .limit(1)
     )
     return result.scalar_one_or_none()
 
@@ -262,3 +283,138 @@ async def create_snapshot(
     await db.commit()
     await db.refresh(snapshot)
     return snapshot
+
+
+# Parser integration functions
+async def parse_schedule(
+    url: str | None = None,
+    headless: bool = True,
+) -> ParseResult:
+    """Parse schedule from OmGU website using Playwright.
+
+    Args:
+        url: Schedule URL. Defaults to settings.schedule_url.
+        headless: Run browser in headless mode.
+
+    Returns:
+        ParseResult with parsed entries and metadata.
+
+    Raises:
+        ParserException: If parsing fails.
+    """
+    from src.parser import OmsuScheduleParser
+
+    async with OmsuScheduleParser(url=url, headless=headless) as parser:
+        return await parser.parse()
+
+
+async def _clear_schedule_entries(db: AsyncSession) -> int:
+    """Delete all schedule entries.
+
+    Args:
+        db: Database session.
+
+    Returns:
+        Number of deleted entries.
+    """
+    result = await db.execute(delete(ScheduleEntry))
+    await db.commit()
+    return result.rowcount
+
+
+async def sync_schedule(
+    db: AsyncSession,
+    force: bool = False,
+    url: str | None = None,
+    headless: bool = True,
+) -> dict[str, Any]:
+    """Synchronize schedule: parse, compare hash, update if changed.
+
+    Args:
+        db: Database session.
+        force: Force update even if content hash unchanged.
+        url: Schedule URL. Defaults to settings.schedule_url.
+        headless: Run browser in headless mode.
+
+    Returns:
+        Dictionary with sync result:
+            - success: bool
+            - changed: bool
+            - entries_count: int
+            - content_hash: str (if success)
+            - message: str (error message if not success)
+    """
+    logger.info("Starting schedule sync (force=%s)", force)
+
+    try:
+        # Parse schedule
+        parse_result = await parse_schedule(url=url, headless=headless)
+
+        if parse_result.entries_count == 0:
+            logger.warning("No entries parsed from schedule")
+            return {
+                "success": False,
+                "changed": False,
+                "entries_count": 0,
+                "message": "No entries parsed from schedule",
+            }
+
+        # Check if content changed
+        latest_snapshot = await get_latest_snapshot(db)
+        if (
+            latest_snapshot
+            and latest_snapshot.content_hash == parse_result.content_hash
+        ):
+            if not force:
+                logger.info(
+                    "Schedule unchanged (hash: %s...)", parse_result.content_hash[:8]
+                )
+                return {
+                    "success": True,
+                    "changed": False,
+                    "entries_count": latest_snapshot.entries_count,
+                    "content_hash": parse_result.content_hash,
+                    "message": "Schedule unchanged",
+                }
+            logger.info("Force sync requested, updating despite unchanged hash")
+
+        # Clear existing entries
+        deleted_count = await _clear_schedule_entries(db)
+        logger.info("Deleted %d existing entries", deleted_count)
+
+        # Create new entries
+        for entry_data in parse_result.entries:
+            await create_schedule_entry(db, entry_data)
+
+        # Create snapshot
+        snapshot_data = ScheduleSnapshotCreate(
+            snapshot_date=parse_result.parsed_date,
+            content_hash=parse_result.content_hash,
+            raw_data=json.dumps(parse_result.raw_data, ensure_ascii=False),
+            source_url=parse_result.source_url,
+            entries_count=parse_result.entries_count,
+        )
+        await create_snapshot(db, snapshot_data)
+
+        logger.info(
+            "Schedule synced: %d entries, hash: %s...",
+            parse_result.entries_count,
+            parse_result.content_hash[:8],
+        )
+
+        return {
+            "success": True,
+            "changed": True,
+            "entries_count": parse_result.entries_count,
+            "content_hash": parse_result.content_hash,
+            "message": "Schedule updated successfully",
+        }
+
+    except Exception as e:
+        logger.error("Schedule sync failed: %s", e, exc_info=True)
+        return {
+            "success": False,
+            "changed": False,
+            "entries_count": 0,
+            "message": str(e),
+        }

@@ -1,6 +1,5 @@
 """Tests for schedule endpoints."""
 
-
 import pytest
 from httpx import AsyncClient
 
@@ -243,9 +242,7 @@ class TestGetScheduleEntry:
         assert data["id"] == entry_id
         assert data["subject_name"] == schedule_entry_data["subject_name"]
 
-    async def test_get_entry_not_found(
-        self, client: AsyncClient, auth_headers: dict
-    ):
+    async def test_get_entry_not_found(self, client: AsyncClient, auth_headers: dict):
         """Test getting non-existent entry fails."""
         response = await client.get(
             "/api/v1/schedule/entries/99999",
@@ -395,26 +392,6 @@ class TestCurrentLesson:
     async def test_get_current_lesson_unauthorized(self, client: AsyncClient):
         """Test getting current lesson without auth fails."""
         response = await client.get("/api/v1/schedule/current")
-
-        assert response.status_code == 401
-
-
-class TestRefreshSchedule:
-    """Tests for POST /api/v1/schedule/refresh."""
-
-    async def test_refresh_schedule_placeholder(
-        self, client: AsyncClient, auth_headers: dict
-    ):
-        """Test refresh schedule placeholder endpoint."""
-        response = await client.post("/api/v1/schedule/refresh", headers=auth_headers)
-
-        assert response.status_code == 202
-        data = response.json()
-        assert data["status"] == "accepted"
-
-    async def test_refresh_schedule_unauthorized(self, client: AsyncClient):
-        """Test refresh schedule without auth fails."""
-        response = await client.post("/api/v1/schedule/refresh")
 
         assert response.status_code == 401
 

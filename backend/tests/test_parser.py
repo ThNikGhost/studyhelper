@@ -1,0 +1,385 @@
+"""Tests for schedule parser module."""
+
+from datetime import time
+from unittest.mock import AsyncMock, patch
+
+import pytest
+
+from src.parser.data_mapper import DataMapper
+from src.parser.exceptions import MappingError
+from src.parser.hash_utils import compute_schedule_hash
+from src.schemas.schedule import DayOfWeek, LessonType, WeekType
+
+
+class TestHashUtils:
+    """Tests for hash_utils module."""
+
+    def test_empty_entries_hash(self):
+        """Empty entries should produce consistent hash."""
+        hash1 = compute_schedule_hash([])
+        hash2 = compute_schedule_hash([])
+        assert hash1 == hash2
+        assert len(hash1) == 64  # SHA-256 produces 64 hex characters
+
+    def test_same_data_same_hash(self):
+        """Same data should produce same hash."""
+        entries = [
+            {"day_of_week": 1, "start_time": "08:00", "subject_name": "Math"},
+            {"day_of_week": 2, "start_time": "10:00", "subject_name": "Physics"},
+        ]
+        hash1 = compute_schedule_hash(entries)
+        hash2 = compute_schedule_hash(entries)
+        assert hash1 == hash2
+
+    def test_different_order_same_hash(self):
+        """Entries in different order should produce same hash (sorted internally)."""
+        entries1 = [
+            {"day_of_week": 2, "start_time": "10:00", "subject_name": "Physics"},
+            {"day_of_week": 1, "start_time": "08:00", "subject_name": "Math"},
+        ]
+        entries2 = [
+            {"day_of_week": 1, "start_time": "08:00", "subject_name": "Math"},
+            {"day_of_week": 2, "start_time": "10:00", "subject_name": "Physics"},
+        ]
+        hash1 = compute_schedule_hash(entries1)
+        hash2 = compute_schedule_hash(entries2)
+        assert hash1 == hash2
+
+    def test_different_data_different_hash(self):
+        """Different data should produce different hash."""
+        entries1 = [{"day_of_week": 1, "subject_name": "Math"}]
+        entries2 = [{"day_of_week": 1, "subject_name": "Physics"}]
+        hash1 = compute_schedule_hash(entries1)
+        hash2 = compute_schedule_hash(entries2)
+        assert hash1 != hash2
+
+
+class TestDataMapperTime:
+    """Tests for DataMapper.parse_time."""
+
+    def test_parse_time_hhmm(self):
+        """Parse time in HH:MM format."""
+        result = DataMapper.parse_time("08:30")
+        assert result == time(8, 30)
+
+    def test_parse_time_hmm(self):
+        """Parse time in H:MM format."""
+        result = DataMapper.parse_time("9:00")
+        assert result == time(9, 0)
+
+    def test_parse_time_with_dot(self):
+        """Parse time with dot separator."""
+        result = DataMapper.parse_time("14.45")
+        assert result == time(14, 45)
+
+    def test_parse_time_with_spaces(self):
+        """Parse time with leading/trailing spaces."""
+        result = DataMapper.parse_time("  10:15  ")
+        assert result == time(10, 15)
+
+    def test_parse_time_empty_raises(self):
+        """Empty time string should raise MappingError."""
+        with pytest.raises(MappingError, match="Empty time"):
+            DataMapper.parse_time("")
+
+    def test_parse_time_invalid_format_raises(self):
+        """Invalid time format should raise MappingError."""
+        with pytest.raises(MappingError, match="Invalid time format"):
+            DataMapper.parse_time("abc")
+
+    def test_parse_time_invalid_values_raises(self):
+        """Invalid time values should raise MappingError."""
+        with pytest.raises(MappingError, match="Invalid time values"):
+            DataMapper.parse_time("25:00")
+
+
+class TestDataMapperDayOfWeek:
+    """Tests for DataMapper.parse_day_of_week."""
+
+    @pytest.mark.parametrize(
+        "day_str,expected",
+        [
+            ("понедельник", DayOfWeek.MONDAY),
+            ("Понедельник", DayOfWeek.MONDAY),
+            ("ПОНЕДЕЛЬНИК", DayOfWeek.MONDAY),
+            ("вторник", DayOfWeek.TUESDAY),
+            ("среда", DayOfWeek.WEDNESDAY),
+            ("четверг", DayOfWeek.THURSDAY),
+            ("пятница", DayOfWeek.FRIDAY),
+            ("суббота", DayOfWeek.SATURDAY),
+            ("воскресенье", DayOfWeek.SUNDAY),
+        ],
+    )
+    def test_parse_day_full_name(self, day_str: str, expected: DayOfWeek):
+        """Parse full day names in Russian."""
+        result = DataMapper.parse_day_of_week(day_str)
+        assert result == expected
+
+    @pytest.mark.parametrize(
+        "day_str,expected",
+        [
+            ("пн", DayOfWeek.MONDAY),
+            ("вт", DayOfWeek.TUESDAY),
+            ("ср", DayOfWeek.WEDNESDAY),
+            ("чт", DayOfWeek.THURSDAY),
+            ("пт", DayOfWeek.FRIDAY),
+            ("сб", DayOfWeek.SATURDAY),
+            ("вс", DayOfWeek.SUNDAY),
+        ],
+    )
+    def test_parse_day_abbreviated(self, day_str: str, expected: DayOfWeek):
+        """Parse abbreviated day names."""
+        result = DataMapper.parse_day_of_week(day_str)
+        assert result == expected
+
+    def test_parse_day_empty_raises(self):
+        """Empty day string should raise MappingError."""
+        with pytest.raises(MappingError, match="Empty day"):
+            DataMapper.parse_day_of_week("")
+
+    def test_parse_day_unknown_raises(self):
+        """Unknown day should raise MappingError."""
+        with pytest.raises(MappingError, match="Unknown day"):
+            DataMapper.parse_day_of_week("monday")
+
+
+class TestDataMapperLessonType:
+    """Tests for DataMapper.parse_lesson_type."""
+
+    @pytest.mark.parametrize(
+        "type_str,expected",
+        [
+            ("лекция", LessonType.LECTURE),
+            ("Лекция", LessonType.LECTURE),
+            ("лек", LessonType.LECTURE),
+            ("лек.", LessonType.LECTURE),
+            ("практика", LessonType.PRACTICE),
+            ("практическое занятие", LessonType.PRACTICE),
+            ("пр", LessonType.PRACTICE),
+            ("пр.", LessonType.PRACTICE),
+            ("лабораторная", LessonType.LAB),
+            ("лабораторная работа", LessonType.LAB),
+            ("лаб", LessonType.LAB),
+            ("лаб.", LessonType.LAB),
+            ("семинар", LessonType.SEMINAR),
+            ("сем", LessonType.SEMINAR),
+            ("экзамен", LessonType.EXAM),
+            ("консультация", LessonType.CONSULTATION),
+        ],
+    )
+    def test_parse_lesson_type(self, type_str: str, expected: LessonType):
+        """Parse various lesson type strings."""
+        result = DataMapper.parse_lesson_type(type_str)
+        assert result == expected
+
+    def test_parse_lesson_type_empty_returns_other(self):
+        """Empty string should return OTHER."""
+        result = DataMapper.parse_lesson_type("")
+        assert result == LessonType.OTHER
+
+    def test_parse_lesson_type_unknown_returns_other(self):
+        """Unknown type should return OTHER."""
+        result = DataMapper.parse_lesson_type("something unknown")
+        assert result == LessonType.OTHER
+
+
+class TestDataMapperWeekType:
+    """Tests for DataMapper.parse_week_type."""
+
+    @pytest.mark.parametrize(
+        "week_str,expected",
+        [
+            ("нечетная", WeekType.ODD),
+            ("нечётная", WeekType.ODD),
+            ("нечет", WeekType.ODD),
+            ("I", WeekType.ODD),
+            ("1", WeekType.ODD),
+            ("четная", WeekType.EVEN),
+            ("чётная", WeekType.EVEN),
+            ("чет", WeekType.EVEN),
+            ("II", WeekType.EVEN),
+            ("2", WeekType.EVEN),
+        ],
+    )
+    def test_parse_week_type(self, week_str: str, expected: WeekType):
+        """Parse various week type strings."""
+        result = DataMapper.parse_week_type(week_str)
+        assert result == expected
+
+    def test_parse_week_type_none_returns_none(self):
+        """None input should return None."""
+        result = DataMapper.parse_week_type(None)
+        assert result is None
+
+    def test_parse_week_type_empty_returns_none(self):
+        """Empty string should return None."""
+        result = DataMapper.parse_week_type("")
+        assert result is None
+
+
+class TestDataMapperRoomAndBuilding:
+    """Tests for DataMapper.parse_room_and_building."""
+
+    def test_parse_format_dash(self):
+        """Parse '2-215' format."""
+        room, building = DataMapper.parse_room_and_building("2-215")
+        assert room == "215"
+        assert building == "2"
+
+    def test_parse_format_dash_with_letter(self):
+        """Parse '1-101а' format."""
+        room, building = DataMapper.parse_room_and_building("1-101а")
+        assert room == "101а"
+        assert building == "1"
+
+    def test_parse_format_text(self):
+        """Parse 'корп. 2, ауд. 215' format."""
+        room, building = DataMapper.parse_room_and_building("корп. 2, ауд. 215")
+        assert room == "215"
+        assert building == "2"
+
+    def test_parse_plain_room(self):
+        """Parse plain room number."""
+        room, building = DataMapper.parse_room_and_building("315")
+        assert room == "315"
+        assert building is None
+
+    def test_parse_empty_returns_none(self):
+        """Empty input should return (None, None)."""
+        room, building = DataMapper.parse_room_and_building("")
+        assert room is None
+        assert building is None
+
+
+class TestDataMapperSubgroup:
+    """Tests for DataMapper.parse_subgroup."""
+
+    def test_parse_subgroup_number(self):
+        """Parse plain number."""
+        result = DataMapper.parse_subgroup("1")
+        assert result == 1
+
+    def test_parse_subgroup_with_text(self):
+        """Parse '1 подгруппа'."""
+        result = DataMapper.parse_subgroup("1 подгруппа")
+        assert result == 1
+
+    def test_parse_subgroup_none_returns_none(self):
+        """None input should return None."""
+        result = DataMapper.parse_subgroup(None)
+        assert result is None
+
+    def test_parse_subgroup_no_number_returns_none(self):
+        """Input without number should return None."""
+        result = DataMapper.parse_subgroup("подгруппа")
+        assert result is None
+
+
+class TestDataMapperMapRawEntry:
+    """Tests for DataMapper.map_raw_entry."""
+
+    def test_map_full_entry(self):
+        """Map entry with all fields."""
+        raw = {
+            "day_of_week": "понедельник",
+            "start_time": "08:00",
+            "end_time": "09:30",
+            "subject_name": "Математика",
+            "lesson_type": "лекция",
+            "teacher_name": "Иванов И.И.",
+            "location": "2-215",
+            "week_type": "нечетная",
+            "subgroup": "1",
+            "group_name": "ММБ-101",
+            "notes": "Test note",
+        }
+        entry = DataMapper.map_raw_entry(raw)
+
+        assert entry.day_of_week == DayOfWeek.MONDAY
+        assert entry.start_time == time(8, 0)
+        assert entry.end_time == time(9, 30)
+        assert entry.subject_name == "Математика"
+        assert entry.lesson_type == LessonType.LECTURE
+        assert entry.teacher_name == "Иванов И.И."
+        assert entry.room == "215"
+        assert entry.building == "2"
+        assert entry.week_type == WeekType.ODD
+        assert entry.subgroup == 1
+        assert entry.group_name == "ММБ-101"
+        assert entry.notes == "Test note"
+
+    def test_map_minimal_entry(self):
+        """Map entry with only required fields."""
+        raw = {
+            "day_of_week": "вторник",
+            "start_time": "10:00",
+            "end_time": "11:30",
+            "subject_name": "Физика",
+        }
+        entry = DataMapper.map_raw_entry(raw)
+
+        assert entry.day_of_week == DayOfWeek.TUESDAY
+        assert entry.subject_name == "Физика"
+        assert entry.lesson_type == LessonType.OTHER
+        assert entry.teacher_name is None
+
+    def test_map_entry_with_int_day(self):
+        """Map entry with day_of_week as integer."""
+        raw = {
+            "day_of_week": 3,
+            "start_time": "12:00",
+            "end_time": "13:30",
+            "subject_name": "Химия",
+        }
+        entry = DataMapper.map_raw_entry(raw)
+        assert entry.day_of_week == DayOfWeek.WEDNESDAY
+
+    def test_map_entry_missing_subject_raises(self):
+        """Missing subject_name should raise MappingError."""
+        raw = {
+            "day_of_week": "понедельник",
+            "start_time": "08:00",
+            "end_time": "09:30",
+        }
+        with pytest.raises(MappingError, match="subject_name"):
+            DataMapper.map_raw_entry(raw)
+
+
+class TestOmsuScheduleParser:
+    """Tests for OmsuScheduleParser class."""
+
+    @pytest.mark.asyncio
+    async def test_parser_context_manager(self):
+        """Test parser as async context manager."""
+        with patch("src.parser.omsu_parser.async_playwright") as mock_playwright:
+            # Setup mocks
+            mock_page = AsyncMock()
+            mock_browser = AsyncMock()
+            mock_browser.new_page.return_value = mock_page
+
+            mock_playwright_instance = AsyncMock()
+            mock_playwright_instance.chromium.launch.return_value = mock_browser
+
+            mock_playwright.return_value.start = AsyncMock(
+                return_value=mock_playwright_instance
+            )
+
+            from src.parser import OmsuScheduleParser
+
+            async with OmsuScheduleParser(headless=True) as parser:
+                assert parser._browser is not None
+                assert parser._page is not None
+
+            # Verify cleanup was called
+            mock_page.close.assert_called_once()
+            mock_browser.close.assert_called_once()
+            mock_playwright_instance.stop.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_parser_without_context_raises(self):
+        """Using parse without context manager should raise."""
+        from src.parser import OmsuScheduleParser
+
+        parser = OmsuScheduleParser()
+        with pytest.raises(RuntimeError, match="not initialized"):
+            await parser.parse()

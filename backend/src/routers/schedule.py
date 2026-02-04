@@ -34,7 +34,9 @@ async def get_week_schedule(
 
 @router.get("/today", response_model=DayScheduleResponse)
 async def get_today_schedule(
-    target_date: date | None = Query(None, description="Target date (defaults to today)"),
+    target_date: date | None = Query(
+        None, description="Target date (defaults to today)"
+    ),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> DayScheduleResponse:
@@ -64,7 +66,9 @@ async def get_schedule_entries(
 
 
 @router.post(
-    "/entries", response_model=ScheduleEntryResponse, status_code=status.HTTP_201_CREATED
+    "/entries",
+    response_model=ScheduleEntryResponse,
+    status_code=status.HTTP_201_CREATED,
 )
 async def create_schedule_entry(
     data: ScheduleEntryCreate,
@@ -144,15 +148,32 @@ async def get_latest_snapshot(
     return await schedule_service.get_latest_snapshot(db)
 
 
-# Placeholder for refresh endpoint (will be implemented with Celery/Playwright)
-@router.post("/refresh", status_code=status.HTTP_202_ACCEPTED)
+# Schedule refresh endpoint
+@router.post("/refresh")
 async def refresh_schedule(
+    force: bool = Query(False, description="Force refresh even if unchanged"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> dict[str, str]:
-    """Request schedule refresh from source (placeholder for Celery task)."""
-    # TODO: Implement with Celery task in Etap 10
-    return {
-        "status": "accepted",
-        "message": "Schedule refresh requested. This feature will be fully implemented with Celery.",
-    }
+) -> dict:
+    """Refresh schedule from OmGU website.
+
+    Parses the schedule, compares with the last snapshot, and updates
+    the database if changes are detected.
+
+    Args:
+        force: Force update even if content hash is unchanged.
+        db: Database session.
+        current_user: Authenticated user.
+
+    Returns:
+        Sync result with success status, changed flag, and entries count.
+    """
+    result = await schedule_service.sync_schedule(db, force=force)
+
+    if not result["success"]:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=result.get("message", "Schedule refresh failed"),
+        )
+
+    return result
