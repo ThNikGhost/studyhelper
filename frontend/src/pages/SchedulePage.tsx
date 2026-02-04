@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, RefreshCw, Calendar } from 'lucide-react'
+import { ChevronLeft, ChevronRight, RefreshCw, Calendar, ArrowLeft } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { DayScheduleCard } from '@/components/schedule/DayScheduleCard'
+import { ScheduleGrid } from '@/components/schedule/ScheduleGrid'
 import scheduleService from '@/services/scheduleService'
 import type { WeekSchedule, CurrentLesson } from '@/types/schedule'
 
@@ -17,11 +18,6 @@ function addDays(dateStr: string, days: number): string {
 // Get today's date string
 function getToday(): string {
   return new Date().toISOString().split('T')[0]
-}
-
-// Check if two date strings are the same day
-function isSameDay(date1: string, date2: string): boolean {
-  return date1.split('T')[0] === date2.split('T')[0]
 }
 
 export function SchedulePage() {
@@ -70,19 +66,30 @@ export function SchedulePage() {
     return todayDate >= weekStart && todayDate <= weekEnd
   }, [weekSchedule, today])
 
+  // Calculate time remaining for current lesson
+  const timeRemaining = useMemo(() => {
+    if (!currentLesson?.current) return null
+    const now = new Date()
+    const [endHours, endMinutes] = currentLesson.current.end_time.split(':').map(Number)
+    const endTime = new Date()
+    endTime.setHours(endHours, endMinutes, 0, 0)
+    const diff = endTime.getTime() - now.getTime()
+    if (diff <= 0) return null
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return { hours, minutes: mins }
+  }, [currentLesson])
+
   // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container max-w-2xl mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-6">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-muted rounded w-1/3" />
             <div className="h-12 bg-muted rounded" />
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-32 bg-muted rounded" />
-              ))}
-            </div>
+            <div className="h-96 bg-muted rounded" />
           </div>
         </div>
       </div>
@@ -93,12 +100,10 @@ export function SchedulePage() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container max-w-2xl mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-6">
           <Card>
             <CardContent className="py-10 text-center">
-              <p className="text-destructive mb-4">
-                Ошибка загрузки расписания
-              </p>
+              <p className="text-destructive mb-4">Ошибка загрузки расписания</p>
               <Button onClick={() => refetch()}>Попробовать снова</Button>
             </CardContent>
           </Card>
@@ -109,16 +114,16 @@ export function SchedulePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container max-w-2xl mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Расписание</h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => refetch()}
-            title="Обновить"
-          >
+        <div className="flex items-center gap-4 mb-6">
+          <Link to="/">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold flex-1">Расписание</h1>
+          <Button variant="ghost" size="icon" onClick={() => refetch()} title="Обновить">
             <RefreshCw className="h-5 w-5" />
           </Button>
         </div>
@@ -132,9 +137,7 @@ export function SchedulePage() {
               </Button>
 
               <div className="text-center">
-                <div className="font-medium">
-                  Неделя {weekSchedule?.week_number}
-                </div>
+                <div className="font-medium">Неделя {weekSchedule?.week_number}</div>
                 <div className="text-sm text-muted-foreground">
                   {weekSchedule?.is_odd_week ? 'Нечётная' : 'Чётная'}
                 </div>
@@ -153,48 +156,66 @@ export function SchedulePage() {
                 className="w-full mt-2"
                 onClick={goToCurrentWeek}
               >
-                <Calendar className="h-4 w-4 mr-2" />
-                К текущей неделе
+                <Calendar className="h-4 w-4 mr-2" />К текущей неделе
               </Button>
             )}
           </CardContent>
         </Card>
 
         {/* Current lesson indicator */}
-        {currentLesson?.current && isCurrentWeek && (
+        {currentLesson?.current && isCurrentWeek && timeRemaining && (
           <Card className="mb-6 border-primary">
             <CardContent className="py-3 px-4">
-              <div className="text-sm text-primary font-medium mb-1">
-                Сейчас идёт:
-              </div>
-              <div className="font-medium">
-                {currentLesson.current.subject_name}
-              </div>
-              {currentLesson.time_until_next !== null && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  До конца: {Math.floor(currentLesson.time_until_next / 60)}ч{' '}
-                  {currentLesson.time_until_next % 60}мин
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-primary font-medium">Сейчас идёт:</div>
+                  <div className="font-medium">{currentLesson.current.subject_name}</div>
                 </div>
-              )}
+                <div className="text-right">
+                  <div className="text-xs text-muted-foreground">До конца:</div>
+                  <div className="font-medium">
+                    {timeRemaining.hours}ч {timeRemaining.minutes}мин
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Days list */}
-        <div className="space-y-6">
-          {weekSchedule?.days.map((day) => (
-            <DayScheduleCard
-              key={day.date}
-              day={day}
-              isToday={isSameDay(day.date, today)}
-              currentEntryId={currentLesson?.current?.id}
-            />
-          ))}
-        </div>
+        {/* Next lesson (when no current) */}
+        {!currentLesson?.current && currentLesson?.next && isCurrentWeek && (
+          <Card className="mb-6">
+            <CardContent className="py-3 px-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-muted-foreground">Следующая:</div>
+                  <div className="font-medium">{currentLesson.next.subject_name}</div>
+                </div>
+                {currentLesson.time_until_next !== null && (
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground">Через:</div>
+                    <div className="font-medium">
+                      {Math.floor(currentLesson.time_until_next / 60)}ч{' '}
+                      {currentLesson.time_until_next % 60}мин
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Schedule grid */}
+        {weekSchedule && (
+          <ScheduleGrid
+            weekSchedule={weekSchedule}
+            currentEntryId={currentLesson?.current?.id}
+          />
+        )}
 
         {/* Empty state */}
         {weekSchedule?.days.every((d) => d.entries.length === 0) && (
-          <Card>
+          <Card className="mt-6">
             <CardContent className="py-10 text-center text-muted-foreground">
               <p>На этой неделе нет занятий</p>
             </CardContent>

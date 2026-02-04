@@ -28,9 +28,10 @@ export function LessonCard({ entry, isActive = false }: LessonCardProps) {
   const startTime = formatTime(entry.start_time)
   const endTime = formatTime(entry.end_time)
 
-  const location = [entry.room, entry.building && `корп. ${entry.building}`]
-    .filter(Boolean)
-    .join(', ')
+  // Format location as "building-room" (e.g., "7-140")
+  const location = entry.building && entry.room
+    ? `${entry.building}-${entry.room}`
+    : entry.room || entry.building || null
 
   return (
     <Card

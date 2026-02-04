@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
+
+# Omsk timezone (UTC+6)
+OMSK_TZ = timezone(timedelta(hours=6))
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import and_, delete, select
@@ -151,7 +154,7 @@ async def get_today_schedule(
 ) -> DayScheduleResponse:
     """Get schedule for today (or specified date)."""
     if target_date is None:
-        target_date = datetime.now(UTC).date()
+        target_date = datetime.now(OMSK_TZ).date()
 
     day_of_week = target_date.isoweekday()
     week_type = "odd" if is_odd_week(target_date) else "even"
@@ -173,7 +176,7 @@ async def get_week_schedule(
 ) -> WeekScheduleResponse:
     """Get schedule for the week containing the specified date."""
     if target_date is None:
-        target_date = datetime.now(UTC).date()
+        target_date = datetime.now(OMSK_TZ).date()
 
     week_start, week_end = get_week_bounds(target_date)
     week_number = get_week_number(target_date)
@@ -209,7 +212,7 @@ async def get_week_schedule(
 
 async def get_current_lesson(db: AsyncSession) -> CurrentLessonResponse:
     """Get current and next lesson."""
-    now = datetime.now(UTC)
+    now = datetime.now(OMSK_TZ)
     current_date = now.date()
     current_time = now.time()
     day_of_week = current_date.isoweekday()
