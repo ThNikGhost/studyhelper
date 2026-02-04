@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
+import SchedulePage from '@/pages/SchedulePage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -30,15 +31,16 @@ function App() {
           </ProtectedRoute>
         }
       />
-      {/* Placeholder routes for future pages */}
+      {/* Schedule page */}
       <Route
         path="/schedule"
         element={
           <ProtectedRoute>
-            <PlaceholderPage title="Расписание" />
+            <SchedulePage />
           </ProtectedRoute>
         }
       />
+      {/* Placeholder routes for future pages */}
       <Route
         path="/subjects"
         element={
