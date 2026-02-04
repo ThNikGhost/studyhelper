@@ -25,13 +25,13 @@ const DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 // Custom colors for lesson types
 // Red: #ED9AA2, Blue: #86B6FE, Green: #8DC3A9
 const lessonTypeColors: Record<LessonType, string> = {
-  [LessonType.LECTURE]: 'bg-[#86B6FE] border-[#5a9afd] text-gray-900',
-  [LessonType.PRACTICE]: 'bg-[#8DC3A9] border-[#6db38a] text-gray-900',
-  [LessonType.LAB]: 'bg-[#ED9AA2] border-[#e07a84] text-gray-900',
-  [LessonType.SEMINAR]: 'bg-[#86B6FE] border-[#5a9afd] text-gray-900',
-  [LessonType.EXAM]: 'bg-[#ED9AA2] border-[#e07a84] text-gray-900',
-  [LessonType.CONSULTATION]: 'bg-gray-200 border-gray-400 text-gray-900',
-  [LessonType.OTHER]: 'bg-gray-200 border-gray-400 text-gray-900',
+  [LessonType.LECTURE]: 'bg-[#86B6FE] border-[#5a9afd] text-black',
+  [LessonType.PRACTICE]: 'bg-[#8DC3A9] border-[#6db38a] text-black',
+  [LessonType.LAB]: 'bg-[#ED9AA2] border-[#e07a84] text-black',
+  [LessonType.SEMINAR]: 'bg-[#86B6FE] border-[#5a9afd] text-black',
+  [LessonType.EXAM]: 'bg-[#ED9AA2] border-[#e07a84] text-black',
+  [LessonType.CONSULTATION]: 'bg-gray-200 border-gray-400 text-black',
+  [LessonType.OTHER]: 'bg-gray-200 border-gray-400 text-black',
 }
 
 // Format date as "DD.MM"
@@ -131,20 +131,20 @@ export function ScheduleGrid({ weekSchedule, currentEntryId }: ScheduleGridProps
                         </div>
 
                         {/* Type badge */}
-                        <div className="text-[10px] opacity-80 mb-0.5">
+                        <div className="text-[10px] text-black/70 mb-0.5">
                           {lessonTypeLabels[entry.lesson_type]}
                         </div>
 
                         {/* Location */}
                         {formatLocation(entry) && (
-                          <div className="text-[10px] opacity-80">
+                          <div className="text-[10px] text-black/70">
                             📍 {formatLocation(entry)}
                           </div>
                         )}
 
                         {/* Teacher (truncated) */}
                         {entry.teacher_name && (
-                          <div className="text-[10px] opacity-80 truncate">
+                          <div className="text-[10px] text-black/70 truncate">
                             {entry.teacher_name.split(' ').slice(0, 2).join(' ')}
                           </div>
                         )}
