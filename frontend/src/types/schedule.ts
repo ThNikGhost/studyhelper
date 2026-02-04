@@ -1,29 +1,35 @@
 // Schedule types matching backend schemas
 
-export enum LessonType {
-  LECTURE = 'lecture',
-  PRACTICE = 'practice',
-  LAB = 'lab',
-  SEMINAR = 'seminar',
-  EXAM = 'exam',
-  CONSULTATION = 'consultation',
-  OTHER = 'other',
-}
+export const LessonType = {
+  LECTURE: 'lecture',
+  PRACTICE: 'practice',
+  LAB: 'lab',
+  SEMINAR: 'seminar',
+  EXAM: 'exam',
+  CONSULTATION: 'consultation',
+  OTHER: 'other',
+} as const
 
-export enum DayOfWeek {
-  MONDAY = 1,
-  TUESDAY = 2,
-  WEDNESDAY = 3,
-  THURSDAY = 4,
-  FRIDAY = 5,
-  SATURDAY = 6,
-  SUNDAY = 7,
-}
+export type LessonType = (typeof LessonType)[keyof typeof LessonType]
 
-export enum WeekType {
-  ODD = 'odd',
-  EVEN = 'even',
-}
+export const DayOfWeek = {
+  MONDAY: 1,
+  TUESDAY: 2,
+  WEDNESDAY: 3,
+  THURSDAY: 4,
+  FRIDAY: 5,
+  SATURDAY: 6,
+  SUNDAY: 7,
+} as const
+
+export type DayOfWeek = (typeof DayOfWeek)[keyof typeof DayOfWeek]
+
+export const WeekType = {
+  ODD: 'odd',
+  EVEN: 'even',
+} as const
+
+export type WeekType = (typeof WeekType)[keyof typeof WeekType]
 
 export interface ScheduleEntry {
   id: number
