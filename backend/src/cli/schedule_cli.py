@@ -4,8 +4,8 @@ Usage:
     # Dry-run parsing (without saving to DB)
     uv run python -m src.cli.schedule_cli parse --verbose
 
-    # Parsing with visible browser
-    uv run python -m src.cli.schedule_cli parse --verbose --visible
+    # Output as JSON
+    uv run python -m src.cli.schedule_cli parse --json
 
     # Sync schedule to database
     uv run python -m src.cli.schedule_cli sync
@@ -22,10 +22,6 @@ import json
 import logging
 import sys
 from datetime import datetime
-
-# Windows-specific event loop policy
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -52,11 +48,10 @@ async def cmd_parse(args: argparse.Namespace) -> int:
     logger = logging.getLogger(__name__)
     logger.info("Starting schedule parsing (dry-run mode)")
 
-    headless = not args.visible
     url = args.url
 
     try:
-        async with OmsuScheduleParser(url=url, headless=headless) as parser:
+        async with OmsuScheduleParser(url=url) as parser:
             result = await parser.parse()
 
             print(f"\n{'=' * 60}")
@@ -94,19 +89,20 @@ async def cmd_parse(args: argparse.Namespace) -> int:
                     print()
 
             if args.json:
+                # Remove _original from raw_data for cleaner output
+                clean_raw = [
+                    {k: v for k, v in entry.items() if k != "_original"}
+                    for entry in result.raw_data
+                ]
                 output = {
                     "source_url": result.source_url,
                     "parsed_date": str(result.parsed_date),
                     "content_hash": result.content_hash,
                     "entries_count": result.entries_count,
-                    "raw_data": result.raw_data,
+                    "raw_data": clean_raw,
                 }
                 print("\nJSON output:")
-                print(json.dumps(output, ensure_ascii=False, indent=2))
-
-            if args.screenshot:
-                await parser.screenshot(args.screenshot)
-                print(f"Screenshot saved: {args.screenshot}")
+                print(json.dumps(output, ensure_ascii=False, indent=2, default=str))
 
             return 0
 
@@ -142,7 +138,6 @@ async def cmd_sync(args: argparse.Namespace) -> int:
             result = await schedule_service.sync_schedule(
                 db,
                 force=args.force,
-                headless=not args.visible,
             )
 
             print(f"\n{'=' * 60}")
@@ -193,22 +188,12 @@ def main() -> int:
     )
     parse_parser.add_argument(
         "--url",
-        help="Schedule URL (defaults to config)",
-    )
-    parse_parser.add_argument(
-        "--visible",
-        action="store_true",
-        help="Run browser in visible mode (not headless)",
+        help="Schedule API URL (defaults to config)",
     )
     parse_parser.add_argument(
         "--json",
         action="store_true",
         help="Output raw JSON data",
-    )
-    parse_parser.add_argument(
-        "--screenshot",
-        metavar="PATH",
-        help="Save screenshot to file",
     )
 
     # Sync command
@@ -220,11 +205,6 @@ def main() -> int:
         "--force",
         action="store_true",
         help="Force sync even if content unchanged",
-    )
-    sync_parser.add_argument(
-        "--visible",
-        action="store_true",
-        help="Run browser in visible mode (not headless)",
     )
 
     args = parser.parse_args()

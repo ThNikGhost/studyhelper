@@ -1,51 +1,35 @@
-"""OmGU schedule parser using Playwright."""
+"""OmGU schedule parser using HTTP API."""
 
 from __future__ import annotations
 
-import asyncio
 import logging
-import sys
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
-from playwright.async_api import Browser, Page, Playwright, async_playwright
+import httpx
 
 from src.config import settings
 from src.parser.data_mapper import DataMapper
-from src.parser.exceptions import (
-    DataExtractionError,
-    ElementNotFoundError,
-    PageLoadError,
-)
+from src.parser.exceptions import DataExtractionError, PageLoadError
 from src.parser.hash_utils import compute_schedule_hash
 from src.schemas.schedule import ScheduleEntryCreate
 
 logger = logging.getLogger(__name__)
 
-# Default timeout for page operations (ms)
-DEFAULT_TIMEOUT = 30000
+# Default timeout for HTTP requests (seconds)
+DEFAULT_TIMEOUT = 30
 
-# Selectors for schedule elements (based on eservice.omsu.ru structure)
-SELECTORS = {
-    # Schedule table container
-    "schedule_container": ".schedule-table, .table-schedule, [class*='schedule']",
-    # Individual lesson/entry
-    "lesson_entry": ".lesson-item, .schedule-item, tr.lesson, [class*='lesson']",
-    # Day header
-    "day_header": ".day-header, th.day, [class*='day-name']",
-    # Time cell
-    "time_cell": ".time, .lesson-time, td.time",
-    # Subject name
-    "subject": ".subject, .lesson-name, .discipline",
-    # Teacher name
-    "teacher": ".teacher, .lecturer, .prepod",
-    # Room/location
-    "location": ".room, .audience, .location, .aud",
-    # Lesson type
-    "lesson_type": ".type, .lesson-type, [class*='type']",
-    # Week type (odd/even)
-    "week_type": ".week-type, .week, [class*='week']",
+# Time slots mapping (pair number -> start_time, end_time)
+# Based on OmGU schedule format
+TIME_SLOTS: dict[int, tuple[str, str]] = {
+    1: ("08:45", "10:20"),
+    2: ("10:30", "12:05"),
+    3: ("12:35", "14:10"),
+    4: ("14:20", "15:55"),
+    5: ("16:05", "17:40"),
+    6: ("17:50", "19:25"),
+    7: ("19:35", "21:10"),
 }
 
 
@@ -72,47 +56,46 @@ class ParseResult:
 
 
 class OmsuScheduleParser:
-    """Playwright-based parser for OmGU schedule website.
+    """HTTP-based parser for OmGU schedule API.
 
     Usage:
         async with OmsuScheduleParser() as parser:
             result = await parser.parse()
             for entry in result.entries:
                 print(entry.subject_name)
+
+    Or without context manager:
+        parser = OmsuScheduleParser()
+        result = await parser.parse()
     """
+
+    # API URL template
+    API_URL_TEMPLATE = "https://eservice.omsu.ru/schedule/backend/schedule/group/{group_id}"
 
     def __init__(
         self,
         url: str | None = None,
-        headless: bool = True,
+        group_id: int | None = None,
         timeout: int = DEFAULT_TIMEOUT,
+        headless: bool = True,  # Kept for backwards compatibility, ignored
     ) -> None:
         """Initialize parser.
 
         Args:
-            url: Schedule URL. Defaults to settings.schedule_url.
-            headless: Run browser in headless mode.
-            timeout: Page operation timeout in milliseconds.
+            url: Full API URL. Defaults to constructed from group_id.
+            group_id: Group ID for schedule. Defaults to settings.schedule_group_id.
+            timeout: HTTP request timeout in seconds.
+            headless: Ignored, kept for backwards compatibility.
         """
-        self.url = url or settings.schedule_url
-        self.headless = headless
+        self.group_id = group_id or getattr(settings, "schedule_group_id", 5028)
+        self.url = url or self.API_URL_TEMPLATE.format(group_id=self.group_id)
         self.timeout = timeout
-        self._playwright: Playwright | None = None
-        self._browser: Browser | None = None
-        self._page: Page | None = None
+        self._client: httpx.AsyncClient | None = None
 
     async def __aenter__(self) -> OmsuScheduleParser:
-        """Start Playwright and launch browser."""
-        # Set Windows event loop policy if needed
-        if sys.platform == "win32":
-            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-        self._playwright = await async_playwright().start()
-        self._browser = await self._playwright.chromium.launch(headless=self.headless)
-        self._page = await self._browser.new_page()
-        self._page.set_default_timeout(self.timeout)
-
-        logger.info("Playwright browser started (headless=%s)", self.headless)
+        """Create HTTP client."""
+        self._client = httpx.AsyncClient(timeout=self.timeout)
+        logger.info("HTTP client created for schedule parsing")
         return self
 
     async def __aexit__(
@@ -121,18 +104,14 @@ class OmsuScheduleParser:
         exc_val: BaseException | None,
         exc_tb: Any,
     ) -> None:
-        """Close browser and stop Playwright."""
-        if self._page:
-            await self._page.close()
-        if self._browser:
-            await self._browser.close()
-        if self._playwright:
-            await self._playwright.stop()
-
-        logger.info("Playwright browser closed")
+        """Close HTTP client."""
+        if self._client:
+            await self._client.aclose()
+            self._client = None
+        logger.info("HTTP client closed")
 
     async def parse(self, url: str | None = None) -> ParseResult:
-        """Parse schedule from URL.
+        """Parse schedule from API.
 
         Args:
             url: URL to parse. Defaults to instance URL.
@@ -141,33 +120,31 @@ class OmsuScheduleParser:
             ParseResult with parsed entries and metadata.
 
         Raises:
-            PageLoadError: If page fails to load.
-            ElementNotFoundError: If schedule container not found.
+            PageLoadError: If API request fails.
             DataExtractionError: If data extraction fails.
         """
-        if self._page is None:
-            raise RuntimeError("Parser not initialized. Use 'async with' context.")
-
         target_url = url or self.url
-        logger.info("Parsing schedule from: %s", target_url)
+        logger.info("Parsing schedule from API: %s", target_url)
 
         result = ParseResult(source_url=target_url, parsed_date=date.today())
 
         try:
-            # Load page
-            await self._load_page(target_url)
+            # Fetch JSON from API
+            json_data = await self._fetch_json(target_url)
 
-            # Wait for schedule to render
-            await self._wait_for_schedule()
+            if not json_data.get("success"):
+                raise DataExtractionError(
+                    f"API returned error: {json_data.get('message', 'Unknown error')}"
+                )
 
-            # Extract raw data
-            raw_entries = await self._extract_schedule_data()
+            # Extract and flatten lessons from all days
+            raw_entries = self._extract_lessons(json_data.get("data", []))
             result.raw_data = raw_entries
 
             # Map to schema objects
             for raw in raw_entries:
                 try:
-                    entry = DataMapper.map_raw_entry(raw)
+                    entry = DataMapper.map_api_entry(raw)
                     result.entries.append(entry)
                 except Exception as e:
                     error_msg = f"Failed to map entry: {e}"
@@ -185,183 +162,137 @@ class OmsuScheduleParser:
 
         except PageLoadError:
             raise
-        except ElementNotFoundError:
+        except DataExtractionError:
             raise
         except Exception as e:
             raise DataExtractionError(f"Failed to extract schedule: {e}") from e
 
         return result
 
-    async def _load_page(self, url: str) -> None:
-        """Load page and wait for network idle.
+    async def _fetch_json(self, url: str) -> dict[str, Any]:
+        """Fetch JSON from API URL.
 
         Args:
-            url: URL to load.
-
-        Raises:
-            PageLoadError: If page fails to load.
-        """
-        if self._page is None:
-            raise RuntimeError("Page not initialized")
-
-        try:
-            response = await self._page.goto(url, wait_until="networkidle")
-            if response and not response.ok:
-                raise PageLoadError(
-                    f"Page returned status {response.status}: {response.status_text}"
-                )
-            logger.debug("Page loaded: %s", url)
-        except Exception as e:
-            if isinstance(e, PageLoadError):
-                raise
-            raise PageLoadError(f"Failed to load page: {e}") from e
-
-    async def _wait_for_schedule(self) -> None:
-        """Wait for schedule container to appear.
-
-        Raises:
-            ElementNotFoundError: If schedule container not found.
-        """
-        if self._page is None:
-            raise RuntimeError("Page not initialized")
-
-        # Try multiple selectors
-        selectors_to_try = [
-            ".schedule-table",
-            ".table-schedule",
-            "table.schedule",
-            "[class*='schedule']",
-            ".timetable",
-            "table",  # Fallback to any table
-        ]
-
-        for selector in selectors_to_try:
-            try:
-                await self._page.wait_for_selector(selector, timeout=5000)
-                logger.debug("Found schedule container: %s", selector)
-                return
-            except Exception:
-                continue
-
-        raise ElementNotFoundError(
-            "Schedule container not found. The page structure may have changed."
-        )
-
-    async def _extract_schedule_data(self) -> list[dict[str, Any]]:
-        """Extract schedule data from page.
+            url: API URL to fetch.
 
         Returns:
-            List of raw entry dictionaries.
+            Parsed JSON response.
 
-        Note:
-            This method uses JavaScript evaluation to extract data from the page.
-            The extraction logic may need adjustment based on actual site structure.
+        Raises:
+            PageLoadError: If request fails.
         """
-        if self._page is None:
-            raise RuntimeError("Page not initialized")
+        # Use existing client or create temporary one
+        client = self._client
+        should_close = False
 
-        # JavaScript to extract schedule data
-        # This is a generic extraction that tries multiple approaches
-        extract_script = """
-        () => {
-            const entries = [];
+        if client is None:
+            client = httpx.AsyncClient(timeout=self.timeout)
+            should_close = True
 
-            // Try to find schedule rows/items
-            const rows = document.querySelectorAll(
-                'tr, .lesson-item, .schedule-item, [class*="lesson"], [class*="pair"]'
-            );
+        try:
+            response = await client.get(url)
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            raise PageLoadError(
+                f"API returned status {e.response.status_code}: {e.response.text}"
+            ) from e
+        except httpx.RequestError as e:
+            raise PageLoadError(f"Failed to fetch API: {e}") from e
+        finally:
+            if should_close:
+                await client.aclose()
 
-            for (const row of rows) {
-                // Skip header rows
-                if (row.querySelector('th')) continue;
+    def _extract_lessons(self, days_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Extract and normalize lessons from API response.
 
-                // Try to extract data
-                const getText = (selectors) => {
-                    for (const sel of selectors) {
-                        const el = row.querySelector(sel);
-                        if (el && el.textContent.trim()) {
-                            return el.textContent.trim();
-                        }
-                    }
-                    return '';
-                };
+        Args:
+            days_data: List of day objects from API.
 
-                const subject = getText([
-                    '.subject', '.discipline', '.lesson-name',
-                    '[class*="subject"]', '[class*="discipline"]',
-                    'td:nth-child(2)', 'td:nth-child(3)'
-                ]);
+        Returns:
+            Flattened list of lesson dictionaries.
+        """
+        lessons = []
 
-                if (!subject) continue;
+        for day_obj in days_data:
+            day_str = day_obj.get("day", "")
+            day_lessons = day_obj.get("lessons", [])
 
-                const entry = {
-                    subject_name: subject,
-                    start_time: getText(['.time-start', '.start', '[class*="time"]']),
-                    end_time: getText(['.time-end', '.end']),
-                    teacher_name: getText([
-                        '.teacher', '.lecturer', '.prepod',
-                        '[class*="teacher"]', '[class*="prepod"]'
-                    ]),
-                    location: getText([
-                        '.room', '.audience', '.location', '.aud',
-                        '[class*="room"]', '[class*="aud"]'
-                    ]),
-                    lesson_type: getText([
-                        '.type', '.lesson-type', '[class*="type"]'
-                    ]),
-                    week_type: getText([
-                        '.week-type', '.week', '[class*="week"]'
-                    ]),
-                    day_of_week: getText([
-                        '.day', '.day-name', '[class*="day"]'
-                    ]),
-                    subgroup: getText(['.subgroup', '[class*="subgroup"]']),
-                    group_name: getText(['.group', '[class*="group"]']),
-                };
+            for lesson in day_lessons:
+                # Parse date to get day of week
+                day_of_week = self._parse_date_to_weekday(day_str)
 
-                // Try to get time from combined cell
-                const timeCell = row.querySelector('.time, td:first-child');
-                if (timeCell && !entry.start_time) {
-                    const timeText = timeCell.textContent.trim();
-                    const timeMatch = timeText.match(/(\\d{1,2}[:.:]\\d{2})\\s*[-–]\\s*(\\d{1,2}[:.:]\\d{2})/);
-                    if (timeMatch) {
-                        entry.start_time = timeMatch[1];
-                        entry.end_time = timeMatch[2];
-                    }
+                # Get time from slot number
+                time_slot = lesson.get("time", 1)
+                start_time, end_time = TIME_SLOTS.get(time_slot, ("08:45", "10:20"))
+
+                # Extract subject name (remove type suffix if present)
+                full_lesson = lesson.get("lesson", "")
+                type_work = lesson.get("type_work", "")
+                subject_name = full_lesson
+                if type_work and full_lesson.endswith(f" {type_work}"):
+                    subject_name = full_lesson[: -len(type_work) - 1].strip()
+
+                # Parse auditCorps (format: "building-room" like "4-101")
+                audit_corps = lesson.get("auditCorps", "")
+                building, room = self._parse_audit_corps(audit_corps)
+
+                # Normalize to expected format
+                normalized = {
+                    "subject_name": subject_name,
+                    "start_time": start_time,
+                    "end_time": end_time,
+                    "day_of_week": day_of_week,
+                    "lesson_type": type_work,
+                    "teacher_name": lesson.get("teacher", ""),
+                    "room": room,
+                    "building": building,
+                    "week_type": lesson.get("week"),
+                    "group_name": lesson.get("group", ""),
+                    "date": day_str,
+                    # Keep original data for reference
+                    "_original": lesson,
                 }
 
-                entries.push(entry);
-            }
+                lessons.append(normalized)
 
-            return entries;
-        }
-        """
+        logger.debug("Extracted %d lessons from %d days", len(lessons), len(days_data))
+        return lessons
 
-        try:
-            raw_entries = await self._page.evaluate(extract_script)
-            logger.debug("Extracted %d raw entries", len(raw_entries))
-            return raw_entries
-        except Exception as e:
-            logger.error("Failed to extract data: %s", e)
-            return []
-
-    async def get_page_html(self) -> str:
-        """Get current page HTML for debugging.
-
-        Returns:
-            Page HTML content.
-        """
-        if self._page is None:
-            raise RuntimeError("Page not initialized")
-        return await self._page.content()
-
-    async def screenshot(self, path: str) -> None:
-        """Take screenshot of current page.
+    @staticmethod
+    def _parse_date_to_weekday(date_str: str) -> int:
+        """Parse date string to weekday number (1=Monday, 7=Sunday).
 
         Args:
-            path: Path to save screenshot.
+            date_str: Date in format "DD.MM.YYYY".
+
+        Returns:
+            Weekday number (1-7).
         """
-        if self._page is None:
-            raise RuntimeError("Page not initialized")
-        await self._page.screenshot(path=path, full_page=True)
-        logger.info("Screenshot saved: %s", path)
+        try:
+            dt = datetime.strptime(date_str, "%d.%m.%Y")
+            # isoweekday: Monday=1, Sunday=7
+            return dt.isoweekday()
+        except ValueError:
+            logger.warning("Failed to parse date: %s", date_str)
+            return 1  # Default to Monday
+
+    @staticmethod
+    def _parse_audit_corps(audit_corps: str) -> tuple[str | None, str | None]:
+        """Parse auditCorps string into building and room.
+
+        Args:
+            audit_corps: String like "4-101" (building-room).
+
+        Returns:
+            Tuple of (building, room).
+        """
+        if not audit_corps:
+            return None, None
+
+        parts = audit_corps.split("-", 1)
+        if len(parts) == 2:
+            return parts[0], parts[1]
+
+        # If no dash, treat as room only
+        return None, audit_corps

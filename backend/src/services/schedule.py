@@ -286,15 +286,11 @@ async def create_snapshot(
 
 
 # Parser integration functions
-async def parse_schedule(
-    url: str | None = None,
-    headless: bool = True,
-) -> ParseResult:
-    """Parse schedule from OmGU website using Playwright.
+async def parse_schedule(url: str | None = None) -> ParseResult:
+    """Parse schedule from OmGU API.
 
     Args:
-        url: Schedule URL. Defaults to settings.schedule_url.
-        headless: Run browser in headless mode.
+        url: Schedule API URL. Defaults to constructed from group_id.
 
     Returns:
         ParseResult with parsed entries and metadata.
@@ -304,7 +300,7 @@ async def parse_schedule(
     """
     from src.parser import OmsuScheduleParser
 
-    async with OmsuScheduleParser(url=url, headless=headless) as parser:
+    async with OmsuScheduleParser(url=url) as parser:
         return await parser.parse()
 
 
@@ -326,15 +322,13 @@ async def sync_schedule(
     db: AsyncSession,
     force: bool = False,
     url: str | None = None,
-    headless: bool = True,
 ) -> dict[str, Any]:
     """Synchronize schedule: parse, compare hash, update if changed.
 
     Args:
         db: Database session.
         force: Force update even if content hash unchanged.
-        url: Schedule URL. Defaults to settings.schedule_url.
-        headless: Run browser in headless mode.
+        url: Schedule API URL. Defaults to constructed from group_id.
 
     Returns:
         Dictionary with sync result:
@@ -348,7 +342,7 @@ async def sync_schedule(
 
     try:
         # Parse schedule
-        parse_result = await parse_schedule(url=url, headless=headless)
+        parse_result = await parse_schedule(url=url)
 
         if parse_result.entries_count == 0:
             logger.warning("No entries parsed from schedule")

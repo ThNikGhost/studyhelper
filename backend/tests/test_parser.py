@@ -1,7 +1,7 @@
 """Tests for schedule parser module."""
 
 from datetime import time
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -351,35 +351,55 @@ class TestOmsuScheduleParser:
     @pytest.mark.asyncio
     async def test_parser_context_manager(self):
         """Test parser as async context manager."""
-        with patch("src.parser.omsu_parser.async_playwright") as mock_playwright:
-            # Setup mocks
-            mock_page = AsyncMock()
-            mock_browser = AsyncMock()
-            mock_browser.new_page.return_value = mock_page
-
-            mock_playwright_instance = AsyncMock()
-            mock_playwright_instance.chromium.launch.return_value = mock_browser
-
-            mock_playwright.return_value.start = AsyncMock(
-                return_value=mock_playwright_instance
-            )
+        with patch("src.parser.omsu_parser.httpx.AsyncClient") as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client_class.return_value = mock_client
 
             from src.parser import OmsuScheduleParser
 
-            async with OmsuScheduleParser(headless=True) as parser:
-                assert parser._browser is not None
-                assert parser._page is not None
+            async with OmsuScheduleParser() as parser:
+                assert parser._client is not None
 
             # Verify cleanup was called
-            mock_page.close.assert_called_once()
-            mock_browser.close.assert_called_once()
-            mock_playwright_instance.stop.assert_called_once()
+            mock_client.aclose.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_parser_without_context_raises(self):
-        """Using parse without context manager should raise."""
-        from src.parser import OmsuScheduleParser
+    async def test_parser_without_context_manager(self):
+        """Parser can work without context manager (creates temporary client)."""
+        with patch("src.parser.omsu_parser.httpx.AsyncClient") as mock_client_class:
+            # Create mock response
+            mock_response = MagicMock()
+            mock_response.json.return_value = {
+                "success": True,
+                "data": [
+                    {
+                        "day": "10.02.2025",
+                        "lessons": [
+                            {
+                                "lesson": "Test Subject Лек",
+                                "type_work": "Лек",
+                                "time": 1,
+                                "teacher": "Test Teacher",
+                                "auditCorps": "4-101",
+                                "group": "TST-101",
+                                "week": 0,
+                            }
+                        ],
+                    }
+                ],
+            }
+            mock_response.raise_for_status = MagicMock()
 
-        parser = OmsuScheduleParser()
-        with pytest.raises(RuntimeError, match="not initialized"):
-            await parser.parse()
+            # Create mock client
+            mock_client = AsyncMock()
+            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client.aclose = AsyncMock()
+            mock_client_class.return_value = mock_client
+
+            from src.parser import OmsuScheduleParser
+
+            parser = OmsuScheduleParser()
+            result = await parser.parse()
+
+            assert result.entries_count == 1
+            assert result.entries[0].subject_name == "Test Subject"

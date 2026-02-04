@@ -246,6 +246,78 @@ class DataMapper:
         return None
 
     @classmethod
+    def map_api_entry(cls, raw: dict[str, Any]) -> ScheduleEntryCreate:
+        """Map API response entry to ScheduleEntryCreate schema.
+
+        Args:
+            raw: Entry dictionary from OmGU API with keys:
+                - subject_name: Subject name
+                - start_time: Start time string (HH:MM)
+                - end_time: End time string (HH:MM)
+                - day_of_week: Day of week (1-7)
+                - lesson_type: Lesson type string ("Лек", "Пр", etc.)
+                - teacher_name: Teacher full name
+                - room: Room number
+                - building: Building number
+                - week_type: Week type (0, 1, 2)
+                - group_name: Group name
+
+        Returns:
+            ScheduleEntryCreate schema object.
+
+        Raises:
+            MappingError: If required fields are missing or invalid.
+        """
+        if "subject_name" not in raw or not raw["subject_name"]:
+            raise MappingError("Missing required field: subject_name")
+
+        # Day of week is already an int from parser
+        day_of_week = cls.parse_day_of_week(raw.get("day_of_week", 1))
+
+        # Time is already in HH:MM format
+        start_time = cls.parse_time(raw.get("start_time", "08:45"))
+        end_time = cls.parse_time(raw.get("end_time", "10:20"))
+
+        # Lesson type
+        lesson_type = cls.parse_lesson_type(raw.get("lesson_type", ""))
+
+        # Week type from API (0 = both, 1 = odd, 2 = even, or similar)
+        week_type = cls._parse_api_week_type(raw.get("week_type"))
+
+        return ScheduleEntryCreate(
+            day_of_week=day_of_week,
+            start_time=start_time,
+            end_time=end_time,
+            week_type=week_type,
+            subject_name=raw["subject_name"].strip(),
+            lesson_type=lesson_type,
+            teacher_name=raw.get("teacher_name", "").strip() or None,
+            room=raw.get("room"),
+            building=raw.get("building"),
+            group_name=raw.get("group_name", "").strip() or None,
+            subgroup=None,
+            notes=None,
+        )
+
+    @staticmethod
+    def _parse_api_week_type(week_value: int | None) -> WeekType | None:
+        """Parse week type from API integer value.
+
+        Args:
+            week_value: 0 = both weeks, 1 = odd, 2 = even (assumption).
+
+        Returns:
+            WeekType enum value or None for both weeks.
+        """
+        if week_value is None or week_value == 0:
+            return None
+        if week_value == 1:
+            return WeekType.ODD
+        if week_value == 2:
+            return WeekType.EVEN
+        return None
+
+    @classmethod
     def map_raw_entry(cls, raw: dict[str, Any]) -> ScheduleEntryCreate:
         """Map raw parsed entry to ScheduleEntryCreate schema.
 
