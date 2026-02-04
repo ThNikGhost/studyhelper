@@ -18,6 +18,13 @@ export interface SemesterCreate {
   name: string
 }
 
+export interface SemesterUpdate {
+  number?: number
+  year_start?: number
+  year_end?: number
+  name?: string
+}
+
 export interface Subject {
   id: number
   name: string

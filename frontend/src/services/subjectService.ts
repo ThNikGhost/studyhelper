@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import type { Subject, SubjectCreate, SubjectUpdate, Semester, SemesterCreate } from '@/types/subject'
+import type { Subject, SubjectCreate, SubjectUpdate, Semester, SemesterCreate, SemesterUpdate } from '@/types/subject'
 
 export const subjectService = {
   // Subjects
@@ -42,6 +42,15 @@ export const subjectService = {
   async createSemester(data: SemesterCreate): Promise<Semester> {
     const response = await api.post<Semester>('/semesters', data)
     return response.data
+  },
+
+  async updateSemester(id: number, data: SemesterUpdate): Promise<Semester> {
+    const response = await api.put<Semester>(`/semesters/${id}`, data)
+    return response.data
+  },
+
+  async deleteSemester(id: number): Promise<void> {
+    await api.delete(`/semesters/${id}`)
   },
 
   async setCurrentSemester(id: number): Promise<Semester> {

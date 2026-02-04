@@ -6,6 +6,7 @@ import RegisterPage from '@/pages/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
 import SchedulePage from '@/pages/SchedulePage'
 import SubjectsPage from '@/pages/SubjectsPage'
+import SemestersPage from '@/pages/SemestersPage'
 import WorksPage from '@/pages/WorksPage'
 
 function App() {
@@ -48,6 +49,14 @@ function App() {
         element={
           <ProtectedRoute>
             <SubjectsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/semesters"
+        element={
+          <ProtectedRoute>
+            <SemestersPage />
           </ProtectedRoute>
         }
       />

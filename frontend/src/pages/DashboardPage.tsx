@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { LogOut, Calendar, BookOpen, ClipboardList, Users } from 'lucide-react'
+import { LogOut, Calendar, BookOpen, ClipboardList, Users, GraduationCap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export default function DashboardPage() {
@@ -45,6 +45,13 @@ export default function DashboardPage() {
       icon: Users,
       href: '/classmates',
       color: 'text-purple-500',
+    },
+    {
+      title: 'Семестры',
+      description: 'Управление семестрами',
+      icon: GraduationCap,
+      href: '/semesters',
+      color: 'text-cyan-500',
     },
   ]
 
