@@ -104,9 +104,7 @@ async def create_work(
     return work
 
 
-async def update_work(
-    db: AsyncSession, work: Work, work_data: WorkUpdate
-) -> Work:
+async def update_work(db: AsyncSession, work: Work, work_data: WorkUpdate) -> Work:
     """Update work."""
     update_data = work_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():

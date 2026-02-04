@@ -60,9 +60,7 @@ def building_data_2() -> dict:
 class TestGetDepartments:
     """Tests for GET /api/v1/university/departments."""
 
-    async def test_get_departments_empty(
-        self, client: AsyncClient, auth_headers: dict
-    ):
+    async def test_get_departments_empty(self, client: AsyncClient, auth_headers: dict):
         """Test getting departments when none exist."""
         response = await client.get(
             "/api/v1/university/departments", headers=auth_headers
@@ -287,9 +285,7 @@ class TestDeleteDepartment:
 class TestGetBuildings:
     """Tests for GET /api/v1/university/buildings."""
 
-    async def test_get_buildings_empty(
-        self, client: AsyncClient, auth_headers: dict
-    ):
+    async def test_get_buildings_empty(self, client: AsyncClient, auth_headers: dict):
         """Test getting buildings when none exist."""
         response = await client.get(
             "/api/v1/university/buildings", headers=auth_headers
@@ -366,9 +362,7 @@ class TestCreateBuilding:
         self, client: AsyncClient, building_data: dict
     ):
         """Test creating building without auth fails."""
-        response = await client.post(
-            "/api/v1/university/buildings", json=building_data
-        )
+        response = await client.post("/api/v1/university/buildings", json=building_data)
 
         assert response.status_code == 401
 

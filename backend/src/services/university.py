@@ -19,7 +19,9 @@ async def get_departments(db: AsyncSession) -> list[Department]:
     return list(result.scalars().all())
 
 
-async def get_department_by_id(db: AsyncSession, department_id: int) -> Department | None:
+async def get_department_by_id(
+    db: AsyncSession, department_id: int
+) -> Department | None:
     """Get department by ID."""
     result = await db.execute(select(Department).where(Department.id == department_id))
     return result.scalar_one_or_none()

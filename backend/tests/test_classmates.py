@@ -35,9 +35,7 @@ def classmate_data_2() -> dict:
 class TestGetClassmates:
     """Tests for GET /api/v1/classmates."""
 
-    async def test_get_classmates_empty(
-        self, client: AsyncClient, auth_headers: dict
-    ):
+    async def test_get_classmates_empty(self, client: AsyncClient, auth_headers: dict):
         """Test getting classmates when none exist."""
         response = await client.get("/api/v1/classmates", headers=auth_headers)
 

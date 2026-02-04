@@ -34,9 +34,7 @@ def teacher_data_2() -> dict:
 class TestGetTeachers:
     """Tests for GET /api/v1/teachers."""
 
-    async def test_get_teachers_empty(
-        self, client: AsyncClient, auth_headers: dict
-    ):
+    async def test_get_teachers_empty(self, client: AsyncClient, auth_headers: dict):
         """Test getting teachers when none exist."""
         response = await client.get("/api/v1/teachers", headers=auth_headers)
 
@@ -212,9 +210,7 @@ class TestGetTeacher:
         assert data["full_name"] == teacher_data["full_name"]
         assert data["email"] == teacher_data["email"]
 
-    async def test_get_teacher_not_found(
-        self, client: AsyncClient, auth_headers: dict
-    ):
+    async def test_get_teacher_not_found(self, client: AsyncClient, auth_headers: dict):
         """Test getting non-existent teacher fails."""
         response = await client.get(
             "/api/v1/teachers/99999",

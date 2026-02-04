@@ -30,4 +30,6 @@ class Semester(Base, TimestampMixin):
 
     def __repr__(self) -> str:
         """String representation."""
-        return f"<Semester(id={self.id}, name={self.name}, is_current={self.is_current})>"
+        return (
+            f"<Semester(id={self.id}, name={self.name}, is_current={self.is_current})>"
+        )

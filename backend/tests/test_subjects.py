@@ -49,9 +49,7 @@ async def semester(client: AsyncClient, auth_headers: dict, semester_data: dict)
 class TestGetSubjects:
     """Tests for GET /api/v1/subjects."""
 
-    async def test_get_subjects_empty(
-        self, client: AsyncClient, auth_headers: dict
-    ):
+    async def test_get_subjects_empty(self, client: AsyncClient, auth_headers: dict):
         """Test getting subjects when none exist."""
         response = await client.get("/api/v1/subjects", headers=auth_headers)
 
@@ -231,9 +229,7 @@ class TestGetSubject:
         assert data["id"] == subject_id
         assert data["name"] == subject_data["name"]
 
-    async def test_get_subject_not_found(
-        self, client: AsyncClient, auth_headers: dict
-    ):
+    async def test_get_subject_not_found(self, client: AsyncClient, auth_headers: dict):
         """Test getting non-existent subject fails."""
         response = await client.get(
             "/api/v1/subjects/99999",

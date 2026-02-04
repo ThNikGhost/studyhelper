@@ -29,7 +29,9 @@ async def get_departments(
 
 
 @router.post(
-    "/departments", response_model=DepartmentResponse, status_code=status.HTTP_201_CREATED
+    "/departments",
+    response_model=DepartmentResponse,
+    status_code=status.HTTP_201_CREATED,
 )
 async def create_department(
     data: DepartmentCreate,

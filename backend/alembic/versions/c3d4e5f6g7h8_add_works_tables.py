@@ -58,7 +58,9 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("work_id", sa.Integer(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
-        sa.Column("status", sa.String(20), nullable=False, server_default="not_started"),
+        sa.Column(
+            "status", sa.String(20), nullable=False, server_default="not_started"
+        ),
         sa.Column("grade", sa.Integer(), nullable=True),
         sa.Column("notes", sa.Text(), nullable=True),
         sa.Column(
@@ -122,7 +124,9 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_index("ix_work_status_history_work_status_id", table_name="work_status_history")
+    op.drop_index(
+        "ix_work_status_history_work_status_id", table_name="work_status_history"
+    )
     op.drop_table("work_status_history")
 
     op.drop_index("ix_work_statuses_work_user", table_name="work_statuses")

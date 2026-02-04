@@ -46,7 +46,9 @@ class Work(Base, TimestampMixin):
     title: Mapped[str] = mapped_column(String(300), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     work_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    deadline: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     max_grade: Mapped[int | None] = mapped_column(Integer, nullable=True)
     subject_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("subjects.id", ondelete="CASCADE"), nullable=False

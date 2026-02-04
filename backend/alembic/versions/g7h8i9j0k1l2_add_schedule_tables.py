@@ -62,7 +62,9 @@ def upgrade() -> None:
             ondelete="SET NULL",
         ),
     )
-    op.create_index("ix_schedule_entries_day_of_week", "schedule_entries", ["day_of_week"])
+    op.create_index(
+        "ix_schedule_entries_day_of_week", "schedule_entries", ["day_of_week"]
+    )
     op.create_index("ix_schedule_entries_week_type", "schedule_entries", ["week_type"])
 
     # Schedule snapshots table

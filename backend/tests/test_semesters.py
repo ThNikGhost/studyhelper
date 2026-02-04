@@ -29,9 +29,7 @@ def semester_data_2() -> dict:
 class TestGetSemesters:
     """Tests for GET /api/v1/semesters."""
 
-    async def test_get_semesters_empty(
-        self, client: AsyncClient, auth_headers: dict
-    ):
+    async def test_get_semesters_empty(self, client: AsyncClient, auth_headers: dict):
         """Test getting semesters when none exist."""
         response = await client.get("/api/v1/semesters", headers=auth_headers)
 

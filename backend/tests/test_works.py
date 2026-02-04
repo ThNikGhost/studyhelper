@@ -171,9 +171,7 @@ class TestCreateWork:
         assert data["deadline"] is None
         assert data["max_grade"] is None
 
-    async def test_create_work_unauthorized(
-        self, client: AsyncClient, work_data: dict
-    ):
+    async def test_create_work_unauthorized(self, client: AsyncClient, work_data: dict):
         """Test creating work without auth fails."""
         work_data["subject_id"] = 1
         response = await client.post("/api/v1/works", json=work_data)
@@ -227,9 +225,7 @@ class TestGetWork:
         assert data["title"] == work_data["title"]
         assert "my_status" in data
 
-    async def test_get_work_not_found(
-        self, client: AsyncClient, auth_headers: dict
-    ):
+    async def test_get_work_not_found(self, client: AsyncClient, auth_headers: dict):
         """Test getting non-existent work fails."""
         response = await client.get(
             "/api/v1/works/99999",
@@ -272,9 +268,7 @@ class TestUpdateWork:
         assert data["max_grade"] == 150
         assert data["description"] == work_data["description"]
 
-    async def test_update_work_not_found(
-        self, client: AsyncClient, auth_headers: dict
-    ):
+    async def test_update_work_not_found(self, client: AsyncClient, auth_headers: dict):
         """Test updating non-existent work fails."""
         response = await client.put(
             "/api/v1/works/99999",
@@ -320,9 +314,7 @@ class TestDeleteWork:
         )
         assert get_response.status_code == 404
 
-    async def test_delete_work_not_found(
-        self, client: AsyncClient, auth_headers: dict
-    ):
+    async def test_delete_work_not_found(self, client: AsyncClient, auth_headers: dict):
         """Test deleting non-existent work fails."""
         response = await client.delete(
             "/api/v1/works/99999",
@@ -477,9 +469,7 @@ class TestGetUpcomingWorks:
         """Test getting upcoming works."""
         # Create work with deadline
         work_data["subject_id"] = subject["id"]
-        work_data["deadline"] = (
-            datetime.now(UTC) + timedelta(days=3)
-        ).isoformat()
+        work_data["deadline"] = (datetime.now(UTC) + timedelta(days=3)).isoformat()
         await client.post(
             "/api/v1/works",
             json=work_data,
@@ -513,9 +503,7 @@ class TestGetUpcomingWorks:
                 "title": "Past Work",
                 "work_type": "homework",
                 "subject_id": subject["id"],
-                "deadline": (
-                    datetime.now(UTC) - timedelta(days=1)
-                ).isoformat(),
+                "deadline": (datetime.now(UTC) - timedelta(days=1)).isoformat(),
             },
             headers=auth_headers,
         )
