@@ -22,16 +22,16 @@ const TIME_SLOTS = [
 // Day names
 const DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
-// Custom colors for lesson types
-// Red: #ED9AA2, Blue: #86B6FE, Green: #8DC3A9
+// Custom colors for lesson types (slightly more saturated)
+// Base: Red #ED9AA2, Blue #86B6FE, Green #8DC3A9
 const lessonTypeColors: Record<LessonType, string> = {
-  [LessonType.LECTURE]: 'bg-[#86B6FE] border-[#5a9afd] text-black',
-  [LessonType.PRACTICE]: 'bg-[#8DC3A9] border-[#6db38a] text-black',
-  [LessonType.LAB]: 'bg-[#ED9AA2] border-[#e07a84] text-black',
-  [LessonType.SEMINAR]: 'bg-[#86B6FE] border-[#5a9afd] text-black',
-  [LessonType.EXAM]: 'bg-[#ED9AA2] border-[#e07a84] text-black',
-  [LessonType.CONSULTATION]: 'bg-gray-200 border-gray-400 text-black',
-  [LessonType.OTHER]: 'bg-gray-200 border-gray-400 text-black',
+  [LessonType.LECTURE]: 'bg-[#6fa8ff] border-[#4a8fef] text-black',
+  [LessonType.PRACTICE]: 'bg-[#7dbf99] border-[#5fad7d] text-black',
+  [LessonType.LAB]: 'bg-[#e8868f] border-[#d96b75] text-black',
+  [LessonType.SEMINAR]: 'bg-[#6fa8ff] border-[#4a8fef] text-black',
+  [LessonType.EXAM]: 'bg-[#e8868f] border-[#d96b75] text-black',
+  [LessonType.CONSULTATION]: 'bg-gray-300 border-gray-400 text-black',
+  [LessonType.OTHER]: 'bg-gray-300 border-gray-400 text-black',
 }
 
 // Format date as "DD.MM"
@@ -56,9 +56,13 @@ function getEntryForSlot(
   return entries.find((e) => e.start_time.slice(0, 5) === slotStart)
 }
 
-// Check if today
+// Check if today (local timezone)
 function isToday(dateStr: string): boolean {
-  const today = new Date().toISOString().split('T')[0]
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const today = `${year}-${month}-${day}`
   return dateStr === today
 }
 
@@ -66,12 +70,10 @@ export function ScheduleGrid({ weekSchedule, currentEntryId }: ScheduleGridProps
   return (
     <div className="overflow-x-auto">
       <div className="min-w-[700px]">
-        {/* Grid container */}
-        <div className="grid grid-cols-8 gap-px bg-border rounded-lg overflow-hidden">
+        {/* Grid container - narrow time column, equal day columns */}
+        <div className="grid rounded-lg overflow-hidden" style={{ gridTemplateColumns: '50px repeat(7, 1fr)' }}>
           {/* Header row - time column + days */}
-          <div className="bg-muted p-2 text-center text-xs font-medium text-muted-foreground">
-            Время
-          </div>
+          <div className="bg-muted p-1"></div>
           {weekSchedule.days.map((day) => (
             <div
               key={day.date}
@@ -93,12 +95,12 @@ export function ScheduleGrid({ weekSchedule, currentEntryId }: ScheduleGridProps
           {TIME_SLOTS.map((slot) => (
             <div key={`row-${slot.pair}`} className="contents">
               {/* Time column */}
-              <div className="bg-muted p-2 text-center text-xs">
-                <div className="font-medium">{slot.pair}</div>
-                <div className="text-muted-foreground text-[10px]">
+              <div className="bg-muted p-1 text-center">
+                <div className="font-semibold text-sm">{slot.pair}</div>
+                <div className="text-muted-foreground text-xs">
                   {slot.start}
                 </div>
-                <div className="text-muted-foreground text-[10px]">
+                <div className="text-muted-foreground text-xs">
                   {slot.end}
                 </div>
               </div>
@@ -113,7 +115,7 @@ export function ScheduleGrid({ weekSchedule, currentEntryId }: ScheduleGridProps
                   <div
                     key={`${day.date}-${slot.pair}`}
                     className={cn(
-                      'bg-background p-1 min-h-[80px]',
+                      'bg-background p-0.5 min-h-[60px]',
                       isTodayCell && 'bg-primary/5'
                     )}
                   >
@@ -131,20 +133,20 @@ export function ScheduleGrid({ weekSchedule, currentEntryId }: ScheduleGridProps
                         </div>
 
                         {/* Type badge */}
-                        <div className="text-[10px] text-black/70 mb-0.5">
+                        <div className="text-[10px] text-black mb-0.5">
                           {lessonTypeLabels[entry.lesson_type]}
                         </div>
 
                         {/* Location */}
                         {formatLocation(entry) && (
-                          <div className="text-[10px] text-black/70">
+                          <div className="text-[10px] text-black">
                             📍 {formatLocation(entry)}
                           </div>
                         )}
 
                         {/* Teacher (truncated) */}
                         {entry.teacher_name && (
-                          <div className="text-[10px] text-black/70 truncate">
+                          <div className="text-[10px] text-black truncate">
                             {entry.teacher_name.split(' ').slice(0, 2).join(' ')}
                           </div>
                         )}

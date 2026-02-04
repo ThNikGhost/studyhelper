@@ -1,27 +1,37 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, RefreshCw, Calendar, ArrowLeft, Loader2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, RefreshCw, ArrowLeft, Loader2, CalendarDays } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScheduleGrid } from '@/components/schedule/ScheduleGrid'
 import scheduleService from '@/services/scheduleService'
 import type { WeekSchedule, CurrentLesson } from '@/types/schedule'
 
-// Add/subtract days from date string
+// Add/subtract days from date string (local timezone)
 function addDays(dateStr: string, days: number): string {
-  const date = new Date(dateStr)
+  const date = new Date(dateStr + 'T12:00:00') // Use noon to avoid timezone edge cases
   date.setDate(date.getDate() + days)
-  return date.toISOString().split('T')[0]
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
-// Get today's date string
+// Get today's date string in local timezone
 function getToday(): string {
-  return new Date().toISOString().split('T')[0]
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 export function SchedulePage() {
   const [targetDate, setTargetDate] = useState<string | undefined>(undefined)
+  const [calendarOpen, setCalendarOpen] = useState(false)
   const today = getToday()
   const queryClient = useQueryClient()
 
@@ -82,7 +92,7 @@ export function SchedulePage() {
   }, [weekSchedule, today])
 
   // Calculate time remaining for current lesson
-  const timeRemaining = useMemo(() => {
+  const timeRemaining = (() => {
     if (!currentLesson?.current) return null
     const now = new Date()
     const [endHours, endMinutes] = currentLesson.current.end_time.split(':').map(Number)
@@ -94,7 +104,7 @@ export function SchedulePage() {
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
     return { hours, minutes: mins }
-  }, [currentLesson])
+  })()
 
   // Loading state
   if (isLoading) {
@@ -128,10 +138,10 @@ export function SchedulePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
+      <div className="container mx-auto px-2 py-2 flex flex-col flex-1 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-2 mb-2">
           <Link to="/">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-5 w-5" />
@@ -154,43 +164,68 @@ export function SchedulePage() {
         </div>
 
         {/* Week navigation */}
-        <Card className="mb-6">
-          <CardContent className="py-3 px-4">
+        <Card className="mb-2">
+          <CardContent className="py-2 px-3">
             <div className="flex items-center justify-between">
-              <Button variant="ghost" size="icon" onClick={goToPreviousWeek}>
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-
-              <div className="text-center">
-                <div className="font-medium">Неделя {weekSchedule?.week_number}</div>
-                <div className="text-sm text-muted-foreground">
-                  {weekSchedule?.is_odd_week ? 'Нечётная' : 'Чётная'}
-                </div>
+              {/* Week info - left */}
+              <div>
+                <span className="font-medium">Неделя {weekSchedule?.week_number}</span>
+                <span className="text-sm text-muted-foreground ml-2">
+                  ({weekSchedule?.is_odd_week ? 'нечётная' : 'чётная'})
+                </span>
               </div>
 
-              <Button variant="ghost" size="icon" onClick={goToNextWeek}>
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
+              {/* Navigation buttons - right */}
+              <div className="flex items-center gap-1">
+                {/* Date picker */}
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <CalendarDays className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                      mode="single"
+                      selected={targetDate ? new Date(targetDate) : new Date(today)}
+                      onSelect={(date) => {
+                        if (date) {
+                          setTargetDate(date.toISOString().split('T')[0])
+                        }
+                        setCalendarOpen(false)
+                      }}
+                      onTodayClick={() => {
+                        setTargetDate(undefined)
+                        setCalendarOpen(false)
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
 
-            {/* Go to current week button */}
-            {!isCurrentWeek && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full mt-2"
-                onClick={goToCurrentWeek}
-              >
-                <Calendar className="h-4 w-4 mr-2" />К текущей неделе
-              </Button>
-            )}
+                {/* To current week */}
+                {!isCurrentWeek && (
+                  <Button variant="ghost" size="sm" onClick={goToCurrentWeek}>
+                    Сегодня
+                  </Button>
+                )}
+
+                {/* Previous/Next week */}
+                <Button variant="ghost" size="icon" onClick={goToPreviousWeek}>
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={goToNextWeek}>
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         {/* Current lesson indicator */}
         {currentLesson?.current && isCurrentWeek && timeRemaining && (
-          <Card className="mb-6 border-primary">
-            <CardContent className="py-3 px-4">
+          <Card className="mb-2 border-primary">
+            <CardContent className="py-2 px-3">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm text-primary font-medium">Сейчас идёт:</div>
@@ -209,8 +244,8 @@ export function SchedulePage() {
 
         {/* Next lesson (when no current) */}
         {!currentLesson?.current && currentLesson?.next && isCurrentWeek && (
-          <Card className="mb-6">
-            <CardContent className="py-3 px-4">
+          <Card className="mb-2">
+            <CardContent className="py-2 px-3">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-sm text-muted-foreground">Следующая:</div>
@@ -231,21 +266,23 @@ export function SchedulePage() {
         )}
 
         {/* Schedule grid */}
-        {weekSchedule && (
-          <ScheduleGrid
-            weekSchedule={weekSchedule}
-            currentEntryId={currentLesson?.current?.id}
-          />
-        )}
+        <div className="flex-1 overflow-auto">
+          {weekSchedule && (
+            <ScheduleGrid
+              weekSchedule={weekSchedule}
+              currentEntryId={currentLesson?.current?.id}
+            />
+          )}
 
-        {/* Empty state */}
-        {weekSchedule?.days.every((d) => d.entries.length === 0) && (
-          <Card className="mt-6">
-            <CardContent className="py-10 text-center text-muted-foreground">
-              <p>На этой неделе нет занятий</p>
-            </CardContent>
-          </Card>
-        )}
+          {/* Empty state */}
+          {weekSchedule?.days.every((d) => d.entries.length === 0) && (
+            <Card className="mt-2">
+              <CardContent className="py-6 text-center text-muted-foreground">
+                <p>На этой неделе нет занятий</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   )
