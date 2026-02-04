@@ -7,29 +7,30 @@ interface ScheduleGridProps {
   currentEntryId?: number
 }
 
-// Time slots for lessons
+// Time slots for lessons (matching backend TIME_SLOTS)
 const TIME_SLOTS = [
   { pair: 1, start: '08:45', end: '10:20' },
   { pair: 2, start: '10:30', end: '12:05' },
-  { pair: 3, start: '12:35', end: '14:10' },
-  { pair: 4, start: '14:20', end: '15:55' },
-  { pair: 5, start: '16:05', end: '17:40' },
-  { pair: 6, start: '17:50', end: '19:25' },
-  { pair: 7, start: '19:35', end: '21:10' },
+  { pair: 3, start: '12:45', end: '14:20' },
+  { pair: 4, start: '14:30', end: '16:05' },
+  { pair: 5, start: '16:15', end: '17:50' },
+  { pair: 6, start: '18:00', end: '19:35' },
+  { pair: 7, start: '19:45', end: '21:20' },
+  { pair: 8, start: '21:30', end: '23:05' },
 ]
 
 // Day names
 const DAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
-// Colors for lesson types
+// Colors for lesson types - vibrant colors for better readability
 const lessonTypeColors: Record<LessonType, string> = {
-  [LessonType.LECTURE]: 'bg-blue-100 dark:bg-blue-900/50 border-blue-300 dark:border-blue-700',
-  [LessonType.PRACTICE]: 'bg-green-100 dark:bg-green-900/50 border-green-300 dark:border-green-700',
-  [LessonType.LAB]: 'bg-orange-100 dark:bg-orange-900/50 border-orange-300 dark:border-orange-700',
-  [LessonType.SEMINAR]: 'bg-purple-100 dark:bg-purple-900/50 border-purple-300 dark:border-purple-700',
-  [LessonType.EXAM]: 'bg-red-100 dark:bg-red-900/50 border-red-300 dark:border-red-700',
-  [LessonType.CONSULTATION]: 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600',
-  [LessonType.OTHER]: 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600',
+  [LessonType.LECTURE]: 'bg-blue-200 dark:bg-blue-800 border-blue-400 dark:border-blue-600 text-blue-900 dark:text-blue-100',
+  [LessonType.PRACTICE]: 'bg-green-200 dark:bg-green-800 border-green-400 dark:border-green-600 text-green-900 dark:text-green-100',
+  [LessonType.LAB]: 'bg-orange-200 dark:bg-orange-800 border-orange-400 dark:border-orange-600 text-orange-900 dark:text-orange-100',
+  [LessonType.SEMINAR]: 'bg-purple-200 dark:bg-purple-800 border-purple-400 dark:border-purple-600 text-purple-900 dark:text-purple-100',
+  [LessonType.EXAM]: 'bg-red-200 dark:bg-red-800 border-red-400 dark:border-red-600 text-red-900 dark:text-red-100',
+  [LessonType.CONSULTATION]: 'bg-slate-200 dark:bg-slate-700 border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100',
+  [LessonType.OTHER]: 'bg-slate-200 dark:bg-slate-700 border-slate-400 dark:border-slate-500 text-slate-900 dark:text-slate-100',
 }
 
 // Format date as "DD.MM"
@@ -89,12 +90,9 @@ export function ScheduleGrid({ weekSchedule, currentEntryId }: ScheduleGridProps
 
           {/* Time slots rows */}
           {TIME_SLOTS.map((slot) => (
-            <>
+            <div key={`row-${slot.pair}`} className="contents">
               {/* Time column */}
-              <div
-                key={`time-${slot.pair}`}
-                className="bg-muted p-2 text-center text-xs"
-              >
+              <div className="bg-muted p-2 text-center text-xs">
                 <div className="font-medium">{slot.pair}</div>
                 <div className="text-muted-foreground text-[10px]">
                   {slot.start}
@@ -127,25 +125,25 @@ export function ScheduleGrid({ weekSchedule, currentEntryId }: ScheduleGridProps
                         )}
                       >
                         {/* Subject name */}
-                        <div className="font-medium line-clamp-2 leading-tight mb-0.5">
+                        <div className="font-semibold line-clamp-2 leading-tight mb-0.5">
                           {entry.subject_name}
                         </div>
 
                         {/* Type badge */}
-                        <div className="text-[10px] text-muted-foreground mb-0.5">
+                        <div className="text-[10px] opacity-80 mb-0.5">
                           {lessonTypeLabels[entry.lesson_type]}
                         </div>
 
                         {/* Location */}
                         {formatLocation(entry) && (
-                          <div className="text-[10px] text-muted-foreground">
+                          <div className="text-[10px] opacity-80">
                             📍 {formatLocation(entry)}
                           </div>
                         )}
 
                         {/* Teacher (truncated) */}
                         {entry.teacher_name && (
-                          <div className="text-[10px] text-muted-foreground truncate">
+                          <div className="text-[10px] opacity-80 truncate">
                             {entry.teacher_name.split(' ').slice(0, 2).join(' ')}
                           </div>
                         )}
@@ -154,7 +152,7 @@ export function ScheduleGrid({ weekSchedule, currentEntryId }: ScheduleGridProps
                   </div>
                 )
               })}
-            </>
+            </div>
           ))}
         </div>
       </div>
