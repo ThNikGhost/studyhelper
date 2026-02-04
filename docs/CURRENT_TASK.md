@@ -1,48 +1,25 @@
 # Текущая задача
 
 ## Задача
-SubjectsPage frontend (незавершённый коммит)
+Frontend страницы MVP
 
 ## Описание
-SubjectsPage создана, но сессия прервалась до проверки сборки и коммита.
+Продолжить создание frontend страниц для MVP.
 
 ## Критерии готовности
-- [x] Создать types/subject.ts
-- [x] Создать services/subjectService.ts
-- [x] Создать pages/SubjectsPage.tsx
-- [x] Обновить App.tsx
-- [ ] Проверить сборку frontend (npm run build)
-- [ ] Закоммитить изменения
+- [x] SchedulePage — страница расписания (+ исправлена фильтрация по lesson_date)
+- [x] SubjectsPage — страница предметов
+- [x] WorksPage — страница работ (дедлайны, статусы)
+- [ ] ClassmatesPage — страница одногруппников
 
-## Прогресс
-- [x] TypeScript типы (Subject, Semester, SubjectCreate, etc.)
-- [x] Сервис API (CRUD для subjects и semesters)
-- [x] Страница с фильтрацией по семестру
-- [x] Модалки для добавления/редактирования/удаления
-- [ ] Проверка сборки
-- [ ] Коммит
+## Следующие шаги
+1. Создать ClassmatesPage (список одногруппников, контакты)
 
-## Заметки по реализации
-SubjectsPage включает:
-- Выбор семестра (dropdown)
-- Список предметов карточками
-- Кнопки редактирования и удаления
-- Модальное окно для добавления/редактирования
-- Модальное окно подтверждения удаления
-- Пустое состояние
-- Кнопка "назад" на главную
-
-## Созданные файлы (не закоммичены)
-- `frontend/src/types/subject.ts`
-- `frontend/src/services/subjectService.ts`
-- `frontend/src/pages/SubjectsPage.tsx`
-- `frontend/src/App.tsx` (изменён)
-
-## Следующие задачи
-1. Проверить `npm run build` во frontend
-2. Закоммитить SubjectsPage
-3. Создать WorksPage
-4. Создать ClassmatesPage
+## Заметки
+- Backend полностью готов для всех страниц
+- Используем React Query для fetch/mutation
+- Tailwind v4 с `as const` объектами вместо enum (erasableSyntaxOnly)
+- Расписание теперь фильтруется по lesson_date (конкретная дата урока)
 
 ## Блокеры / Вопросы
 Нет блокеров.

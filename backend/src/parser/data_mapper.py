@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import time
+from datetime import date, time
 from typing import Any
 
 from src.parser.exceptions import MappingError
@@ -284,7 +284,11 @@ class DataMapper:
         # Week type from API (0 = both, 1 = odd, 2 = even, or similar)
         week_type = cls._parse_api_week_type(raw.get("week_type"))
 
+        # Lesson date from parser
+        lesson_date_value: date | None = raw.get("lesson_date")
+
         return ScheduleEntryCreate(
+            lesson_date=lesson_date_value,
             day_of_week=day_of_week,
             start_time=start_time,
             end_time=end_time,

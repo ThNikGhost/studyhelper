@@ -40,6 +40,9 @@ class ScheduleEntry(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
+    # Specific date of the lesson
+    lesson_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+
     # Time and day
     day_of_week: Mapped[int] = mapped_column(
         Integer, nullable=False
@@ -47,7 +50,7 @@ class ScheduleEntry(Base, TimestampMixin):
     start_time: Mapped[time] = mapped_column(Time, nullable=False)
     end_time: Mapped[time] = mapped_column(Time, nullable=False)
 
-    # Week type (for alternating schedules)
+    # Week type (for alternating schedules) - deprecated, use lesson_date
     week_type: Mapped[str | None] = mapped_column(
         String(20), nullable=True
     )  # "odd", "even", or null for both

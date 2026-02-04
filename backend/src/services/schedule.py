@@ -5,15 +5,13 @@ from __future__ import annotations
 import json
 import logging
 from datetime import date, datetime, timedelta, timezone
-
-# Omsk timezone (UTC+6)
-OMSK_TZ = timezone(timedelta(hours=6))
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import and_, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.schedule import ScheduleEntry, ScheduleSnapshot
+from src.parser.hash_utils import DateEncoder
 from src.schemas.schedule import (
     CurrentLessonResponse,
     DayOfWeek,
@@ -29,6 +27,9 @@ if TYPE_CHECKING:
     from src.parser.omsu_parser import ParseResult
 
 logger = logging.getLogger(__name__)
+
+# Omsk timezone (UTC+6)
+OMSK_TZ = timezone(timedelta(hours=6))
 
 DAY_NAMES_RU = {
     1: "Понедельник",
@@ -65,7 +66,7 @@ async def get_schedule_entries(
     day_of_week: int | None = None,
     week_type: str | None = None,
 ) -> list[ScheduleEntry]:
-    """Get schedule entries with optional filters."""
+    """Get schedule entries with optional filters (legacy, uses week_type)."""
     query = select(ScheduleEntry).order_by(
         ScheduleEntry.day_of_week, ScheduleEntry.start_time
     )
@@ -87,6 +88,59 @@ async def get_schedule_entries(
     return list(result.scalars().all())
 
 
+async def get_schedule_entries_by_date_range(
+    db: AsyncSession,
+    start_date: date,
+    end_date: date,
+) -> list[ScheduleEntry]:
+    """Get schedule entries for a specific date range.
+
+    Args:
+        db: Database session.
+        start_date: Start date (inclusive).
+        end_date: End date (inclusive).
+
+    Returns:
+        List of schedule entries within the date range.
+    """
+    query = (
+        select(ScheduleEntry)
+        .where(
+            and_(
+                ScheduleEntry.lesson_date >= start_date,
+                ScheduleEntry.lesson_date <= end_date,
+            )
+        )
+        .order_by(ScheduleEntry.lesson_date, ScheduleEntry.start_time)
+    )
+
+    result = await db.execute(query)
+    return list(result.scalars().all())
+
+
+async def get_schedule_entries_by_date(
+    db: AsyncSession,
+    target_date: date,
+) -> list[ScheduleEntry]:
+    """Get schedule entries for a specific date.
+
+    Args:
+        db: Database session.
+        target_date: The date to get entries for.
+
+    Returns:
+        List of schedule entries for the date.
+    """
+    query = (
+        select(ScheduleEntry)
+        .where(ScheduleEntry.lesson_date == target_date)
+        .order_by(ScheduleEntry.start_time)
+    )
+
+    result = await db.execute(query)
+    return list(result.scalars().all())
+
+
 async def get_schedule_entry_by_id(
     db: AsyncSession, entry_id: int
 ) -> ScheduleEntry | None:
@@ -100,6 +154,7 @@ async def create_schedule_entry(
 ) -> ScheduleEntry:
     """Create a new schedule entry."""
     entry = ScheduleEntry(
+        lesson_date=data.lesson_date,
         day_of_week=data.day_of_week.value,
         start_time=data.start_time,
         end_time=data.end_time,
@@ -157,11 +212,9 @@ async def get_today_schedule(
         target_date = datetime.now(OMSK_TZ).date()
 
     day_of_week = target_date.isoweekday()
-    week_type = "odd" if is_odd_week(target_date) else "even"
 
-    entries = await get_schedule_entries(
-        db, day_of_week=day_of_week, week_type=week_type
-    )
+    # Use date-based filtering
+    entries = await get_schedule_entries_by_date(db, target_date)
 
     return DayScheduleResponse(
         date=target_date,
@@ -181,16 +234,15 @@ async def get_week_schedule(
     week_start, week_end = get_week_bounds(target_date)
     week_number = get_week_number(target_date)
     odd_week = is_odd_week(target_date)
-    week_type = "odd" if odd_week else "even"
 
-    # Get all entries for this week type
-    entries = await get_schedule_entries(db, week_type=week_type)
+    # Get all entries for this week by date range
+    entries = await get_schedule_entries_by_date_range(db, week_start, week_end)
 
     # Group entries by day
     days: list[DayScheduleResponse] = []
     for day_num in range(1, 8):  # Monday to Sunday
         day_date = week_start + timedelta(days=day_num - 1)
-        day_entries = [e for e in entries if e.day_of_week == day_num]
+        day_entries = [e for e in entries if e.lesson_date == day_date]
 
         days.append(
             DayScheduleResponse(
@@ -215,13 +267,9 @@ async def get_current_lesson(db: AsyncSession) -> CurrentLessonResponse:
     now = datetime.now(OMSK_TZ)
     current_date = now.date()
     current_time = now.time()
-    day_of_week = current_date.isoweekday()
-    week_type = "odd" if is_odd_week(current_date) else "even"
 
-    # Get today's entries
-    today_entries = await get_schedule_entries(
-        db, day_of_week=day_of_week, week_type=week_type
-    )
+    # Get today's entries by date
+    today_entries = await get_schedule_entries_by_date(db, current_date)
 
     current_lesson = None
     next_lesson = None
@@ -387,7 +435,9 @@ async def sync_schedule(
         snapshot_data = ScheduleSnapshotCreate(
             snapshot_date=parse_result.parsed_date,
             content_hash=parse_result.content_hash,
-            raw_data=json.dumps(parse_result.raw_data, ensure_ascii=False),
+            raw_data=json.dumps(
+                parse_result.raw_data, ensure_ascii=False, cls=DateEncoder
+            ),
             source_url=parse_result.source_url,
             entries_count=parse_result.entries_count,
         )

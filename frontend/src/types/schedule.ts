@@ -33,6 +33,7 @@ export type WeekType = (typeof WeekType)[keyof typeof WeekType]
 
 export interface ScheduleEntry {
   id: number
+  lesson_date: string | null // YYYY-MM-DD format
   day_of_week: DayOfWeek
   start_time: string // HH:MM:SS format
   end_time: string

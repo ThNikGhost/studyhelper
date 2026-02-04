@@ -25,11 +25,12 @@ DEFAULT_TIMEOUT = 30
 TIME_SLOTS: dict[int, tuple[str, str]] = {
     1: ("08:45", "10:20"),
     2: ("10:30", "12:05"),
-    3: ("12:35", "14:10"),
-    4: ("14:20", "15:55"),
-    5: ("16:05", "17:40"),
-    6: ("17:50", "19:25"),
-    7: ("19:35", "21:10"),
+    3: ("12:45", "14:20"),
+    4: ("14:30", "16:05"),
+    5: ("16:15", "17:50"),
+    6: ("18:00", "19:35"),
+    7: ("19:45", "21:20"),
+    8: ("21:30", "23:05"),
 }
 
 
@@ -70,7 +71,9 @@ class OmsuScheduleParser:
     """
 
     # API URL template
-    API_URL_TEMPLATE = "https://eservice.omsu.ru/schedule/backend/schedule/group/{group_id}"
+    API_URL_TEMPLATE = (
+        "https://eservice.omsu.ru/schedule/backend/schedule/group/{group_id}"
+    )
 
     def __init__(
         self,
@@ -218,6 +221,9 @@ class OmsuScheduleParser:
             day_str = day_obj.get("day", "")
             day_lessons = day_obj.get("lessons", [])
 
+            # Parse the date for lesson_date field
+            lesson_date = self._parse_date_string(day_str)
+
             for lesson in day_lessons:
                 # Parse date to get day of week
                 day_of_week = self._parse_date_to_weekday(day_str)
@@ -226,12 +232,10 @@ class OmsuScheduleParser:
                 time_slot = lesson.get("time", 1)
                 start_time, end_time = TIME_SLOTS.get(time_slot, ("08:45", "10:20"))
 
-                # Extract subject name (remove type suffix if present)
-                full_lesson = lesson.get("lesson", "")
-                type_work = lesson.get("type_work", "")
-                subject_name = full_lesson
-                if type_work and full_lesson.endswith(f" {type_work}"):
-                    subject_name = full_lesson[: -len(type_work) - 1].strip()
+                # Extract subject name and remove type suffix (Лек, Практ, Лаб, etc.)
+                subject_name = self._clean_subject_name(
+                    lesson.get("lesson", ""), lesson.get("type_work", "")
+                )
 
                 # Parse auditCorps (format: "building-room" like "4-101")
                 audit_corps = lesson.get("auditCorps", "")
@@ -243,21 +247,57 @@ class OmsuScheduleParser:
                     "start_time": start_time,
                     "end_time": end_time,
                     "day_of_week": day_of_week,
-                    "lesson_type": type_work,
+                    "lesson_type": lesson.get("type_work", ""),
                     "teacher_name": lesson.get("teacher", ""),
                     "room": room,
                     "building": building,
-                    "week_type": lesson.get("week"),
+                    "lesson_date": lesson_date,
                     "group_name": lesson.get("group", ""),
-                    "date": day_str,
-                    # Keep original data for reference
-                    "_original": lesson,
                 }
 
                 lessons.append(normalized)
 
         logger.debug("Extracted %d lessons from %d days", len(lessons), len(days_data))
         return lessons
+
+    @staticmethod
+    def _clean_subject_name(lesson_name: str, type_work: str) -> str:
+        """Remove lesson type suffix from subject name.
+
+        Args:
+            lesson_name: Full lesson name like "Математика Лек".
+            type_work: Lesson type like "Лек".
+
+        Returns:
+            Clean subject name without type suffix.
+        """
+        if not lesson_name:
+            return ""
+
+        subject_name = lesson_name.strip()
+
+        # Remove type_work suffix if present
+        if type_work and subject_name.endswith(f" {type_work}"):
+            subject_name = subject_name[: -len(type_work) - 1].strip()
+
+        return subject_name
+
+    @staticmethod
+    def _parse_date_string(date_str: str) -> date | None:
+        """Parse date string to date object.
+
+        Args:
+            date_str: Date in format "DD.MM.YYYY".
+
+        Returns:
+            Date object or None if parsing fails.
+        """
+        try:
+            dt = datetime.strptime(date_str, "%d.%m.%Y")
+            return dt.date()
+        except ValueError:
+            logger.warning("Failed to parse date: %s", date_str)
+            return None
 
     @staticmethod
     def _parse_date_to_weekday(date_str: str) -> int:

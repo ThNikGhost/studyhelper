@@ -41,11 +41,12 @@ class WeekType(str, Enum):
 class ScheduleEntryBase(BaseModel):
     """Base schedule entry schema."""
 
+    lesson_date: date | None = Field(None, description="Specific date of the lesson")
     day_of_week: DayOfWeek = Field(..., description="Day of week (1=Monday, 7=Sunday)")
     start_time: time = Field(..., description="Lesson start time")
     end_time: time = Field(..., description="Lesson end time")
     week_type: WeekType | None = Field(
-        None, description="Week type (odd/even) or null for both"
+        None, description="Week type (odd/even) or null for both - deprecated"
     )
     subject_name: str = Field(..., min_length=1, max_length=200, description="Subject")
     lesson_type: LessonType = Field(..., description="Type of lesson")
@@ -68,6 +69,7 @@ class ScheduleEntryCreate(ScheduleEntryBase):
 class ScheduleEntryUpdate(BaseModel):
     """Schema for updating a schedule entry."""
 
+    lesson_date: date | None = Field(None)
     day_of_week: DayOfWeek | None = Field(None)
     start_time: time | None = Field(None)
     end_time: time | None = Field(None)
