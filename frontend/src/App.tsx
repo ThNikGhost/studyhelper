@@ -6,6 +6,7 @@ import RegisterPage from '@/pages/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
 import SchedulePage from '@/pages/SchedulePage'
 import SubjectsPage from '@/pages/SubjectsPage'
+import WorksPage from '@/pages/WorksPage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -54,7 +55,7 @@ function App() {
         path="/works"
         element={
           <ProtectedRoute>
-            <PlaceholderPage title="Работы" />
+            <WorksPage />
           </ProtectedRoute>
         }
       />
