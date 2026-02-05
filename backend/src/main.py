@@ -10,9 +10,11 @@ if sys.platform == "win32":
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from src.config import settings
 from src.routers import (
@@ -23,6 +25,7 @@ from src.routers import (
     subjects,
     teachers,
     university,
+    uploads,
     works,
 )
 
@@ -76,5 +79,11 @@ api_v1.include_router(teachers.router, prefix="/teachers", tags=["Teachers"])
 api_v1.include_router(university.router, prefix="/university", tags=["University"])
 api_v1.include_router(classmates.router, prefix="/classmates", tags=["Classmates"])
 api_v1.include_router(schedule.router, prefix="/schedule", tags=["Schedule"])
+api_v1.include_router(uploads.router, prefix="/uploads", tags=["Uploads"])
 
 app.include_router(api_v1)
+
+# Mount static files for uploads
+uploads_dir = Path(settings.upload_dir)
+uploads_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")

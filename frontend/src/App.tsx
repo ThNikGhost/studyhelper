@@ -8,6 +8,7 @@ import SchedulePage from '@/pages/SchedulePage'
 import SubjectsPage from '@/pages/SubjectsPage'
 import SemestersPage from '@/pages/SemestersPage'
 import WorksPage from '@/pages/WorksPage'
+import ClassmatesPage from '@/pages/ClassmatesPage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -72,23 +73,12 @@ function App() {
         path="/classmates"
         element={
           <ProtectedRoute>
-            <PlaceholderPage title="Одногруппники" />
+            <ClassmatesPage />
           </ProtectedRoute>
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  )
-}
-
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-2">{title}</h1>
-        <p className="text-muted-foreground">Страница в разработке</p>
-      </div>
-    </div>
   )
 }
 

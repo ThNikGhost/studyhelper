@@ -34,5 +34,10 @@ class Settings(BaseSettings):
     schedule_url: str = "https://eservice.omsu.ru/schedule/#/schedule/group/5028"
     schedule_update_interval_hours: int = 6
 
+    # File uploads
+    upload_dir: str = "uploads"
+    max_upload_size_mb: int = 5
+    allowed_image_types: list[str] = ["image/jpeg", "image/png", "image/webp"]
+
 
 settings = Settings()

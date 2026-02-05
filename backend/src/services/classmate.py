@@ -28,7 +28,7 @@ async def create_classmate(db: AsyncSession, data: ClassmateCreate) -> Classmate
         phone=data.phone,
         telegram=data.telegram,
         vk=str(data.vk) if data.vk else None,
-        photo_url=str(data.photo_url) if data.photo_url else None,
+        photo_url=data.photo_url,
         group_name=data.group_name,
         subgroup=data.subgroup,
         notes=data.notes,
@@ -45,7 +45,8 @@ async def update_classmate(
     """Update classmate."""
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
-        if field in ("vk", "photo_url") and value is not None:
+        # Convert HttpUrl to string for vk field
+        if field == "vk" and value is not None:
             value = str(value)
         setattr(classmate, field, value)
     await db.commit()
