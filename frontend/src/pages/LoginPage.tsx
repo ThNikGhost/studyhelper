@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
+import { getErrorMessage } from '@/lib/errorUtils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,21 +29,7 @@ export default function LoginPage() {
       await login(email, password)
       navigate('/')
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response?: { data?: { detail?: unknown } } }
-        const detail = axiosError.response?.data?.detail
-        if (typeof detail === 'string') {
-          setError(detail)
-        } else if (Array.isArray(detail)) {
-          // FastAPI validation errors
-          const messages = detail.map((e: { msg?: string }) => e.msg || 'Ошибка').join(', ')
-          setError(messages)
-        } else {
-          setError('Ошибка входа')
-        }
-      } else {
-        setError('Ошибка входа')
-      }
+      setError(getErrorMessage(err, 'Ошибка входа'))
     }
   }
 

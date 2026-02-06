@@ -12,7 +12,9 @@ class SubjectBase(BaseModel):
     short_name: str | None = Field(
         None, max_length=50, description="Short name or abbreviation"
     )
-    description: str | None = Field(None, description="Subject description")
+    description: str | None = Field(
+        None, max_length=2000, description="Subject description"
+    )
 
 
 class SubjectCreate(SubjectBase):
@@ -26,7 +28,7 @@ class SubjectUpdate(BaseModel):
 
     name: str | None = Field(None, min_length=1, max_length=200)
     short_name: str | None = Field(None, max_length=50)
-    description: str | None = Field(None)
+    description: str | None = Field(None, max_length=2000)
     semester_id: int | None = Field(None)
 
 

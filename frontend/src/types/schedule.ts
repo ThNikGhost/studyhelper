@@ -12,6 +12,10 @@ export const LessonType = {
 
 export type LessonType = (typeof LessonType)[keyof typeof LessonType]
 
+/**
+ * Day of week using ISO 8601 numbering (1=Monday, 7=Sunday).
+ * Note: differs from JavaScript Date.getDay() which uses 0=Sunday, 6=Saturday.
+ */
 export const DayOfWeek = {
   MONDAY: 1,
   TUESDAY: 2,

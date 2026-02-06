@@ -1,5 +1,7 @@
 """Authentication service."""
 
+import logging
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.user import User
@@ -21,6 +23,8 @@ from src.utils.security import (
     decode_token,
     verify_password,
 )
+
+logger = logging.getLogger(__name__)
 
 MAX_USERS = 2
 
@@ -55,6 +59,7 @@ async def login_user(db: AsyncSession, email: str, password: str) -> TokenRespon
     """Login user and return tokens."""
     user = await authenticate_user(db, email, password)
     if not user:
+        logger.warning("Failed login attempt for email: %s", email)
         raise CredentialsException(detail="Incorrect email or password")
 
     access_token = create_access_token(data={"sub": str(user.id)})

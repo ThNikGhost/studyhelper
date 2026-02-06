@@ -1,10 +1,23 @@
 """Classmate service."""
 
+from pydantic import HttpUrl
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.classmate import Classmate
 from src.schemas.classmate import ClassmateCreate, ClassmateUpdate
+
+
+def _url_to_str(url: HttpUrl | None) -> str | None:
+    """Convert Pydantic HttpUrl to plain string for DB storage.
+
+    Args:
+        url: Pydantic HttpUrl instance or None.
+
+    Returns:
+        String representation of URL or None.
+    """
+    return str(url) if url else None
 
 
 async def get_classmates(db: AsyncSession) -> list[Classmate]:
@@ -27,7 +40,7 @@ async def create_classmate(db: AsyncSession, data: ClassmateCreate) -> Classmate
         email=data.email,
         phone=data.phone,
         telegram=data.telegram,
-        vk=str(data.vk) if data.vk else None,
+        vk=_url_to_str(data.vk),
         photo_url=data.photo_url,
         group_name=data.group_name,
         subgroup=data.subgroup,
@@ -45,9 +58,8 @@ async def update_classmate(
     """Update classmate."""
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
-        # Convert HttpUrl to string for vk field
-        if field == "vk" and value is not None:
-            value = str(value)
+        if field == "vk":
+            value = _url_to_str(value)
         setattr(classmate, field, value)
     await db.commit()
     await db.refresh(classmate)

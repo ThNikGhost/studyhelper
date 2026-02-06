@@ -1,5 +1,6 @@
 """Work service."""
 
+import logging
 from datetime import UTC, datetime
 
 from sqlalchemy import and_, select
@@ -14,6 +15,8 @@ from src.schemas.work import (
     WorkStatusUpdate,
     WorkUpdate,
 )
+
+logger = logging.getLogger(__name__)
 
 
 async def get_works(
@@ -65,43 +68,48 @@ async def create_work(
     db: AsyncSession, work_data: WorkCreate, created_by: User
 ) -> Work:
     """Create a new work and initialize status for all users."""
-    work = Work(
-        title=work_data.title,
-        description=work_data.description,
-        work_type=work_data.work_type.value,
-        deadline=work_data.deadline,
-        max_grade=work_data.max_grade,
-        subject_id=work_data.subject_id,
-    )
-    db.add(work)
-    await db.flush()
-
-    # Get all users to create status for each (pair mode)
-    users_result = await db.execute(select(User))
-    users = users_result.scalars().all()
-
-    for user in users:
-        work_status = WorkStatus(
-            work_id=work.id,
-            user_id=user.id,
-            status=WorkStatusEnum.NOT_STARTED.value,
+    try:
+        work = Work(
+            title=work_data.title,
+            description=work_data.description,
+            work_type=work_data.work_type.value,
+            deadline=work_data.deadline,
+            max_grade=work_data.max_grade,
+            subject_id=work_data.subject_id,
         )
-        db.add(work_status)
+        db.add(work)
         await db.flush()
 
-        # Create initial history entry
-        history = WorkStatusHistory(
-            work_status_id=work_status.id,
-            old_status=None,
-            new_status=WorkStatusEnum.NOT_STARTED.value,
-            changed_at=datetime.now(UTC),
-            changed_by_id=created_by.id,
-        )
-        db.add(history)
+        # Get all users to create status for each (pair mode)
+        users_result = await db.execute(select(User))
+        users = users_result.scalars().all()
 
-    await db.commit()
-    await db.refresh(work)
-    return work
+        for user in users:
+            work_status = WorkStatus(
+                work_id=work.id,
+                user_id=user.id,
+                status=WorkStatusEnum.NOT_STARTED.value,
+            )
+            db.add(work_status)
+            await db.flush()
+
+            # Create initial history entry
+            history = WorkStatusHistory(
+                work_status_id=work_status.id,
+                old_status=None,
+                new_status=WorkStatusEnum.NOT_STARTED.value,
+                changed_at=datetime.now(UTC),
+                changed_by_id=created_by.id,
+            )
+            db.add(history)
+
+        await db.commit()
+        await db.refresh(work)
+        return work
+    except Exception:
+        await db.rollback()
+        logger.exception("Failed to create work '%s'", work_data.title)
+        raise
 
 
 async def update_work(db: AsyncSession, work: Work, work_data: WorkUpdate) -> Work:

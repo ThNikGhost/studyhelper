@@ -25,6 +25,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { scheduleService } from '@/services/scheduleService'
 import { workService } from '@/services/workService'
+import { formatDeadline, getDeadlineColor } from '@/lib/dateUtils'
 import {
   lessonTypeLabels,
   type ScheduleEntry,
@@ -57,49 +58,6 @@ function formatTimeUntil(seconds: number): string {
     return `${hours} ч`
   }
   return `${hours} ч ${remainingMinutes} мин`
-}
-
-function formatDeadline(deadline: string): string {
-  const date = new Date(deadline)
-  const now = new Date()
-  const diffMs = date.getTime() - now.getTime()
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-
-  if (diffDays < 0) {
-    return 'Просрочено'
-  }
-  if (diffDays === 0) {
-    return 'Сегодня'
-  }
-  if (diffDays === 1) {
-    return 'Завтра'
-  }
-  if (diffDays <= 7) {
-    return `Через ${diffDays} дн.`
-  }
-
-  return date.toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'short',
-  })
-}
-
-function getDeadlineColor(deadline: string): string {
-  const date = new Date(deadline)
-  const now = new Date()
-  const diffMs = date.getTime() - now.getTime()
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-
-  if (diffDays < 0) {
-    return 'text-red-600 dark:text-red-400'
-  }
-  if (diffDays <= 1) {
-    return 'text-orange-600 dark:text-orange-400'
-  }
-  if (diffDays <= 3) {
-    return 'text-yellow-600 dark:text-yellow-400'
-  }
-  return 'text-muted-foreground'
 }
 
 interface LessonCardProps {
@@ -313,19 +271,20 @@ export default function DashboardPage() {
   const { user, logout } = useAuthStore()
 
   const handleLogout = async () => {
+    if (!confirm('Вы уверены, что хотите выйти?')) return
     await logout()
   }
 
   const { data: currentLesson, isLoading: lessonLoading, isError: lessonError } = useQuery({
     queryKey: ['currentLesson'],
-    queryFn: () => scheduleService.getCurrentLesson(),
+    queryFn: ({ signal }) => scheduleService.getCurrentLesson(signal),
     refetchInterval: 60000, // Refetch every minute
     staleTime: 30000,
   })
 
   const { data: upcomingWorks, isLoading: worksLoading, isError: worksError } = useQuery({
     queryKey: ['upcomingWorks'],
-    queryFn: () => workService.getUpcomingWorks(10),
+    queryFn: ({ signal }) => workService.getUpcomingWorks(10, signal),
     staleTime: 60000,
   })
 

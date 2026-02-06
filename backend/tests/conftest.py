@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from src.database import get_db
 from src.main import app
 from src.models.base import Base
+from src.utils.rate_limit import limiter
 
 # Use SQLite in-memory for tests (avoids Windows PostgreSQL issues)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -53,11 +54,13 @@ async def client(engine) -> AsyncClient:
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
+    limiter.enabled = False
     async with AsyncClient(
         transport=ASGITransport(app=app),
         base_url="http://test",
     ) as ac:
         yield ac
+    limiter.enabled = True
     app.dependency_overrides.clear()
 
 

@@ -9,12 +9,16 @@ import {
   ClipboardList,
   Calendar,
   Filter,
+  Loader2,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Modal } from '@/components/ui/modal'
+import { toast } from 'sonner'
+import { formatDeadline, getDeadlineColor } from '@/lib/dateUtils'
 import workService from '@/services/workService'
 import subjectService from '@/services/subjectService'
 import type {
@@ -32,59 +36,6 @@ import {
   workStatusColors,
 } from '@/types/work'
 import type { Subject } from '@/types/subject'
-
-// Simple modal component
-function Modal({
-  open,
-  onClose,
-  title,
-  children,
-}: {
-  open: boolean
-  onClose: () => void
-  title: string
-  children: React.ReactNode
-}) {
-  if (!open) return null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <Card className="relative z-10 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent>{children}</CardContent>
-      </Card>
-    </div>
-  )
-}
-
-// Format deadline for display
-function formatDeadline(deadline: string | null): string {
-  if (!deadline) return 'Без дедлайна'
-  const date = new Date(deadline)
-  return date.toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-// Get deadline status color
-function getDeadlineColor(deadline: string | null): string {
-  if (!deadline) return 'text-muted-foreground'
-  const now = new Date()
-  const deadlineDate = new Date(deadline)
-  const diff = deadlineDate.getTime() - now.getTime()
-  const daysUntil = diff / (1000 * 60 * 60 * 24)
-
-  if (diff < 0) return 'text-red-500' // Overdue
-  if (daysUntil < 1) return 'text-orange-500' // Less than 1 day
-  if (daysUntil < 3) return 'text-amber-500' // Less than 3 days
-  return 'text-muted-foreground'
-}
 
 export function WorksPage() {
   const queryClient = useQueryClient()
@@ -115,7 +66,7 @@ export function WorksPage() {
   // Fetch subjects for selector
   const { data: subjects = [] } = useQuery<Subject[]>({
     queryKey: ['subjects'],
-    queryFn: () => subjectService.getSubjects(),
+    queryFn: ({ signal }) => subjectService.getSubjects(undefined, signal),
   })
 
   // Fetch works
@@ -126,11 +77,11 @@ export function WorksPage() {
     refetch,
   } = useQuery<WorkWithStatus[]>({
     queryKey: ['works', filterSubjectId, filterStatus],
-    queryFn: () =>
-      workService.getWorks({
-        subject_id: filterSubjectId,
-        status: filterStatus,
-      }),
+    queryFn: ({ signal }) =>
+      workService.getWorks(
+        { subject_id: filterSubjectId, status: filterStatus },
+        signal,
+      ),
   })
 
   // Create mutation
@@ -138,7 +89,11 @@ export function WorksPage() {
     mutationFn: (data: WorkCreate) => workService.createWork(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['works'] })
+      toast.success('Работа добавлена')
       closeModal()
+    },
+    onError: () => {
+      toast.error('Не удалось добавить работу')
     },
   })
 
@@ -148,7 +103,11 @@ export function WorksPage() {
       workService.updateWork(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['works'] })
+      toast.success('Работа обновлена')
       closeModal()
+    },
+    onError: () => {
+      toast.error('Не удалось обновить работу')
     },
   })
 
@@ -157,7 +116,11 @@ export function WorksPage() {
     mutationFn: (id: number) => workService.deleteWork(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['works'] })
+      toast.success('Работа удалена')
       setDeleteConfirmWork(null)
+    },
+    onError: () => {
+      toast.error('Не удалось удалить работу')
     },
   })
 
@@ -167,7 +130,11 @@ export function WorksPage() {
       workService.updateWorkStatus(workId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['works'] })
+      toast.success('Статус обновлён')
       setStatusModalWork(null)
+    },
+    onError: () => {
+      toast.error('Не удалось обновить статус')
     },
   })
 
@@ -547,7 +514,13 @@ export function WorksPage() {
                 Отмена
               </Button>
               <Button type="submit" className="flex-1" disabled={isMutating}>
-                {editingWork ? 'Сохранить' : 'Добавить'}
+                {isMutating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : editingWork ? (
+                  'Сохранить'
+                ) : (
+                  'Добавить'
+                )}
               </Button>
             </div>
           </form>
@@ -618,8 +591,12 @@ export function WorksPage() {
               >
                 Отмена
               </Button>
-              <Button type="submit" className="flex-1" disabled={isMutating}>
-                Сохранить
+              <Button type="submit" className="flex-1" disabled={updateStatusMutation.isPending}>
+                {updateStatusMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Сохранить'
+                )}
               </Button>
             </div>
           </form>
@@ -648,10 +625,14 @@ export function WorksPage() {
               type="button"
               variant="destructive"
               className="flex-1"
-              disabled={isMutating}
+              disabled={deleteMutation.isPending}
               onClick={() => deleteConfirmWork && deleteMutation.mutate(deleteConfirmWork.id)}
             >
-              Удалить
+              {deleteMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Удалить'
+              )}
             </Button>
           </div>
         </Modal>

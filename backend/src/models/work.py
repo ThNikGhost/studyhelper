@@ -75,7 +75,7 @@ class WorkStatus(Base, TimestampMixin):
         Integer, ForeignKey("works.id", ondelete="CASCADE"), nullable=False
     )
     user_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default=WorkStatusEnum.NOT_STARTED.value

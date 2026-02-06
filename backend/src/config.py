@@ -1,5 +1,6 @@
 """Application configuration."""
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,6 +39,18 @@ class Settings(BaseSettings):
     upload_dir: str = "uploads"
     max_upload_size_mb: int = 5
     allowed_image_types: list[str] = ["image/jpeg", "image/png", "image/webp"]
+
+    # Timezone
+    timezone: str = "Asia/Omsk"
+
+    @model_validator(mode="after")
+    def validate_secret_key(self) -> "Settings":
+        """Ensure secret_key is changed in production."""
+        if not self.debug and self.secret_key == "change-me-in-production":
+            raise ValueError(
+                "secret_key must be changed from default in production (debug=False)"
+            )
+        return self
 
 
 settings = Settings()

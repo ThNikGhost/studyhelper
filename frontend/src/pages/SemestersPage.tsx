@@ -1,40 +1,15 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, ArrowLeft, Calendar, Check } from 'lucide-react'
+import { Plus, Pencil, Trash2, ArrowLeft, Calendar, Check, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Modal } from '@/components/ui/modal'
+import { toast } from 'sonner'
 import subjectService from '@/services/subjectService'
 import type { Semester, SemesterCreate } from '@/types/subject'
-
-// Simple modal component
-function Modal({
-  open,
-  onClose,
-  title,
-  children,
-}: {
-  open: boolean
-  onClose: () => void
-  title: string
-  children: React.ReactNode
-}) {
-  if (!open) return null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <Card className="relative z-10 w-full max-w-md mx-4">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent>{children}</CardContent>
-      </Card>
-    </div>
-  )
-}
 
 // Get current academic year
 function getCurrentAcademicYear(): { yearStart: number; yearEnd: number } {
@@ -73,7 +48,7 @@ export function SemestersPage() {
     refetch,
   } = useQuery<Semester[]>({
     queryKey: ['semesters'],
-    queryFn: () => subjectService.getSemesters(),
+    queryFn: ({ signal }) => subjectService.getSemesters(signal),
   })
 
   // Create mutation
@@ -81,7 +56,11 @@ export function SemestersPage() {
     mutationFn: (data: SemesterCreate) => subjectService.createSemester(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['semesters'] })
+      toast.success('Семестр создан')
       closeModal()
+    },
+    onError: () => {
+      toast.error('Не удалось создать семестр')
     },
   })
 
@@ -91,7 +70,11 @@ export function SemestersPage() {
       subjectService.updateSemester(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['semesters'] })
+      toast.success('Семестр обновлён')
       closeModal()
+    },
+    onError: () => {
+      toast.error('Не удалось обновить семестр')
     },
   })
 
@@ -100,7 +83,11 @@ export function SemestersPage() {
     mutationFn: (id: number) => subjectService.deleteSemester(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['semesters'] })
+      toast.success('Семестр удалён')
       setDeleteConfirmSemester(null)
+    },
+    onError: () => {
+      toast.error('Не удалось удалить семестр')
     },
   })
 
@@ -109,6 +96,10 @@ export function SemestersPage() {
     mutationFn: (id: number) => subjectService.setCurrentSemester(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['semesters'] })
+      toast.success('Текущий семестр изменён')
+    },
+    onError: () => {
+      toast.error('Не удалось изменить текущий семестр')
     },
   })
 
@@ -257,7 +248,11 @@ export function SemestersPage() {
                         disabled={isMutating}
                         title="Сделать текущим"
                       >
-                        <Check className="h-4 w-4" />
+                        {setCurrentMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
                       </Button>
                     )}
                     <Button
@@ -360,7 +355,13 @@ export function SemestersPage() {
                 Отмена
               </Button>
               <Button type="submit" className="flex-1" disabled={isMutating}>
-                {editingSemester ? 'Сохранить' : 'Создать'}
+                {isMutating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : editingSemester ? (
+                  'Сохранить'
+                ) : (
+                  'Создать'
+                )}
               </Button>
             </div>
           </form>
@@ -389,10 +390,14 @@ export function SemestersPage() {
               type="button"
               variant="destructive"
               className="flex-1"
-              disabled={isMutating}
+              disabled={deleteMutation.isPending}
               onClick={() => deleteConfirmSemester && deleteMutation.mutate(deleteConfirmSemester.id)}
             >
-              Удалить
+              {deleteMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Удалить'
+              )}
             </Button>
           </div>
         </Modal>

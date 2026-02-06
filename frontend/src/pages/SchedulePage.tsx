@@ -7,6 +7,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScheduleGrid } from '@/components/schedule/ScheduleGrid'
+import { formatDateLocal, getToday } from '@/lib/dateUtils'
+import { toast } from 'sonner'
 import scheduleService from '@/services/scheduleService'
 import type { WeekSchedule, CurrentLesson } from '@/types/schedule'
 
@@ -14,19 +16,7 @@ import type { WeekSchedule, CurrentLesson } from '@/types/schedule'
 function addDays(dateStr: string, days: number): string {
   const date = new Date(dateStr + 'T12:00:00') // Use noon to avoid timezone edge cases
   date.setDate(date.getDate() + days)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-// Get today's date string in local timezone
-function getToday(): string {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return formatDateLocal(date)
 }
 
 export function SchedulePage() {
@@ -43,22 +33,29 @@ export function SchedulePage() {
     refetch,
   } = useQuery<WeekSchedule>({
     queryKey: ['schedule', 'week', targetDate],
-    queryFn: () => scheduleService.getWeekSchedule(targetDate),
+    queryFn: ({ signal }) => scheduleService.getWeekSchedule(targetDate, signal),
   })
 
   // Fetch current lesson (updates every minute)
   const { data: currentLesson } = useQuery<CurrentLesson>({
     queryKey: ['schedule', 'current'],
-    queryFn: () => scheduleService.getCurrentLesson(),
+    queryFn: ({ signal }) => scheduleService.getCurrentLesson(signal),
     refetchInterval: 60000, // 1 minute
   })
 
   // Mutation for refreshing schedule from OmGU
   const refreshMutation = useMutation({
     mutationFn: () => scheduleService.refreshSchedule(false),
-    onSuccess: () => {
-      // Invalidate all schedule queries to refetch fresh data
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['schedule'] })
+      if (data.changed) {
+        toast.success(`Расписание обновлено (${data.entries_count} записей)`)
+      } else {
+        toast.info('Расписание не изменилось')
+      }
+    },
+    onError: () => {
+      toast.error('Не удалось обновить расписание')
     },
   })
 
@@ -190,7 +187,7 @@ export function SchedulePage() {
                       selected={targetDate ? new Date(targetDate) : new Date(today)}
                       onSelect={(date) => {
                         if (date) {
-                          setTargetDate(date.toISOString().split('T')[0])
+                          setTargetDate(formatDateLocal(date))
                         }
                         setCalendarOpen(false)
                       }}

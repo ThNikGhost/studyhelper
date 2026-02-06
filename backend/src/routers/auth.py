@@ -1,6 +1,6 @@
 """Authentication router."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,12 +17,15 @@ from src.services.auth import (
     refresh_access_token,
     register_user,
 )
+from src.utils.rate_limit import limiter
 
 router = APIRouter()
 
 
 @router.post("/register", response_model=UserResponse, status_code=201)
+@limiter.limit("3/minute")
 async def register(
+    request: Request,
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db),
 ) -> User:
@@ -31,7 +34,9 @@ async def register(
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("5/minute")
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
@@ -41,11 +46,11 @@ async def login(
 
 @router.post("/refresh", response_model=AccessTokenResponse)
 async def refresh(
-    request: RefreshRequest,
+    request_data: RefreshRequest,
     db: AsyncSession = Depends(get_db),
 ) -> AccessTokenResponse:
     """Refresh access token using refresh token."""
-    access_token = await refresh_access_token(db, request.refresh_token)
+    access_token = await refresh_access_token(db, request_data.refresh_token)
     return AccessTokenResponse(access_token=access_token)
 
 

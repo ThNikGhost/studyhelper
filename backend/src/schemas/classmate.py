@@ -17,7 +17,7 @@ class ClassmateBase(BaseModel):
     photo_url: str | None = Field(None, max_length=500, description="Photo URL or path")
     group_name: str | None = Field(None, max_length=50, description="Group name")
     subgroup: int | None = Field(None, ge=1, le=10, description="Subgroup number")
-    notes: str | None = Field(None, description="Additional notes")
+    notes: str | None = Field(None, max_length=2000, description="Additional notes")
 
 
 class ClassmateCreate(ClassmateBase):
@@ -38,7 +38,7 @@ class ClassmateUpdate(BaseModel):
     photo_url: str | None = Field(None, max_length=500)
     group_name: str | None = Field(None, max_length=50)
     subgroup: int | None = Field(None, ge=1, le=10)
-    notes: str | None = Field(None)
+    notes: str | None = Field(None, max_length=2000)
 
 
 class ClassmateResponse(ClassmateBase):

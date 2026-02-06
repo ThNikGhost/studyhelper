@@ -34,7 +34,9 @@ class WorkBase(BaseModel):
     """Base work schema."""
 
     title: str = Field(..., min_length=1, max_length=300, description="Work title")
-    description: str | None = Field(None, description="Work description")
+    description: str | None = Field(
+        None, max_length=2000, description="Work description"
+    )
     work_type: WorkType = Field(..., description="Type of work")
     deadline: datetime | None = Field(None, description="Deadline for the work")
     max_grade: int | None = Field(None, ge=0, description="Maximum possible grade")
@@ -50,7 +52,7 @@ class WorkUpdate(BaseModel):
     """Schema for updating a work."""
 
     title: str | None = Field(None, min_length=1, max_length=300)
-    description: str | None = Field(None)
+    description: str | None = Field(None, max_length=2000)
     work_type: WorkType | None = Field(None)
     deadline: datetime | None = Field(None)
     max_grade: int | None = Field(None, ge=0)
@@ -76,7 +78,7 @@ class WorkStatusBase(BaseModel):
         default=WorkStatusEnum.NOT_STARTED, description="Current status"
     )
     grade: int | None = Field(None, ge=0, description="Received grade")
-    notes: str | None = Field(None, description="Personal notes")
+    notes: str | None = Field(None, max_length=2000, description="Personal notes")
 
 
 class WorkStatusUpdate(BaseModel):
@@ -84,7 +86,7 @@ class WorkStatusUpdate(BaseModel):
 
     status: WorkStatusEnum | None = Field(None)
     grade: int | None = Field(None, ge=0)
-    notes: str | None = Field(None)
+    notes: str | None = Field(None, max_length=2000)
 
 
 class WorkStatusResponse(WorkStatusBase):

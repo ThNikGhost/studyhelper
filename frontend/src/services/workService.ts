@@ -19,21 +19,21 @@ export const workService = {
   /**
    * Get all works with optional filters.
    */
-  async getWorks(filters?: WorkFilters): Promise<WorkWithStatus[]> {
+  async getWorks(filters?: WorkFilters, signal?: AbortSignal): Promise<WorkWithStatus[]> {
     const params: Record<string, string | number | boolean> = {}
     if (filters?.subject_id) params.subject_id = filters.subject_id
     if (filters?.status) params.status = filters.status
     if (filters?.has_deadline !== undefined) params.has_deadline = filters.has_deadline
 
-    const response = await api.get<WorkWithStatus[]>('/works', { params })
+    const response = await api.get<WorkWithStatus[]>('/works', { params, signal })
     return response.data
   },
 
   /**
    * Get a single work by ID.
    */
-  async getWork(id: number): Promise<WorkWithStatus> {
-    const response = await api.get<WorkWithStatus>(`/works/${id}`)
+  async getWork(id: number, signal?: AbortSignal): Promise<WorkWithStatus> {
+    const response = await api.get<WorkWithStatus>(`/works/${id}`, { signal })
     return response.data
   },
 
@@ -71,9 +71,10 @@ export const workService = {
   /**
    * Get upcoming works with deadlines.
    */
-  async getUpcomingWorks(limit: number = 10): Promise<UpcomingWork[]> {
+  async getUpcomingWorks(limit: number = 10, signal?: AbortSignal): Promise<UpcomingWork[]> {
     const response = await api.get<UpcomingWork[]>('/works/upcoming', {
       params: { limit },
+      signal,
     })
     return response.data
   },

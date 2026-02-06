@@ -15,38 +15,18 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Modal } from '@/components/ui/modal'
+import { toast } from 'sonner'
 import classmateService from '@/services/classmateService'
 import uploadService from '@/services/uploadService'
 import type { Classmate, ClassmateCreate } from '@/types/classmate'
 
-// Simple modal component
-function Modal({
-  open,
-  onClose,
-  title,
-  children,
-}: {
-  open: boolean
-  onClose: () => void
-  title: string
-  children: React.ReactNode
-}) {
-  if (!open) return null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <Card className="relative z-10 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent>{children}</CardContent>
-      </Card>
-    </div>
-  )
+// Sanitize Telegram username for safe URL construction
+function sanitizeTelegram(value: string): string {
+  return value.replace('@', '').replace(/[^a-zA-Z0-9_]/g, '')
 }
 
 // Avatar component
@@ -123,7 +103,7 @@ export function ClassmatesPage() {
     refetch,
   } = useQuery<Classmate[]>({
     queryKey: ['classmates'],
-    queryFn: () => classmateService.getClassmates(),
+    queryFn: ({ signal }) => classmateService.getClassmates(signal),
   })
 
   // Group classmates by subgroup
@@ -157,7 +137,11 @@ export function ClassmatesPage() {
     mutationFn: (data: ClassmateCreate) => classmateService.createClassmate(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['classmates'] })
+      toast.success('Одногруппник добавлен')
       closeFormModal()
+    },
+    onError: () => {
+      toast.error('Не удалось добавить одногруппника')
     },
   })
 
@@ -167,7 +151,11 @@ export function ClassmatesPage() {
       classmateService.updateClassmate(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['classmates'] })
+      toast.success('Одногруппник обновлён')
       closeFormModal()
+    },
+    onError: () => {
+      toast.error('Не удалось обновить одногруппника')
     },
   })
 
@@ -176,8 +164,12 @@ export function ClassmatesPage() {
     mutationFn: (id: number) => classmateService.deleteClassmate(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['classmates'] })
+      toast.success('Одногруппник удалён')
       setDeleteConfirmClassmate(null)
       setViewingClassmate(null)
+    },
+    onError: () => {
+      toast.error('Не удалось удалить одногруппника')
     },
   })
 
@@ -188,13 +180,13 @@ export function ClassmatesPage() {
 
     // Validate file type
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      alert('Допустимые форматы: JPEG, PNG, WebP')
+      toast.error('Допустимые форматы: JPEG, PNG, WebP')
       return
     }
 
     // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Максимальный размер файла: 5MB')
+      toast.error('Максимальный размер файла: 5MB')
       return
     }
 
@@ -211,7 +203,7 @@ export function ClassmatesPage() {
       const response = await uploadService.uploadAvatar(file)
       setFormData((prev) => ({ ...prev, photo_url: response.url }))
     } catch {
-      alert('Ошибка загрузки файла')
+      toast.error('Ошибка загрузки файла')
       setPreviewUrl(null)
     } finally {
       setIsUploading(false)
@@ -429,7 +421,7 @@ export function ClassmatesPage() {
                 )}
                 {viewingClassmate.telegram && (
                   <a
-                    href={`https://t.me/${viewingClassmate.telegram.replace('@', '')}`}
+                    href={`https://t.me/${sanitizeTelegram(viewingClassmate.telegram)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
@@ -650,7 +642,13 @@ export function ClassmatesPage() {
                 Отмена
               </Button>
               <Button type="submit" className="flex-1" disabled={isMutating || isUploading}>
-                {editingClassmate ? 'Сохранить' : 'Создать'}
+                {isMutating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : editingClassmate ? (
+                  'Сохранить'
+                ) : (
+                  'Создать'
+                )}
               </Button>
             </div>
           </form>
@@ -679,12 +677,16 @@ export function ClassmatesPage() {
               type="button"
               variant="destructive"
               className="flex-1"
-              disabled={isMutating}
+              disabled={deleteMutation.isPending}
               onClick={() =>
                 deleteConfirmClassmate && deleteMutation.mutate(deleteConfirmClassmate.id)
               }
             >
-              Удалить
+              {deleteMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Удалить'
+              )}
             </Button>
           </div>
         </Modal>

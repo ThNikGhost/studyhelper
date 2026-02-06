@@ -3,14 +3,14 @@ import type { Subject, SubjectCreate, SubjectUpdate, Semester, SemesterCreate, S
 
 export const subjectService = {
   // Subjects
-  async getSubjects(semesterId?: number): Promise<Subject[]> {
+  async getSubjects(semesterId?: number, signal?: AbortSignal): Promise<Subject[]> {
     const params = semesterId ? { semester_id: semesterId } : {}
-    const response = await api.get<Subject[]>('/subjects', { params })
+    const response = await api.get<Subject[]>('/subjects', { params, signal })
     return response.data
   },
 
-  async getSubject(id: number): Promise<Subject> {
-    const response = await api.get<Subject>(`/subjects/${id}`)
+  async getSubject(id: number, signal?: AbortSignal): Promise<Subject> {
+    const response = await api.get<Subject>(`/subjects/${id}`, { signal })
     return response.data
   },
 
@@ -29,13 +29,13 @@ export const subjectService = {
   },
 
   // Semesters
-  async getSemesters(): Promise<Semester[]> {
-    const response = await api.get<Semester[]>('/semesters')
+  async getSemesters(signal?: AbortSignal): Promise<Semester[]> {
+    const response = await api.get<Semester[]>('/semesters', { signal })
     return response.data
   },
 
-  async getCurrentSemester(): Promise<Semester | null> {
-    const response = await api.get<Semester | null>('/semesters/current')
+  async getCurrentSemester(signal?: AbortSignal): Promise<Semester | null> {
+    const response = await api.get<Semester | null>('/semesters/current', { signal })
     return response.data
   },
 

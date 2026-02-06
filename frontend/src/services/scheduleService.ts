@@ -6,9 +6,9 @@ export const scheduleService = {
    * Get schedule for a week
    * @param targetDate - Date within target week (YYYY-MM-DD), defaults to current week
    */
-  async getWeekSchedule(targetDate?: string): Promise<WeekSchedule> {
+  async getWeekSchedule(targetDate?: string, signal?: AbortSignal): Promise<WeekSchedule> {
     const params = targetDate ? { target_date: targetDate } : {}
-    const response = await api.get<WeekSchedule>('/schedule/week', { params })
+    const response = await api.get<WeekSchedule>('/schedule/week', { params, signal })
     return response.data
   },
 
@@ -16,17 +16,17 @@ export const scheduleService = {
    * Get schedule for a specific day
    * @param targetDate - Target date (YYYY-MM-DD), defaults to today
    */
-  async getTodaySchedule(targetDate?: string): Promise<DaySchedule> {
+  async getTodaySchedule(targetDate?: string, signal?: AbortSignal): Promise<DaySchedule> {
     const params = targetDate ? { target_date: targetDate } : {}
-    const response = await api.get<DaySchedule>('/schedule/today', { params })
+    const response = await api.get<DaySchedule>('/schedule/today', { params, signal })
     return response.data
   },
 
   /**
    * Get current and next lesson
    */
-  async getCurrentLesson(): Promise<CurrentLesson> {
-    const response = await api.get<CurrentLesson>('/schedule/current')
+  async getCurrentLesson(signal?: AbortSignal): Promise<CurrentLesson> {
+    const response = await api.get<CurrentLesson>('/schedule/current', { signal })
     return response.data
   },
 

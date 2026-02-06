@@ -1,43 +1,15 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Pencil, Trash2, RefreshCw, ArrowLeft, BookOpen } from 'lucide-react'
+import { Plus, Pencil, Trash2, RefreshCw, ArrowLeft, BookOpen, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Modal } from '@/components/ui/modal'
+import { toast } from 'sonner'
 import subjectService from '@/services/subjectService'
 import type { Subject, SubjectCreate, Semester } from '@/types/subject'
-
-// Simple modal component
-function Modal({
-  open,
-  onClose,
-  title,
-  children,
-}: {
-  open: boolean
-  onClose: () => void
-  title: string
-  children: React.ReactNode
-}) {
-  if (!open) return null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="fixed inset-0 bg-black/50"
-        onClick={onClose}
-      />
-      <Card className="relative z-10 w-full max-w-md mx-4">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-        </CardHeader>
-        <CardContent>{children}</CardContent>
-      </Card>
-    </div>
-  )
-}
 
 export function SubjectsPage() {
   const queryClient = useQueryClient()
@@ -57,13 +29,13 @@ export function SubjectsPage() {
   // Fetch semesters
   const { data: semesters = [], isLoading: semestersLoading } = useQuery<Semester[]>({
     queryKey: ['semesters'],
-    queryFn: () => subjectService.getSemesters(),
+    queryFn: ({ signal }) => subjectService.getSemesters(signal),
   })
 
   // Fetch current semester
   const { data: currentSemester } = useQuery<Semester | null>({
     queryKey: ['semesters', 'current'],
-    queryFn: () => subjectService.getCurrentSemester(),
+    queryFn: ({ signal }) => subjectService.getCurrentSemester(signal),
   })
 
   // Auto-select current semester
@@ -77,7 +49,7 @@ export function SubjectsPage() {
     refetch,
   } = useQuery<Subject[]>({
     queryKey: ['subjects', effectiveSemesterId],
-    queryFn: () => subjectService.getSubjects(effectiveSemesterId),
+    queryFn: ({ signal }) => subjectService.getSubjects(effectiveSemesterId, signal),
     enabled: effectiveSemesterId !== undefined || semesters.length > 0,
   })
 
@@ -86,7 +58,11 @@ export function SubjectsPage() {
     mutationFn: (data: SubjectCreate) => subjectService.createSubject(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subjects'] })
+      toast.success('Предмет добавлен')
       closeModal()
+    },
+    onError: () => {
+      toast.error('Не удалось добавить предмет')
     },
   })
 
@@ -96,7 +72,11 @@ export function SubjectsPage() {
       subjectService.updateSubject(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subjects'] })
+      toast.success('Предмет обновлён')
       closeModal()
+    },
+    onError: () => {
+      toast.error('Не удалось обновить предмет')
     },
   })
 
@@ -105,7 +85,11 @@ export function SubjectsPage() {
     mutationFn: (id: number) => subjectService.deleteSubject(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subjects'] })
+      toast.success('Предмет удалён')
       setDeleteConfirmSubject(null)
+    },
+    onError: () => {
+      toast.error('Не удалось удалить предмет')
     },
   })
 
@@ -351,7 +335,13 @@ export function SubjectsPage() {
                 Отмена
               </Button>
               <Button type="submit" className="flex-1" disabled={isMutating}>
-                {editingSubject ? 'Сохранить' : 'Добавить'}
+                {isMutating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : editingSubject ? (
+                  'Сохранить'
+                ) : (
+                  'Добавить'
+                )}
               </Button>
             </div>
           </form>
@@ -380,10 +370,14 @@ export function SubjectsPage() {
               type="button"
               variant="destructive"
               className="flex-1"
-              disabled={isMutating}
+              disabled={deleteMutation.isPending}
               onClick={() => deleteConfirmSubject && deleteMutation.mutate(deleteConfirmSubject.id)}
             >
-              Удалить
+              {deleteMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Удалить'
+              )}
             </Button>
           </div>
         </Modal>

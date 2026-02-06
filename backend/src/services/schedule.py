@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import date, datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any
+from datetime import date, datetime, timedelta
+from typing import TYPE_CHECKING, TypedDict
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import and_, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import settings
 from src.models.schedule import ScheduleEntry, ScheduleSnapshot
+from src.parser.exceptions import ParserException
 from src.parser.hash_utils import DateEncoder
 from src.schemas.schedule import (
     CurrentLessonResponse,
@@ -28,8 +31,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Omsk timezone (UTC+6)
-OMSK_TZ = timezone(timedelta(hours=6))
+OMSK_TZ = ZoneInfo(settings.timezone)
 
 DAY_NAMES_RU = {
     1: "Понедельник",
@@ -40,6 +42,16 @@ DAY_NAMES_RU = {
     6: "Суббота",
     7: "Воскресенье",
 }
+
+
+class SyncResult(TypedDict, total=False):
+    """Result of schedule synchronization."""
+
+    success: bool
+    changed: bool
+    entries_count: int
+    content_hash: str
+    message: str
 
 
 def get_week_number(d: date) -> int:
@@ -373,7 +385,7 @@ async def sync_schedule(
     db: AsyncSession,
     force: bool = False,
     url: str | None = None,
-) -> dict[str, Any]:
+) -> SyncResult:
     """Synchronize schedule: parse, compare hash, update if changed.
 
     Args:
@@ -382,12 +394,7 @@ async def sync_schedule(
         url: Schedule API URL. Defaults to constructed from group_id.
 
     Returns:
-        Dictionary with sync result:
-            - success: bool
-            - changed: bool
-            - entries_count: int
-            - content_hash: str (if success)
-            - message: str (error message if not success)
+        SyncResult with sync status details.
     """
     logger.info("Starting schedule sync (force=%s)", force)
 
@@ -397,12 +404,12 @@ async def sync_schedule(
 
         if parse_result.entries_count == 0:
             logger.warning("No entries parsed from schedule")
-            return {
-                "success": False,
-                "changed": False,
-                "entries_count": 0,
-                "message": "No entries parsed from schedule",
-            }
+            return SyncResult(
+                success=False,
+                changed=False,
+                entries_count=0,
+                message="No entries parsed from schedule",
+            )
 
         # Check if content changed
         latest_snapshot = await get_latest_snapshot(db)
@@ -414,13 +421,13 @@ async def sync_schedule(
                 logger.info(
                     "Schedule unchanged (hash: %s...)", parse_result.content_hash[:8]
                 )
-                return {
-                    "success": True,
-                    "changed": False,
-                    "entries_count": latest_snapshot.entries_count,
-                    "content_hash": parse_result.content_hash,
-                    "message": "Schedule unchanged",
-                }
+                return SyncResult(
+                    success=True,
+                    changed=False,
+                    entries_count=latest_snapshot.entries_count,
+                    content_hash=parse_result.content_hash,
+                    message="Schedule unchanged",
+                )
             logger.info("Force sync requested, updating despite unchanged hash")
 
         # Clear existing entries
@@ -449,19 +456,27 @@ async def sync_schedule(
             parse_result.content_hash[:8],
         )
 
-        return {
-            "success": True,
-            "changed": True,
-            "entries_count": parse_result.entries_count,
-            "content_hash": parse_result.content_hash,
-            "message": "Schedule updated successfully",
-        }
+        return SyncResult(
+            success=True,
+            changed=True,
+            entries_count=parse_result.entries_count,
+            content_hash=parse_result.content_hash,
+            message="Schedule updated successfully",
+        )
 
+    except ParserException as e:
+        logger.error("Parser error during schedule sync: %s", e)
+        return SyncResult(
+            success=False,
+            changed=False,
+            entries_count=0,
+            message=f"Parser error: {e}",
+        )
     except Exception as e:
-        logger.error("Schedule sync failed: %s", e, exc_info=True)
-        return {
-            "success": False,
-            "changed": False,
-            "entries_count": 0,
-            "message": str(e),
-        }
+        logger.error("Unexpected error during schedule sync: %s", e, exc_info=True)
+        return SyncResult(
+            success=False,
+            changed=False,
+            entries_count=0,
+            message=str(e),
+        )

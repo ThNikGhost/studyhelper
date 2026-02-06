@@ -2,13 +2,13 @@ import api from '@/lib/api'
 import type { Classmate, ClassmateCreate, ClassmateUpdate } from '@/types/classmate'
 
 export const classmateService = {
-  async getClassmates(): Promise<Classmate[]> {
-    const response = await api.get<Classmate[]>('/classmates')
+  async getClassmates(signal?: AbortSignal): Promise<Classmate[]> {
+    const response = await api.get<Classmate[]>('/classmates', { signal })
     return response.data
   },
 
-  async getClassmate(id: number): Promise<Classmate> {
-    const response = await api.get<Classmate>(`/classmates/${id}`)
+  async getClassmate(id: number, signal?: AbortSignal): Promise<Classmate> {
+    const response = await api.get<Classmate>(`/classmates/${id}`, { signal })
     return response.data
   },
 

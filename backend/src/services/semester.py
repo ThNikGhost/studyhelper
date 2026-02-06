@@ -1,6 +1,6 @@
 """Semester service."""
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.semester import Semester
@@ -62,11 +62,10 @@ async def delete_semester(db: AsyncSession, semester: Semester) -> None:
 
 async def set_current_semester(db: AsyncSession, semester: Semester) -> Semester:
     """Set semester as current (only one can be current)."""
-    # Remove current flag from all semesters
-    result = await db.execute(select(Semester).where(Semester.is_current.is_(True)))
-    current_semesters = result.scalars().all()
-    for s in current_semesters:
-        s.is_current = False
+    # Atomically remove current flag from all semesters
+    await db.execute(
+        update(Semester).where(Semester.is_current.is_(True)).values(is_current=False)
+    )
 
     # Set new current
     semester.is_current = True
