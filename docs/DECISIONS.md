@@ -350,6 +350,60 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 12. PWA решения (2026-02-07)
+
+### generateSW вместо injectManifest
+
+**Решение:** Использовать `generateSW` (Workbox) для генерации Service Worker.
+
+**Обоснование:**
+- Стандартные стратегии кеширования покрывают все текущие потребности
+- Не нужен кастомный SW-код
+- Автоматический precaching app shell (JS/CSS/HTML)
+
+**Альтернативы рассмотренные:**
+- `injectManifest` — избыточен, нет потребности в кастомной SW-логике
+
+### registerType: 'prompt'
+
+**Решение:** Пользователь решает когда применять обновление SW.
+
+**Обоснование:**
+- `autoUpdate` может прервать работу пользователя посреди заполнения формы
+- `prompt` показывает баннер "Доступна новая версия" с кнопкой "Обновить"
+- Пользователь контролирует момент обновления
+
+### NetworkFirst для API, precache для shell
+
+**Решение:**
+- App Shell (JS/CSS/HTML) — precache (Cache First)
+- API `/api/v1/*` — NetworkFirst с таймаутом 3с и fallback на кеш (24h, 100 записей)
+
+**Обоснование:**
+- App shell меняется редко → precache оптимален
+- API данные должны быть свежими → NetworkFirst с коротким таймаутом
+- 24h TTL и 100 записей — разумный баланс между объёмом кеша и полезностью
+- `method: 'GET'` — кешируем только GET-запросы, мутации не кешируем
+
+### offline.html fallback
+
+**Решение:** Статическая страница `public/offline.html` для навигационных запросов без кеша.
+
+**Обоснование:**
+- Если пользователь офлайн и precache не содержит нужный маршрут — вместо ошибки показываем понятную страницу
+- `navigateFallback: 'index.html'` покрывает SPA-роутинг, `offline.html` — крайний fallback
+
+### pwa-mock.ts для тестов
+
+**Решение:** Вынести мок `virtual:pwa-register/react` в отдельный файл `src/test/pwa-mock.ts`.
+
+**Обоснование:**
+- `vi.hoisted()` нельзя экспортировать из `setup.ts` — ошибка `SyntaxError: Cannot export hoisted variable`
+- Отдельный модуль позволяет импортировать мок-стейт и в `setup.ts`, и в тестовых файлах
+- Сброс моков в `afterEach` в setup.ts — централизованный cleanup
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -369,3 +423,7 @@ notification_settings — настройки уведомлений
 | 2026-02-06 | Shared Modal + sonner toasts | DRY, accessibility, UX |
 | 2026-02-07 | Vitest + testing-library + MSW | Нативная интеграция с Vite, тесты поведения |
 | 2026-02-07 | pool: 'forks' в Vitest | MSW + jsdom подвисают на Windows с threads |
+| 2026-02-07 | generateSW для PWA | Стандартные стратегии, не нужен кастомный SW |
+| 2026-02-07 | registerType: prompt | Пользователь контролирует момент обновления |
+| 2026-02-07 | NetworkFirst для API (3s timeout) | Свежие данные с fallback на кеш |
+| 2026-02-07 | pwa-mock.ts для тестов | vi.hoisted() нельзя экспортировать из setup.ts |
