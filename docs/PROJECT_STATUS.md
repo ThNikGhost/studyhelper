@@ -1,12 +1,12 @@
 # Статус проекта StudyHelper
 
 ## Последнее обновление
-- **Дата**: 2026-02-05
-- **Сессия**: MVP Frontend полностью готов + Dashboard виджеты
+- **Дата**: 2026-02-06
+- **Сессия**: Полный Code Review — 8 фаз (~70 фиксов)
 
 ## Общий прогресс
 **Фаза**: MVP разработка
-**Прогресс**: ~98% (backend готов + парсер + все frontend страницы + виджеты)
+**Прогресс**: 100% (backend + frontend + code review завершены)
 
 ---
 
@@ -17,20 +17,22 @@
 - [x] CLAUDE.md — обновлён под проект
 - [x] plans/MVP_plan.md — план MVP
 - [x] plans/backend_plan.md — план backend разработки
-- [x] plans/future_features.md — планы на будущее (обновлено)
+- [x] plans/future_features.md — планы на будущее
 - [x] plans/schedule_page_frontend_plan.md — план SchedulePage
+- [x] plans/enchanted-humming-lynx.md — план Code Review (8 фаз)
 
 ### Инфраструктура
 - [x] Docker Compose (PostgreSQL 16, Redis 7, Adminer) — для Linux/Mac
 - [x] Локальный PostgreSQL — для Windows
-- [x] .env.example — переменные окружения
+- [x] .env.example — переменные окружения (backend + frontend)
 - [x] GitHub repository
+- [x] GitHub Actions CI (backend lint+test + frontend lint+build)
 
 ### Backend (ЗАВЕРШЁН)
 - [x] Инициализация проекта (pyproject.toml, uv)
 - [x] Конфигурация (pydantic-settings)
 - [x] База данных (SQLAlchemy 2.0 async)
-- [x] Alembic миграции (8 миграций применено)
+- [x] Alembic миграции (9 миграций применено)
 
 #### Модули:
 | Модуль | Модель | Схемы | Сервис | Роутер | Тесты |
@@ -44,7 +46,7 @@
 | Classmates | ✅ | ✅ | ✅ | ✅ | ✅ 20 |
 | Schedule | ✅ ScheduleEntry, ScheduleSnapshot | ✅ | ✅ | ✅ | ✅ 24+11 |
 | Parser | ✅ | ✅ | ✅ | CLI | ✅ 74 |
-| Uploads | — | ✅ | — | ✅ | ✅ 11 |
+| Uploads | — | ✅ | ✅ | ✅ | ✅ 11 |
 
 ### Parser модуль (ЗАВЕРШЁН ✅)
 - [x] `src/parser/` — модуль парсинга
@@ -56,41 +58,48 @@
 ### Frontend (ЗАВЕРШЁН ✅)
 - [x] Инициализация Vite + React 19 + TypeScript
 - [x] Tailwind CSS v4 настроен
-- [x] UI компоненты (Button, Input, Card, Label, Calendar, Popover)
-- [x] API клиент (axios с interceptors для JWT)
+- [x] UI компоненты (Button, Input, Card, Label, Calendar, Popover, Modal)
+- [x] API клиент (axios с interceptors для JWT + token refresh mutex)
 - [x] Auth store (Zustand)
 - [x] Роутинг (react-router-dom)
 - [x] Защищённые маршруты (ProtectedRoute)
+- [x] ErrorBoundary компонент
 - [x] Страницы: LoginPage, RegisterPage, DashboardPage
 - [x] SchedulePage ✅ (кастомный календарь, локальное время)
 - [x] SubjectsPage ✅
 - [x] WorksPage ✅
 - [x] SemestersPage ✅ (CRUD для семестров)
-- [x] ClassmatesPage ✅ (CRUD, контакты)
+- [x] ClassmatesPage ✅ (CRUD, контакты, санитизация Telegram)
+
+### Code Review (ЗАВЕРШЁН ✅)
+- [x] Фаза 0: GitHub Actions CI
+- [x] Фаза 1: Backend Security (secret_key validation, CORS, rate limiting, security headers, exception handler)
+- [x] Фаза 2: Upload Security (streaming reads, magic bytes, path traversal, UploadService)
+- [x] Фаза 3: Backend Code Quality (specific exceptions, atomic updates, rollback, logging, ZoneInfo, TypedDict)
+- [x] Фаза 4: Frontend Infrastructure (ErrorBoundary, token refresh mutex, AbortController, toast, Modal, dateUtils, errorUtils, constants)
+- [x] Фаза 5: Frontend Page Fixes (shared Modal/toast/spinners on all pages, timezone fix, Telegram sanitization, logout confirm)
+- [x] Фаза 6: Backend Minor & Nitpick (max_length in schemas, HttpUrl helper, DB index, docstrings in exceptions)
+- [x] Фаза 7: Frontend Minor & Nitpick (ESLint rules, DayOfWeek JSDoc)
 
 ---
 
 ## Что в работе
 
-### Текущая задача: Dashboard виджеты (ЗАВЕРШЕНО ✅)
-Добавлены виджеты на главную страницу:
-- [x] Виджет текущего/следующего занятия
-- [x] Виджет ближайших дедлайнов
-- [ ] Виджет статистики — опционально
-
-### Выполнено в этой сессии:
-- [x] ClassmatesPage — страница одногруппников (CRUD, группировка по подгруппам)
-- [x] Uploads модуль — загрузка/удаление аватарок
-- [x] Аватарки отображаются на карточках одногруппников
+Нет активных задач.
 
 ### Следующие задачи:
-1. Тестирование всех страниц
-2. Деплой MVP
+1. Коммит и пуш всех Code Review изменений
+2. Деплой MVP на сервер
 3. PWA настройка (service worker, manifest)
 
 ---
 
 ## Что отложено (на будущее)
+
+### Отдельный PR (из Code Review)
+- httpOnly cookies вместо localStorage
+- Механизм отзыва JWT
+- Docker production config
 
 ### Фаза 2
 - Push-уведомления
@@ -99,7 +108,7 @@
 - Календарь
 - Прогресс-бары
 - Учебный план
-- Кликабельные элементы расписания (предмет → страница предмета)
+- Кликабельные элементы расписания
 
 ---
 
@@ -112,6 +121,11 @@
 ### Windows + Vite + localhost
 Vite на Windows может не слушать на правильном адресе из-за IPv6/IPv4 резолвинга.
 **Решение**: Явно указать `host: '127.0.0.1'` в vite.config.ts
+
+### ESLint: pre-existing ошибки в shadcn/ui
+3 ошибки в shadcn/ui компонентах (button.tsx, input.tsx, label.tsx) — не связаны с нашим кодом.
+- `react-refresh/only-export-components` в button.tsx
+- `@typescript-eslint/no-empty-object-type` в input.tsx и label.tsx
 
 ---
 
@@ -126,6 +140,8 @@ Vite на Windows может не слушать на правильном ад�
 - **API расписания**: `https://eservice.omsu.ru/schedule/backend/schedule/group/{group_id}`
 - **Frontend**: Vite + React 19 + TypeScript + Tailwind v4 + Zustand + React Query
 - **Календарь**: react-day-picker v9 + @radix-ui/react-popover
+- **Security**: rate limiting (slowapi), security headers, magic bytes validation, streaming uploads, path traversal protection
+- **Frontend infrastructure**: ErrorBoundary, shared Modal (accessible), sonner toasts, AbortController signals, token refresh mutex
 
 ---
 
@@ -137,6 +153,8 @@ Vite на Windows может не слушать на правильном ад�
 | Покрытие тестами | ~80% |
 | API endpoints | ~55 |
 | Моделей | 13 |
-| Миграций | 8 |
-| Линтер | ✅ Ruff проходит |
+| Миграций | 9 |
+| Линтер backend | ✅ Ruff проходит |
+| Линтер frontend | ✅ ESLint проходит (кроме shadcn/ui) |
+| Frontend build | ✅ TypeScript + Vite |
 | Frontend страниц | 8 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates) |
