@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { ChevronLeft, ChevronRight, RefreshCw, ArrowLeft, Loader2, CalendarDays } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ function addDays(dateStr: string, days: number): string {
 }
 
 export function SchedulePage() {
+  const isOnline = useNetworkStatus()
   const [targetDate, setTargetDate] = useState<string | undefined>(undefined)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const today = getToday()
@@ -149,7 +151,7 @@ export function SchedulePage() {
             variant="ghost"
             size="icon"
             onClick={handleRefresh}
-            disabled={refreshMutation.isPending}
+            disabled={refreshMutation.isPending || !isOnline}
             title="Обновить с сайта ОмГУ"
           >
             {refreshMutation.isPending ? (

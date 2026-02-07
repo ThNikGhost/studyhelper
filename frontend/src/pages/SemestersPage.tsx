@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { Plus, Pencil, Trash2, ArrowLeft, Calendar, Check, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -24,6 +25,7 @@ function getCurrentAcademicYear(): { yearStart: number; yearEnd: number } {
 }
 
 export function SemestersPage() {
+  const isOnline = useNetworkStatus()
   const queryClient = useQueryClient()
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingSemester, setEditingSemester] = useState<Semester | null>(null)
@@ -214,7 +216,7 @@ export function SemestersPage() {
         </div>
 
         {/* Add button */}
-        <Button className="w-full mb-6" onClick={openAddModal}>
+        <Button className="w-full mb-6" onClick={openAddModal} disabled={!isOnline}>
           <Plus className="h-4 w-4 mr-2" />
           Добавить семестр
         </Button>
@@ -245,7 +247,7 @@ export function SemestersPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => setCurrentMutation.mutate(semester.id)}
-                        disabled={isMutating}
+                        disabled={isMutating || !isOnline}
                         title="Сделать текущим"
                       >
                         {setCurrentMutation.isPending ? (
@@ -259,6 +261,7 @@ export function SemestersPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => openEditModal(semester)}
+                      disabled={!isOnline}
                       title="Редактировать"
                     >
                       <Pencil className="h-4 w-4" />
@@ -267,6 +270,7 @@ export function SemestersPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => setDeleteConfirmSemester(semester)}
+                      disabled={!isOnline}
                       title="Удалить"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />

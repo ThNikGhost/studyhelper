@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import {
   Plus,
   Pencil,
@@ -85,6 +86,7 @@ const defaultFormData: ClassmateCreate = {
 }
 
 export function ClassmatesPage() {
+  const isOnline = useNetworkStatus()
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -335,7 +337,7 @@ export function ClassmatesPage() {
             </Button>
           </Link>
           <h1 className="text-2xl font-bold flex-1">Одногруппники</h1>
-          <Button size="icon" onClick={openAddModal}>
+          <Button size="icon" onClick={openAddModal} disabled={!isOnline}>
             <Plus className="h-5 w-5" />
           </Button>
         </div>
@@ -468,6 +470,7 @@ export function ClassmatesPage() {
                   variant="outline"
                   className="flex-1"
                   onClick={() => openEditModal(viewingClassmate)}
+                  disabled={!isOnline}
                 >
                   <Pencil className="h-4 w-4 mr-2" />
                   Редактировать
@@ -476,6 +479,7 @@ export function ClassmatesPage() {
                   variant="destructive"
                   size="icon"
                   onClick={() => setDeleteConfirmClassmate(viewingClassmate)}
+                  disabled={!isOnline}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
