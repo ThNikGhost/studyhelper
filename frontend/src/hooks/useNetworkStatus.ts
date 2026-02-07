@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 /**
  * Hook to track browser online/offline status.
@@ -7,15 +7,23 @@ import { useState, useEffect } from 'react'
  */
 export function useNetworkStatus(): boolean {
   const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const isMounted = useRef(true)
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
+    isMounted.current = true
+
+    const handleOnline = () => {
+      if (isMounted.current) setIsOnline(true)
+    }
+    const handleOffline = () => {
+      if (isMounted.current) setIsOnline(false)
+    }
 
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
 
     return () => {
+      isMounted.current = false
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }

@@ -25,9 +25,15 @@ export function UpdatePrompt() {
         <>
           <CheckCircle className="h-4 w-4 shrink-0" />
           <span className="flex-1">Приложение готово к работе офлайн</span>
-          <button onClick={close} className="p-1 hover:bg-blue-700 rounded" aria-label="Закрыть">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={close}
+            aria-label="Закрыть"
+            className="h-7 w-7 text-white hover:bg-blue-700 hover:text-white"
+          >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </>
       ) : (
         <>
@@ -41,9 +47,15 @@ export function UpdatePrompt() {
           >
             Обновить
           </Button>
-          <button onClick={close} className="p-1 hover:bg-blue-700 rounded" aria-label="Закрыть">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={close}
+            aria-label="Закрыть"
+            className="h-7 w-7 text-white hover:bg-blue-700 hover:text-white"
+          >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </>
       )}
     </div>

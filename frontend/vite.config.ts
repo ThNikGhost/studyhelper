@@ -12,11 +12,13 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'apple-touch-icon-180x180.png'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon-180x180.png', 'offline.html'],
       manifest: {
         name: 'StudyHelper',
         short_name: 'StudyHelper',
         description: 'Персональный помощник студента ОмГУ',
+        lang: 'ru',
+        categories: ['education'],
         theme_color: '#3B82F6',
         background_color: '#ffffff',
         display: 'standalone',
@@ -48,15 +50,16 @@ export default defineConfig({
           {
             urlPattern: /\/api\/v1\/.*/i,
             handler: 'NetworkFirst',
+            method: 'GET',
             options: {
               cacheName: 'api-cache',
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60 * 24, // 24 hours
               },
-              networkTimeoutSeconds: 5,
+              networkTimeoutSeconds: 3,
               cacheableResponse: {
-                statuses: [0, 200],
+                statuses: [200],
               },
             },
           },

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#3B82F6" />
+    <title>StudyHelper — Офлайн</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: #f8fafc;
+        color: #334155;
+      }
+      .container {
+        text-align: center;
+        padding: 2rem;
+        max-width: 400px;
+      }
+      .icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+      p {
+        color: #64748b;
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+      }
+      button {
+        background: #3B82F6;
+        color: #fff;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+      button:hover { background: #2563eb; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="icon">&#128268;</div>
+      <h1>Нет подключения</h1>
+      <p>Проверьте интернет-соединение и попробуйте снова.</p>
+      <button onclick="window.location.reload()">Обновить страницу</button>
+    </div>
+  </body>
+</html>
