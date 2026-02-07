@@ -2,11 +2,11 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-07
-- **Сессия**: Реализация 01-PWA (Progressive Web App)
+- **Сессия**: Реализация 04-dashboard-widget (улучшение виджетов Dashboard)
 
 ## Общий прогресс
 **Фаза**: Post-MVP реализация
-**Прогресс**: MVP 100% завершён. 01-PWA реализована (ветка `feature/pwa`).
+**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован.
 
 ---
 
@@ -73,10 +73,11 @@
 
 ### Frontend тесты (ЗАВЕРШЁН ✅)
 - [x] Тестовая инфраструктура: Vitest + @testing-library/react + MSW
-- [x] Тесты утилит: dateUtils (15), errorUtils (13), constants (6)
+- [x] Тесты утилит: dateUtils (22), errorUtils (13), constants (6)
 - [x] Тесты store: authStore (11)
 - [x] Тесты компонентов: ProtectedRoute (3), ErrorBoundary (3), Modal (6)
 - [x] Тесты страниц: LoginPage (6), DashboardPage (10)
+- [x] Тесты dashboard виджетов: TodayScheduleWidget (10), DeadlinesWidget (10)
 - [x] TypeScript + ESLint чисто на тестовых файлах
 
 ### Code Review (ЗАВЕРШЁН ✅)
@@ -89,7 +90,7 @@
 - [x] Фаза 6: Backend Minor & Nitpick (max_length in schemas, HttpUrl helper, DB index, docstrings in exceptions)
 - [x] Фаза 7: Frontend Minor & Nitpick (ESLint rules, DayOfWeek JSDoc)
 
-### 01-PWA (ЗАВЕРШЕНА ✅) — ветка `feature/pwa`
+### 01-PWA (ЗАВЕРШЕНА ✅) — merged в `main`
 - [x] `vite-plugin-pwa` + `VitePWA()` конфигурация (generateSW, registerType: prompt)
 - [x] Web manifest (name, icons, theme_color, lang: ru, display: standalone)
 - [x] Мета-теги в index.html (theme-color, apple-mobile-web-app, description)
@@ -104,21 +105,31 @@
 - [x] 17 новых тестов (pwa-mock.ts, useNetworkStatus, NetworkStatusBar, UpdatePrompt, AppLayout)
 - [x] Code review + исправление всех замечаний (P0/P1/P2)
 
+### 04-dashboard-widget (ЗАВЕРШЕНА ✅)
+- [x] `TodayScheduleWidget` — все пары на сегодня, текущая подсвечена, прошедшие приглушены, badge "через X мин"
+- [x] `DeadlinesWidget` — группировка по срочности (Просрочено/Сегодня-Завтра/На неделе), badge просроченных, до 8 элементов
+- [x] `QuickActions` — вынесен в отдельный компонент, адаптивная сетка `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`
+- [x] `formatTime()`, `formatTimeUntil()` — утилиты перенесены в dateUtils
+- [x] Рефакторинг DashboardPage — замена inline-виджетов на импорты, добавлен query `/schedule/today`
+- [x] MSW handlers обновлены (mock `/schedule/today`, test data)
+- [x] 27 новых тестов (TodayScheduleWidget: 10, DeadlinesWidget: 10, dateUtils: 7)
+- [x] TypeScript, ESLint, build — всё чисто
+
 ---
 
 ## Что в работе
 
-Нет активных задач. 01-PWA на ветке `feature/pwa` готова к merge.
+Нет активных задач. 04-dashboard-widget реализован, ожидает коммит.
 
 ### Следующие задачи (приоритет):
 1. ~~**01-PWA** — manifest, service worker, оффлайн (P0)~~ ✅
-2. **04-dashboard-widget** — виджет "Ближайшее" на dashboard (P1)
+2. ~~**04-dashboard-widget** — виджеты Dashboard (P1)~~ ✅
 3. **06-clickable-schedule** — кликабельные элементы расписания (P1)
 4. **09-dark-theme** — тёмная тема (P2)
 5. **07-progress-bars** — прогресс-бары по предметам (P2)
 6. **03-file-upload-ui** — UI загрузки файлов (P1)
 7. **05-ics-export** — экспорт в .ics (P2)
-8. **02-push-notifications** — push-уведомления (P1, зависит от PWA)
+8. **02-push-notifications** — push-уведомления (P1, зависит от PWA ✅)
 9. **08-attendance** — посещаемость (P2)
 10. **10-lesson-notes** — заметки к парам (P2)
 11. **11-semester-timeline** — timeline семестра (P3)
@@ -154,7 +165,7 @@ Vite на Windows может не слушать на правильном ад�
 
 ### Vitest: процесс подвисает при завершении (Windows)
 При `vitest run` на Windows процесс не завершается после прохождения всех тестов (MSW + jsdom удерживают сокеты).
-**Решение**: Использовать `pool: 'forks'` в конфиге + `timeout` при запуске из CI. Все 87 тестов проходят корректно, подвисание только при cleanup.
+**Решение**: Использовать `pool: 'forks'` в конфиге + `timeout` при запуске из CI. Все 114 тестов проходят корректно, подвисание только при cleanup.
 
 ### Vitest: OOM в watch mode (Windows)
 При `npm run test` (watch mode) воркер Vitest падает с OOM (`JavaScript heap out of memory`) на ~4GB после прохождения всех тестов.
@@ -177,6 +188,7 @@ Vite на Windows может не слушать на правильном ад�
 - **Frontend infrastructure**: ErrorBoundary, shared Modal (accessible), sonner toasts, AbortController signals, token refresh mutex
 - **Frontend тесты**: Vitest + @testing-library/react + MSW для моков API
 - **PWA**: vite-plugin-pwa (generateSW), registerType: prompt, NetworkFirst для API, offline.html fallback
+- **Dashboard виджеты**: TodayScheduleWidget, DeadlinesWidget, QuickActions — отдельные компоненты в `components/dashboard/`
 
 ---
 
@@ -185,13 +197,13 @@ Vite на Windows может не слушать на правильном ад�
 | Метрика | Значение |
 |---------|----------|
 | Тестов backend | 264 |
-| Тестов frontend | 87 |
+| Тестов frontend | 114 |
 | Покрытие тестами | ~80% |
 | API endpoints | ~55 |
 | Моделей | 13 |
 | Миграций | 9 |
 | Линтер backend | ✅ Ruff проходит |
 | Линтер frontend | ✅ ESLint проходит (кроме shadcn/ui) |
-| Frontend тесты | ✅ Vitest проходит (87 тестов) |
+| Frontend тесты | ✅ Vitest проходит (114 тестов) |
 | Frontend build | ✅ TypeScript + Vite |
 | Frontend страниц | 8 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates) |

@@ -63,3 +63,32 @@ export function formatDateLocal(date: Date): string {
 export function getToday(): string {
   return formatDateLocal(new Date())
 }
+
+/**
+ * Format time string from HH:MM:SS to HH:MM.
+ */
+export function formatTime(timeStr: string): string {
+  return timeStr.slice(0, 5)
+}
+
+/**
+ * Format seconds into a human-readable Russian string.
+ *
+ * @param seconds - Number of seconds to format.
+ * @returns Formatted string like "менее минуты", "15 мин", "1 ч 30 мин".
+ */
+export function formatTimeUntil(seconds: number): string {
+  if (seconds < 60) {
+    return 'менее минуты'
+  }
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) {
+    return `${minutes} мин`
+  }
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+  if (remainingMinutes === 0) {
+    return `${hours} ч`
+  }
+  return `${hours} ч ${remainingMinutes} мин`
+}

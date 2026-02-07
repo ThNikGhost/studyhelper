@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { formatDeadline, getDeadlineColor, formatDateLocal, getToday } from '../dateUtils'
+import {
+  formatDeadline,
+  getDeadlineColor,
+  formatDateLocal,
+  getToday,
+  formatTime,
+  formatTimeUntil,
+} from '../dateUtils'
 
 describe('formatDeadline', () => {
   afterEach(() => {
@@ -123,5 +130,43 @@ describe('getToday', () => {
     vi.setSystemTime(new Date(2026, 5, 15)) // Jun 15, 2026
 
     expect(getToday()).toBe('2026-06-15')
+  })
+})
+
+describe('formatTime', () => {
+  it('formats HH:MM:SS to HH:MM', () => {
+    expect(formatTime('10:30:00')).toBe('10:30')
+  })
+
+  it('handles midnight', () => {
+    expect(formatTime('00:00:00')).toBe('00:00')
+  })
+
+  it('handles single-digit hours in string', () => {
+    expect(formatTime('09:05:00')).toBe('09:05')
+  })
+})
+
+describe('formatTimeUntil', () => {
+  it('returns "менее минуты" for less than 60 seconds', () => {
+    expect(formatTimeUntil(0)).toBe('менее минуты')
+    expect(formatTimeUntil(30)).toBe('менее минуты')
+    expect(formatTimeUntil(59)).toBe('менее минуты')
+  })
+
+  it('returns minutes for less than 60 minutes', () => {
+    expect(formatTimeUntil(60)).toBe('1 мин')
+    expect(formatTimeUntil(300)).toBe('5 мин')
+    expect(formatTimeUntil(3540)).toBe('59 мин')
+  })
+
+  it('returns hours only when minutes are zero', () => {
+    expect(formatTimeUntil(3600)).toBe('1 ч')
+    expect(formatTimeUntil(7200)).toBe('2 ч')
+  })
+
+  it('returns hours and minutes', () => {
+    expect(formatTimeUntil(5400)).toBe('1 ч 30 мин')
+    expect(formatTimeUntil(3660)).toBe('1 ч 1 мин')
   })
 })
