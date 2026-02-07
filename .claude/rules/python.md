@@ -1,3 +1,8 @@
+---
+globs: ["backend/**/*.py"]
+description: Python code style, type hints, and project conventions
+---
+
 # Python Code Rules
 
 ## Менеджер зависимостей: uv

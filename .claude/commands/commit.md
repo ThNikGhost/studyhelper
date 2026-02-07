@@ -1,3 +1,7 @@
+---
+description: Проверить тесты, линтер и сделать коммит с пушем
+---
+
 # Commit Feature
 
 Сделай коммит и пуш завершённой работы.
@@ -14,20 +18,23 @@ $ARGUMENTS — описание того, что было сделано (опц
 
 2. **Проверь, что тесты проходят:**
    ```bash
-   uv run pytest -q
+   cd backend && uv run pytest -q
+   ```
+   ```bash
+   cd frontend && npm run test -- --run 2>/dev/null || true
    ```
    Если тесты падают — НЕ коммить, сначала исправь.
 
 3. **Проверь линтинг:**
    ```bash
-   uv run ruff check .
+   cd backend && uv run ruff check .
    ```
    Если есть ошибки — исправь перед коммитом.
 
 4. **Добавь файлы:**
-   ```bash
-   git add -A
-   ```
+   - Добавляй конкретные файлы: `git add file1 file2`
+   - НИКОГДА не используй `git add -A` или `git add .`
+   - Проверь, что не добавляешь .env, секреты, бинарные файлы
 
 5. **Сделай коммит:**
    - Используй conventional commits: `type(scope): description`
@@ -51,8 +58,3 @@ refactor(users): extract validation logic
 test(products): add integration tests
 docs(readme): update installation instructions
 ```
-
-## Если что-то пошло не так
-- Тесты падают → Исправь и попробуй снова
-- Конфликт при пуше → `git pull --rebase` и разреши конфликты
-- Забыл добавить файл → `git add file && git commit --amend`

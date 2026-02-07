@@ -1,3 +1,7 @@
+---
+description: Git workflow and conventional commits
+---
+
 # Git Rules
 
 ## Формат коммитов (Conventional Commits)

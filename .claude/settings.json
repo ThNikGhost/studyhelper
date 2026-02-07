@@ -1,7 +1,6 @@
 {
-
-
-  "enableAllProjectMcpServers": true,
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": ["github", "filesystem", "postgres", "ssh"],
 
   "permissions": {
     "allow": [
@@ -11,21 +10,68 @@
       "Bash(ruff:*)",
       "Bash(alembic:*)",
       "Bash(uvicorn:*)",
-      "Edit(src/**)",
-      "Edit(tests/**)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+
+      "Edit(backend/**)",
+      "Edit(frontend/src/**)",
       "Edit(docs/**)",
       "Edit(scripts/**)",
+      "Edit(.claude/**)",
+      "Edit(CLAUDE.md)",
+      "Edit(.claudeignore)",
+
       "mcp__github__*",
       "mcp__ssh__*",
-      "mcp__postgres__*",
-      "mcp__filesystem__*",
-      "mcp__sequential-thinking__*"
+      "mcp__postgres__query",
+      "mcp__filesystem__read_file",
+      "mcp__filesystem__read_text_file",
+      "mcp__filesystem__read_media_file",
+      "mcp__filesystem__read_multiple_files",
+      "mcp__filesystem__write_file",
+      "mcp__filesystem__edit_file",
+      "mcp__filesystem__create_directory",
+      "mcp__filesystem__list_directory",
+      "mcp__filesystem__list_directory_with_sizes",
+      "mcp__filesystem__directory_tree",
+      "mcp__filesystem__search_files",
+      "mcp__filesystem__get_file_info",
+      "mcp__filesystem__list_allowed_directories"
     ],
 
     "deny": [
       "Read(.env)",
       "Read(.env.*)",
-      "Read(**/secrets/**)"
+      "Read(**/secrets/**)",
+      "Read(.mcp.json)",
+
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean -f:*)",
+      "Bash(git clean -fd:*)",
+      "Bash(git branch -D:*)"
+    ],
+
+    "ask": [
+      "Bash(git rebase:*)",
+      "Bash(git stash drop:*)",
+      "Bash(alembic downgrade:*)"
+    ]
+  },
+
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python D:\\vscode\\claude-projects\\studyhelper\\scripts\\hooks\\format_python.py"
+          }
+        ]
+      }
     ]
   }
 }

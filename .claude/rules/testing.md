@@ -1,3 +1,8 @@
+---
+globs: ["**/test*/**", "**/conftest.py", "**/*_test.py", "**/test_*.py"]
+description: Testing standards with pytest
+---
+
 # Testing Rules
 
 ## Фреймворк
