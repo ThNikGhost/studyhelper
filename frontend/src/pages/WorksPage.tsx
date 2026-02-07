@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import {
   Plus,
   Pencil,
@@ -38,6 +39,7 @@ import {
 import type { Subject } from '@/types/subject'
 
 export function WorksPage() {
+  const isOnline = useNetworkStatus()
   const queryClient = useQueryClient()
   const [filterSubjectId, setFilterSubjectId] = useState<number | undefined>(undefined)
   const [filterStatus, setFilterStatus] = useState<WorkStatus | undefined>(undefined)
@@ -327,7 +329,7 @@ export function WorksPage() {
         </Card>
 
         {/* Add button */}
-        <Button className="w-full mb-6" onClick={openAddModal}>
+        <Button className="w-full mb-6" onClick={openAddModal} disabled={!isOnline}>
           <Plus className="h-4 w-4 mr-2" />
           Добавить работу
         </Button>
@@ -386,6 +388,7 @@ export function WorksPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => openEditModal(work)}
+                      disabled={!isOnline}
                       title="Редактировать"
                     >
                       <Pencil className="h-4 w-4" />
@@ -394,6 +397,7 @@ export function WorksPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => setDeleteConfirmWork(work)}
+                      disabled={!isOnline}
                       title="Удалить"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />

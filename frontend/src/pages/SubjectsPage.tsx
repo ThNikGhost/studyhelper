@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { Plus, Pencil, Trash2, RefreshCw, ArrowLeft, BookOpen, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,7 @@ import subjectService from '@/services/subjectService'
 import type { Subject, SubjectCreate, Semester } from '@/types/subject'
 
 export function SubjectsPage() {
+  const isOnline = useNetworkStatus()
   const queryClient = useQueryClient()
   const [selectedSemesterId, setSelectedSemesterId] = useState<number | undefined>(undefined)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -212,7 +214,7 @@ export function SubjectsPage() {
         </Card>
 
         {/* Add button */}
-        <Button className="w-full mb-6" onClick={openAddModal}>
+        <Button className="w-full mb-6" onClick={openAddModal} disabled={!isOnline}>
           <Plus className="h-4 w-4 mr-2" />
           Добавить предмет
         </Button>
@@ -244,6 +246,7 @@ export function SubjectsPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => openEditModal(subject)}
+                      disabled={!isOnline}
                       title="Редактировать"
                     >
                       <Pencil className="h-4 w-4" />
@@ -252,6 +255,7 @@ export function SubjectsPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => setDeleteConfirmSubject(subject)}
+                      disabled={!isOnline}
                       title="Удалить"
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />

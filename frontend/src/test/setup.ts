@@ -1,7 +1,17 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
-import { afterAll, afterEach, beforeAll } from 'vitest'
+import { afterAll, afterEach, beforeAll, vi } from 'vitest'
 import { server } from './mocks/server'
+import { pwaRegisterMock } from './pwa-mock'
+
+// Mock virtual:pwa-register/react using shared mock state
+vi.mock('virtual:pwa-register/react', () => ({
+  useRegisterSW: () => ({
+    needRefresh: [pwaRegisterMock.needRefresh, pwaRegisterMock.setNeedRefresh],
+    offlineReady: [pwaRegisterMock.offlineReady, pwaRegisterMock.setOfflineReady],
+    updateServiceWorker: pwaRegisterMock.updateServiceWorker,
+  }),
+}))
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -47,5 +57,11 @@ afterEach(() => {
   server.resetHandlers()
   cleanup()
   localStorage.clear()
+  // Reset PWA mock to defaults
+  pwaRegisterMock.needRefresh = false
+  pwaRegisterMock.offlineReady = false
+  pwaRegisterMock.setNeedRefresh.mockClear()
+  pwaRegisterMock.setOfflineReady.mockClear()
+  pwaRegisterMock.updateServiceWorker.mockClear()
 })
 afterAll(() => server.close())

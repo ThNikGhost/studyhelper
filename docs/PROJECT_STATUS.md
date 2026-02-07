@@ -2,11 +2,11 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-07
-- **Сессия**: Планирование post-MVP фич (11 задач)
+- **Сессия**: Реализация 01-PWA (Progressive Web App)
 
 ## Общий прогресс
-**Фаза**: Post-MVP планирование
-**Прогресс**: MVP 100% завершён. Составлены планы для 11 новых фич.
+**Фаза**: Post-MVP реализация
+**Прогресс**: MVP 100% завершён. 01-PWA реализована (ветка `feature/pwa`).
 
 ---
 
@@ -89,14 +89,29 @@
 - [x] Фаза 6: Backend Minor & Nitpick (max_length in schemas, HttpUrl helper, DB index, docstrings in exceptions)
 - [x] Фаза 7: Frontend Minor & Nitpick (ESLint rules, DayOfWeek JSDoc)
 
+### 01-PWA (ЗАВЕРШЕНА ✅) — ветка `feature/pwa`
+- [x] `vite-plugin-pwa` + `VitePWA()` конфигурация (generateSW, registerType: prompt)
+- [x] Web manifest (name, icons, theme_color, lang: ru, display: standalone)
+- [x] Мета-теги в index.html (theme-color, apple-mobile-web-app, description)
+- [x] Иконки: pwa-192x192.png, pwa-512x512.png, apple-touch-icon-180x180.png, favicon.svg
+- [x] Workbox: precache app shell + NetworkFirst для `/api/v1/*` (timeout 3s)
+- [x] Offline fallback: `public/offline.html`
+- [x] `useNetworkStatus` хук (online/offline + isMounted guard)
+- [x] `NetworkStatusBar` — amber баннер при офлайне (role="alert")
+- [x] `UpdatePrompt` — баннер обновления SW с shadcn/ui Button
+- [x] `AppLayout` — обёртка для protected routes
+- [x] 5 страниц: кнопки disabled в офлайне (Works, Subjects, Semesters, Classmates, Schedule)
+- [x] 17 новых тестов (pwa-mock.ts, useNetworkStatus, NetworkStatusBar, UpdatePrompt, AppLayout)
+- [x] Code review + исправление всех замечаний (P0/P1/P2)
+
 ---
 
 ## Что в работе
 
-Нет активных задач. Планы для 11 фич составлены в `docs/tasks/`.
+Нет активных задач. 01-PWA на ветке `feature/pwa` готова к merge.
 
 ### Следующие задачи (приоритет):
-1. **01-PWA** — manifest, service worker, оффлайн (P0)
+1. ~~**01-PWA** — manifest, service worker, оффлайн (P0)~~ ✅
 2. **04-dashboard-widget** — виджет "Ближайшее" на dashboard (P1)
 3. **06-clickable-schedule** — кликабельные элементы расписания (P1)
 4. **09-dark-theme** — тёмная тема (P2)
@@ -139,7 +154,11 @@ Vite на Windows может не слушать на правильном ад�
 
 ### Vitest: процесс подвисает при завершении (Windows)
 При `vitest run` на Windows процесс не завершается после прохождения всех тестов (MSW + jsdom удерживают сокеты).
-**Решение**: Использовать `pool: 'forks'` в конфиге + `timeout` при запуске из CI. Все 70 тестов проходят корректно, подвисание только при cleanup.
+**Решение**: Использовать `pool: 'forks'` в конфиге + `timeout` при запуске из CI. Все 87 тестов проходят корректно, подвисание только при cleanup.
+
+### Vitest: OOM в watch mode (Windows)
+При `npm run test` (watch mode) воркер Vitest падает с OOM (`JavaScript heap out of memory`) на ~4GB после прохождения всех тестов.
+**Решение**: Использовать `npx vitest run` вместо watch mode. Тесты проходят корректно, OOM только при watch mode cleanup.
 
 ---
 
@@ -157,6 +176,7 @@ Vite на Windows может не слушать на правильном ад�
 - **Security**: rate limiting (slowapi), security headers, magic bytes validation, streaming uploads, path traversal protection
 - **Frontend infrastructure**: ErrorBoundary, shared Modal (accessible), sonner toasts, AbortController signals, token refresh mutex
 - **Frontend тесты**: Vitest + @testing-library/react + MSW для моков API
+- **PWA**: vite-plugin-pwa (generateSW), registerType: prompt, NetworkFirst для API, offline.html fallback
 
 ---
 
@@ -165,13 +185,13 @@ Vite на Windows может не слушать на правильном ад�
 | Метрика | Значение |
 |---------|----------|
 | Тестов backend | 264 |
-| Тестов frontend | 70 |
+| Тестов frontend | 87 |
 | Покрытие тестами | ~80% |
 | API endpoints | ~55 |
 | Моделей | 13 |
 | Миграций | 9 |
 | Линтер backend | ✅ Ruff проходит |
 | Линтер frontend | ✅ ESLint проходит (кроме shadcn/ui) |
-| Frontend тесты | ✅ Vitest проходит (70 тестов) |
+| Frontend тесты | ✅ Vitest проходит (87 тестов) |
 | Frontend build | ✅ TypeScript + Vite |
 | Frontend страниц | 8 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates) |
