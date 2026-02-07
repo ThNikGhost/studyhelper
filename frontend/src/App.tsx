@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { AppLayout } from '@/components/AppLayout'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
 import DashboardPage from '@/pages/DashboardPage'
@@ -31,7 +32,9 @@ function App() {
         path="/"
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <AppLayout>
+              <DashboardPage />
+            </AppLayout>
           </ProtectedRoute>
         }
       />
@@ -40,7 +43,9 @@ function App() {
         path="/schedule"
         element={
           <ProtectedRoute>
-            <SchedulePage />
+            <AppLayout>
+              <SchedulePage />
+            </AppLayout>
           </ProtectedRoute>
         }
       />
@@ -49,7 +54,9 @@ function App() {
         path="/subjects"
         element={
           <ProtectedRoute>
-            <SubjectsPage />
+            <AppLayout>
+              <SubjectsPage />
+            </AppLayout>
           </ProtectedRoute>
         }
       />
@@ -57,7 +64,9 @@ function App() {
         path="/semesters"
         element={
           <ProtectedRoute>
-            <SemestersPage />
+            <AppLayout>
+              <SemestersPage />
+            </AppLayout>
           </ProtectedRoute>
         }
       />
@@ -65,7 +74,9 @@ function App() {
         path="/works"
         element={
           <ProtectedRoute>
-            <WorksPage />
+            <AppLayout>
+              <WorksPage />
+            </AppLayout>
           </ProtectedRoute>
         }
       />
@@ -73,7 +84,9 @@ function App() {
         path="/classmates"
         element={
           <ProtectedRoute>
-            <ClassmatesPage />
+            <AppLayout>
+              <ClassmatesPage />
+            </AppLayout>
           </ProtectedRoute>
         }
       />
