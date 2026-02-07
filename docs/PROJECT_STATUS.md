@@ -1,12 +1,12 @@
 # Статус проекта StudyHelper
 
 ## Последнее обновление
-- **Дата**: 2026-02-06
-- **Сессия**: Полный Code Review — 8 фаз (~70 фиксов)
+- **Дата**: 2026-02-07
+- **Сессия**: Frontend тесты — инфраструктура + 70 тестов
 
 ## Общий прогресс
 **Фаза**: MVP разработка
-**Прогресс**: 100% (backend + frontend + code review завершены)
+**Прогресс**: 100% (backend + frontend + code review + frontend тесты завершены)
 
 ---
 
@@ -71,6 +71,14 @@
 - [x] SemestersPage ✅ (CRUD для семестров)
 - [x] ClassmatesPage ✅ (CRUD, контакты, санитизация Telegram)
 
+### Frontend тесты (ЗАВЕРШЁН ✅)
+- [x] Тестовая инфраструктура: Vitest + @testing-library/react + MSW
+- [x] Тесты утилит: dateUtils (15), errorUtils (13), constants (6)
+- [x] Тесты store: authStore (11)
+- [x] Тесты компонентов: ProtectedRoute (3), ErrorBoundary (3), Modal (6)
+- [x] Тесты страниц: LoginPage (6), DashboardPage (10)
+- [x] TypeScript + ESLint чисто на тестовых файлах
+
 ### Code Review (ЗАВЕРШЁН ✅)
 - [x] Фаза 0: GitHub Actions CI
 - [x] Фаза 1: Backend Security (secret_key validation, CORS, rate limiting, security headers, exception handler)
@@ -88,9 +96,8 @@
 Нет активных задач.
 
 ### Следующие задачи:
-1. Коммит и пуш всех Code Review изменений
-2. Деплой MVP на сервер
-3. PWA настройка (service worker, manifest)
+1. Деплой MVP на сервер
+2. PWA настройка (service worker, manifest)
 
 ---
 
@@ -127,6 +134,10 @@ Vite на Windows может не слушать на правильном ад�
 - `react-refresh/only-export-components` в button.tsx
 - `@typescript-eslint/no-empty-object-type` в input.tsx и label.tsx
 
+### Vitest: процесс подвисает при завершении (Windows)
+При `vitest run` на Windows процесс не завершается после прохождения всех тестов (MSW + jsdom удерживают сокеты).
+**Решение**: Использовать `pool: 'forks'` в конфиге + `timeout` при запуске из CI. Все 70 тестов проходят корректно, подвисание только при cleanup.
+
 ---
 
 ## Архитектурные заметки
@@ -142,6 +153,7 @@ Vite на Windows может не слушать на правильном ад�
 - **Календарь**: react-day-picker v9 + @radix-ui/react-popover
 - **Security**: rate limiting (slowapi), security headers, magic bytes validation, streaming uploads, path traversal protection
 - **Frontend infrastructure**: ErrorBoundary, shared Modal (accessible), sonner toasts, AbortController signals, token refresh mutex
+- **Frontend тесты**: Vitest + @testing-library/react + MSW для моков API
 
 ---
 
@@ -149,12 +161,14 @@ Vite на Windows может не слушать на правильном ад�
 
 | Метрика | Значение |
 |---------|----------|
-| Тестов | 264 |
+| Тестов backend | 264 |
+| Тестов frontend | 70 |
 | Покрытие тестами | ~80% |
 | API endpoints | ~55 |
 | Моделей | 13 |
 | Миграций | 9 |
 | Линтер backend | ✅ Ruff проходит |
 | Линтер frontend | ✅ ESLint проходит (кроме shadcn/ui) |
+| Frontend тесты | ✅ Vitest проходит (70 тестов) |
 | Frontend build | ✅ TypeScript + Vite |
 | Frontend страниц | 8 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates) |

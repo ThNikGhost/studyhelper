@@ -4,15 +4,12 @@
 **Завершена** ✅
 
 ## Предыдущая задача
-Code Review — полный цикл из 8 фаз (~70 фиксов):
-- [x] Фаза 0: GitHub Actions CI
-- [x] Фаза 1: Backend Security
-- [x] Фаза 2: Upload Security
-- [x] Фаза 3: Backend Code Quality
-- [x] Фаза 4: Frontend Infrastructure
-- [x] Фаза 5: Frontend Page Fixes
-- [x] Фаза 6: Backend Minor & Nitpick
-- [x] Фаза 7: Frontend Minor & Nitpick
+Frontend тесты — полный цикл из 5 фаз (70 тестов):
+- [x] Фаза 0: Инфраструктура (Vitest + @testing-library/react + MSW + jsdom)
+- [x] Фаза 1: Тесты утилит (dateUtils 15, errorUtils 13, constants 6)
+- [x] Фаза 2: Тесты store (authStore 11)
+- [x] Фаза 3: Тесты компонентов (ProtectedRoute 3, ErrorBoundary 3, Modal 6)
+- [x] Фаза 4: Тесты страниц (LoginPage 6, DashboardPage 10)
 
 ## Следующие шаги
 1. Деплой MVP на сервер
@@ -24,11 +21,11 @@ Code Review — полный цикл из 8 фаз (~70 фиксов):
 - Docker production config
 
 ## Заметки
-- Все 264 теста проходят
+- Backend: 264 теста проходят
+- Frontend: 70 тестов проходят
 - Backend: ruff lint + format чисто
-- Frontend: TypeScript компиляция + Vite build успешны
-- ESLint чисто (кроме 3 pre-existing ошибок в shadcn/ui)
-- Alembic миграция #9 применена (индекс work_statuses.user_id)
+- Frontend: TypeScript компиляция + Vite build + ESLint чисто
+- Vitest подвисает при cleanup на Windows (MSW + jsdom) — не влияет на результаты тестов
 
 ## Блокеры / Вопросы
 Нет блокеров.

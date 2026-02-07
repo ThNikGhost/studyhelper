@@ -323,6 +323,33 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 11. Frontend тестирование (2026-02-07)
+
+### Vitest + @testing-library/react + MSW
+
+**Решение:** Vitest как тестовый фреймворк, @testing-library/react для рендеринга, MSW для мокирования API.
+
+**Обоснование:**
+- Vitest нативно интегрируется с Vite (общая конфигурация, алиасы, плагины)
+- @testing-library/react поощряет тестирование поведения, а не деталей реализации
+- MSW перехватывает запросы на сетевом уровне — не нужно мокать axios напрямую
+- jsdom как environment для имитации браузерного API
+
+**Альтернативы рассмотренные:**
+- Jest — требует отдельную конфигурацию трансформаций, дублирует то, что Vite уже делает
+- Playwright/Cypress — E2E тесты избыточны для unit/integration уровня на этом этапе
+
+### pool: 'forks' для Vitest на Windows
+
+**Решение:** Использовать `pool: 'forks'` вместо дефолтного `pool: 'threads'`.
+
+**Обоснование:**
+- MSW + jsdom на Windows удерживают сокеты после завершения тестов
+- `pool: 'forks'` использует child processes, которые гарантированно убиваются при завершении
+- Все 70 тестов проходят корректно
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -340,3 +367,5 @@ notification_settings — настройки уведомлений
 | 2026-02-06 | slowapi для rate limiting | Простая защита auth endpoints от brute-force |
 | 2026-02-06 | Magic bytes для upload | Надёжнее расширений, защита от подделки |
 | 2026-02-06 | Shared Modal + sonner toasts | DRY, accessibility, UX |
+| 2026-02-07 | Vitest + testing-library + MSW | Нативная интеграция с Vite, тесты поведения |
+| 2026-02-07 | pool: 'forks' в Vitest | MSW + jsdom подвисают на Windows с threads |
