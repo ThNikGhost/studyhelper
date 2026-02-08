@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/button'
 import { LogOut } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { scheduleService } from '@/services/scheduleService'
 import { workService } from '@/services/workService'
+import subjectService from '@/services/subjectService'
+import { calculateSemesterProgress } from '@/lib/progressUtils'
 import { TodayScheduleWidget } from '@/components/dashboard/TodayScheduleWidget'
 import { DeadlinesWidget } from '@/components/dashboard/DeadlinesWidget'
+import { SemesterProgressWidget } from '@/components/dashboard/SemesterProgressWidget'
 import { QuickActions } from '@/components/dashboard/QuickActions'
 import { LessonDetailModal } from '@/components/schedule/LessonDetailModal'
 import type { ScheduleEntry } from '@/types/schedule'
@@ -50,6 +53,31 @@ export default function DashboardPage() {
     staleTime: 60000,
   })
 
+  const {
+    data: subjects = [],
+    isLoading: subjectsLoading,
+    isError: subjectsError,
+  } = useQuery({
+    queryKey: ['subjects'],
+    queryFn: ({ signal }) => subjectService.getSubjects(undefined, signal),
+    staleTime: 60000,
+  })
+
+  const {
+    data: allWorks = [],
+    isLoading: allWorksLoading,
+    isError: allWorksError,
+  } = useQuery({
+    queryKey: ['works'],
+    queryFn: ({ signal }) => workService.getWorks(undefined, signal),
+    staleTime: 60000,
+  })
+
+  const semesterProgress = useMemo(
+    () => calculateSemesterProgress(allWorks, subjects),
+    [allWorks, subjects],
+  )
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -91,6 +119,11 @@ export default function DashboardPage() {
             data={upcomingWorks}
             isLoading={worksLoading}
             isError={worksError}
+          />
+          <SemesterProgressWidget
+            progress={semesterProgress}
+            isLoading={subjectsLoading || allWorksLoading}
+            isError={subjectsError || allWorksError}
           />
         </div>
 

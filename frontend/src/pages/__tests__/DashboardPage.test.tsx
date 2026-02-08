@@ -79,9 +79,9 @@ describe('DashboardPage', () => {
     renderDashboard()
 
     await waitFor(() => {
-      expect(screen.getByText('Математический анализ')).toBeInTheDocument()
-      expect(screen.getByText('Физика')).toBeInTheDocument()
-      // "Программирование" appears in both schedule widget and deadlines subject_name
+      // Subject names may appear in both schedule and progress widgets
+      expect(screen.getAllByText('Математический анализ').length).toBeGreaterThanOrEqual(1)
+      expect(screen.getAllByText('Физика').length).toBeGreaterThanOrEqual(1)
       expect(screen.getAllByText('Программирование').length).toBeGreaterThanOrEqual(1)
     })
   })

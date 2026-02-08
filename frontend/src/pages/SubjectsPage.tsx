@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Pencil, Trash2, RefreshCw, ArrowLeft, BookOpen, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -8,13 +9,18 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
+import { ProgressBar } from '@/components/ui/progress-bar'
+import { SubjectProgressCard } from '@/components/subjects/SubjectProgressCard'
 import { toast } from 'sonner'
 import subjectService from '@/services/subjectService'
+import workService from '@/services/workService'
+import { calculateSemesterProgress, getProgressBarColor, getProgressColor } from '@/lib/progressUtils'
 import type { Subject, SubjectCreate, Semester } from '@/types/subject'
 
 export function SubjectsPage() {
   const isOnline = useNetworkStatus()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [selectedSemesterId, setSelectedSemesterId] = useState<number | undefined>(undefined)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null)
@@ -54,6 +60,26 @@ export function SubjectsPage() {
     queryFn: ({ signal }) => subjectService.getSubjects(effectiveSemesterId, signal),
     enabled: effectiveSemesterId !== undefined || semesters.length > 0,
   })
+
+  // Fetch all works for progress calculation
+  const { data: works = [] } = useQuery({
+    queryKey: ['works'],
+    queryFn: ({ signal }) => workService.getWorks(undefined, signal),
+  })
+
+  // Calculate progress per subject
+  const semesterProgress = useMemo(
+    () => calculateSemesterProgress(works, subjects),
+    [works, subjects],
+  )
+
+  const progressBySubject = useMemo(() => {
+    const map = new Map<number, (typeof semesterProgress.subjects)[0]>()
+    for (const sp of semesterProgress.subjects) {
+      map.set(sp.subjectId, sp)
+    }
+    return map
+  }, [semesterProgress])
 
   // Create mutation
   const createMutation = useMutation({
@@ -213,57 +239,71 @@ export function SubjectsPage() {
           </CardContent>
         </Card>
 
+        {/* Overall progress summary */}
+        {subjects.length > 0 && semesterProgress.total > 0 && (
+          <Card className="mb-6">
+            <CardContent className="py-3 px-4">
+              <div className="flex items-baseline justify-between mb-1">
+                <span className="text-sm font-medium">Общий прогресс</span>
+                <span
+                  className={`text-sm font-semibold ${getProgressColor(semesterProgress.percentage)}`}
+                >
+                  {semesterProgress.completed} из {semesterProgress.total} ({semesterProgress.percentage}%)
+                </span>
+              </div>
+              <ProgressBar
+                value={semesterProgress.percentage}
+                color={getProgressBarColor(semesterProgress.percentage)}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Add button */}
         <Button className="w-full mb-6" onClick={openAddModal} disabled={!isOnline}>
           <Plus className="h-4 w-4 mr-2" />
           Добавить предмет
         </Button>
 
-        {/* Subjects list */}
+        {/* Subjects list with progress */}
         <div className="space-y-3">
           {subjects.map((subject) => (
-            <Card key={subject.id}>
-              <CardContent className="py-4 px-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 text-green-500 shrink-0" />
-                      <h3 className="font-medium truncate">{subject.name}</h3>
-                    </div>
-                    {subject.short_name && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Сокращение: {subject.short_name}
-                      </p>
-                    )}
-                    {subject.description && (
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        {subject.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEditModal(subject)}
-                      disabled={!isOnline}
-                      title="Редактировать"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeleteConfirmSubject(subject)}
-                      disabled={!isOnline}
-                      title="Удалить"
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <div key={subject.id} className="relative">
+              <SubjectProgressCard
+                subject={subject}
+                progress={progressBySubject.get(subject.id)}
+                onClick={() => navigate(`/works?subject_id=${subject.id}`)}
+              />
+              {/* Edit/Delete buttons overlay */}
+              <div className="absolute top-3 right-3 flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    openEditModal(subject)
+                  }}
+                  disabled={!isOnline}
+                  title="Редактировать"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setDeleteConfirmSubject(subject)
+                  }}
+                  disabled={!isOnline}
+                  title="Удалить"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
 

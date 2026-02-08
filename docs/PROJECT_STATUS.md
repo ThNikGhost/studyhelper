@@ -2,11 +2,11 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-08
-- **Сессия**: Реализация 06-clickable-schedule (кликабельные элементы расписания)
+- **Сессия**: Реализация 07-progress-bars (прогресс-бары по предметам)
 
 ## Общий прогресс
 **Фаза**: Post-MVP реализация
-**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован.
+**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован. 07-progress-bars реализован.
 
 ---
 
@@ -125,18 +125,29 @@
 - [x] 31 новый тест (LessonDetailModal: 19, LessonCard: 12)
 - [x] TypeScript, ESLint, build — всё чисто
 
+### 07-progress-bars (ЗАВЕРШЕНА ✅)
+- [x] `lib/progressUtils.ts` — типы SubjectProgress/SemesterProgress, calculateSemesterProgress, getProgressColor, getProgressBarColor
+- [x] `components/ui/progress-bar.tsx` — ProgressBar (value, color, size, showLabel, aria)
+- [x] `components/subjects/SubjectProgressCard.tsx` — карточка предмета с прогресс-баром, статистикой, status badges
+- [x] `components/dashboard/SemesterProgressWidget.tsx` — виджет общего прогресса, топ-3 предмета с наименьшим прогрессом
+- [x] SubjectsPage — общий прогресс вверху, SubjectProgressCard, навигация на WorksPage
+- [x] DashboardPage — SemesterProgressWidget в grid виджетов
+- [x] MSW handlers: GET /api/v1/subjects, расширенные тестовые данные работ
+- [x] 38 новых тестов (progressUtils: 15, ProgressBar: 8, SubjectProgressCard: 7, SemesterProgressWidget: 8)
+- [x] TypeScript, ESLint, build — всё чисто
+
 ---
 
 ## Что в работе
 
-Нет активных задач. 06-clickable-schedule реализован, ожидает коммит.
+Нет активных задач. 07-progress-bars реализован, ожидает коммит.
 
 ### Следующие задачи (приоритет):
 1. ~~**01-PWA** — manifest, service worker, оффлайн (P0)~~ ✅
 2. ~~**04-dashboard-widget** — виджеты Dashboard (P1)~~ ✅
 3. ~~**06-clickable-schedule** — кликабельные элементы расписания (P1)~~ ✅
-4. **09-dark-theme** — тёмная тема (P2)
-5. **07-progress-bars** — прогресс-бары по предметам (P2)
+4. ~~**07-progress-bars** — прогресс-бары по предметам (P2)~~ ✅
+5. **09-dark-theme** — тёмная тема (P2)
 6. **03-file-upload-ui** — UI загрузки файлов (P1)
 7. **05-ics-export** — экспорт в .ics (P2)
 8. **02-push-notifications** — push-уведомления (P1, зависит от PWA ✅)
@@ -200,6 +211,7 @@ Vite на Windows может не слушать на правильном ад�
 - **PWA**: vite-plugin-pwa (generateSW), registerType: prompt, NetworkFirst для API, offline.html fallback
 - **Dashboard виджеты**: TodayScheduleWidget, DeadlinesWidget, QuickActions — отдельные компоненты в `components/dashboard/`
 - **Clickable schedule**: LessonDetailModal с работами и заметками, onClick/onEntryClick на LessonCard/ScheduleGrid/TodayScheduleWidget
+- **Progress bars**: ProgressBar (a11y, size variants), SubjectProgressCard, SemesterProgressWidget (top-3 lowest), calculateSemesterProgress в progressUtils
 
 ---
 
@@ -208,13 +220,13 @@ Vite на Windows может не слушать на правильном ад�
 | Метрика | Значение |
 |---------|----------|
 | Тестов backend | 264 |
-| Тестов frontend | 145 |
+| Тестов frontend | 183 |
 | Покрытие тестами | ~80% |
 | API endpoints | ~55 |
 | Моделей | 13 |
 | Миграций | 9 |
 | Линтер backend | ✅ Ruff проходит |
 | Линтер frontend | ✅ ESLint проходит (кроме shadcn/ui) |
-| Frontend тесты | ✅ Vitest проходит (145 тестов) |
+| Frontend тесты | ✅ Vitest проходит (183 тестов) |
 | Frontend build | ✅ TypeScript + Vite |
 | Frontend страниц | 8 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates) |

@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import type { User, TokenResponse } from '@/types/auth'
 import type { CurrentLesson, DaySchedule, ScheduleEntry } from '@/types/schedule'
+import type { Subject } from '@/types/subject'
 import type { UpcomingWork, WorkWithStatus } from '@/types/work'
 
 // Test data factories
@@ -114,9 +115,104 @@ export const testCurrentLesson: CurrentLesson = {
   time_until_next: 3600,
 }
 
+export const testSubjects: Subject[] = [
+  {
+    id: 1,
+    name: 'Математический анализ',
+    short_name: 'Матан',
+    description: null,
+    semester_id: 1,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 2,
+    name: 'Физика',
+    short_name: 'Физ',
+    description: null,
+    semester_id: 1,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  {
+    id: 3,
+    name: 'Программирование',
+    short_name: 'Прог',
+    description: 'Основы программирования',
+    semester_id: 1,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+]
+
 export const testWorksForSubject: WorkWithStatus[] = [
+  // Subject 1: Матан — 2 completed, 1 in_progress (67%)
   {
     id: 101,
+    title: 'Контрольная работа №1',
+    description: null,
+    work_type: 'test',
+    deadline: '2026-02-15T23:59:00Z',
+    max_grade: 10,
+    subject_id: 1,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    my_status: {
+      id: 1,
+      work_id: 101,
+      user_id: 1,
+      status: 'completed',
+      grade: null,
+      notes: null,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+    },
+  },
+  {
+    id: 102,
+    title: 'Домашнее задание №1',
+    description: null,
+    work_type: 'homework',
+    deadline: '2026-02-20T23:59:00Z',
+    max_grade: 5,
+    subject_id: 1,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    my_status: {
+      id: 2,
+      work_id: 102,
+      user_id: 1,
+      status: 'graded',
+      grade: 5,
+      notes: null,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+    },
+  },
+  {
+    id: 103,
+    title: 'Домашнее задание №2',
+    description: null,
+    work_type: 'homework',
+    deadline: '2026-03-01T23:59:00Z',
+    max_grade: 5,
+    subject_id: 1,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    my_status: {
+      id: 3,
+      work_id: 103,
+      user_id: 1,
+      status: 'in_progress',
+      grade: null,
+      notes: null,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+    },
+  },
+  // Subject 2: Физика — 1 in_progress, 1 not started (0%)
+  {
+    id: 104,
     title: 'Лабораторная работа №1',
     description: null,
     work_type: 'lab',
@@ -126,8 +222,8 @@ export const testWorksForSubject: WorkWithStatus[] = [
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     my_status: {
-      id: 1,
-      work_id: 101,
+      id: 4,
+      work_id: 104,
       user_id: 1,
       status: 'in_progress',
       grade: null,
@@ -137,7 +233,7 @@ export const testWorksForSubject: WorkWithStatus[] = [
     },
   },
   {
-    id: 102,
+    id: 105,
     title: 'Домашнее задание №3',
     description: null,
     work_type: 'homework',
@@ -147,6 +243,70 @@ export const testWorksForSubject: WorkWithStatus[] = [
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
     my_status: null,
+  },
+  // Subject 3: Программирование — 2 completed, 1 submitted (100%)
+  {
+    id: 106,
+    title: 'Лабораторная №1',
+    description: null,
+    work_type: 'lab',
+    deadline: '2026-02-10T23:59:00Z',
+    max_grade: 10,
+    subject_id: 3,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    my_status: {
+      id: 5,
+      work_id: 106,
+      user_id: 1,
+      status: 'completed',
+      grade: null,
+      notes: null,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+    },
+  },
+  {
+    id: 107,
+    title: 'Лабораторная №2',
+    description: null,
+    work_type: 'lab',
+    deadline: '2026-02-25T23:59:00Z',
+    max_grade: 10,
+    subject_id: 3,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    my_status: {
+      id: 6,
+      work_id: 107,
+      user_id: 1,
+      status: 'submitted',
+      grade: null,
+      notes: null,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+    },
+  },
+  {
+    id: 108,
+    title: 'Лабораторная №3',
+    description: null,
+    work_type: 'lab',
+    deadline: '2026-03-10T23:59:00Z',
+    max_grade: 10,
+    subject_id: 3,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    my_status: {
+      id: 7,
+      work_id: 108,
+      user_id: 1,
+      status: 'graded',
+      grade: 9,
+      notes: null,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+    },
   },
 ]
 
@@ -187,6 +347,11 @@ export const handlers = [
 
   http.post('/api/v1/auth/logout', () => {
     return new HttpResponse(null, { status: 204 })
+  }),
+
+  // Subject endpoints
+  http.get('/api/v1/subjects', () => {
+    return HttpResponse.json(testSubjects)
   }),
 
   // Schedule endpoints
