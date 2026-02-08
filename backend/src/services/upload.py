@@ -155,6 +155,14 @@ def delete_avatar_file(filename: str) -> bool:
         HTTPException: If filename attempts path traversal.
     """
     upload_dir = get_upload_dir()
+
+    # Reject backslashes (path traversal on Windows, invalid on Linux)
+    if '\\' in filename or '..' in filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid filename",
+        )
+
     file_path = (upload_dir / filename).resolve()
 
     # Path traversal protection: ensure resolved path is within upload_dir
