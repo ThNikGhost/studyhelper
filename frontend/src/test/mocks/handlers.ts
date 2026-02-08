@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw'
 import type { User, TokenResponse } from '@/types/auth'
 import type { AttendanceEntry, AttendanceStats } from '@/types/attendance'
 import type { StudyFile } from '@/types/file'
+import type { LessonNote } from '@/types/note'
 import type { CurrentLesson, DaySchedule, ScheduleEntry } from '@/types/schedule'
 import type { Subject } from '@/types/subject'
 import type { UpcomingWork, WorkWithStatus } from '@/types/work'
@@ -447,6 +448,39 @@ export const testAttendanceStats: AttendanceStats = {
   ],
 }
 
+export const testLessonNotes: LessonNote[] = [
+  {
+    id: 1,
+    user_id: 1,
+    schedule_entry_id: 10,
+    subject_name: 'Физика',
+    lesson_date: '2026-02-07',
+    content: 'Запомнить формулу F=ma и второй закон Ньютона',
+    created_at: '2026-02-07T12:00:00Z',
+    updated_at: '2026-02-07T12:00:00Z',
+  },
+  {
+    id: 2,
+    user_id: 1,
+    schedule_entry_id: 1,
+    subject_name: 'Математический анализ',
+    lesson_date: '2026-02-07',
+    content: 'Разобрать теорему о пределе последовательности. Домашнее задание: стр. 45-50, задачи 1-10.',
+    created_at: '2026-02-07T14:00:00Z',
+    updated_at: '2026-02-07T14:00:00Z',
+  },
+  {
+    id: 3,
+    user_id: 1,
+    schedule_entry_id: null,
+    subject_name: 'Программирование',
+    lesson_date: '2026-02-06',
+    content: 'Подготовить отчёт по лабораторной работе. Срок до пятницы. Необходимо описать алгоритм сортировки и привести примеры. Также нужно добавить блок-схему и таблицу результатов тестирования.',
+    created_at: '2026-02-06T10:00:00Z',
+    updated_at: '2026-02-06T10:00:00Z',
+  },
+]
+
 export const handlers = [
   // Auth endpoints
   http.post('/api/v1/auth/login', () => {
@@ -552,6 +586,58 @@ export const handlers = [
   }),
 
   http.post('/api/v1/attendance/mark-present', () => {
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  // Notes endpoints
+  http.get('/api/v1/notes/', () => {
+    return HttpResponse.json(testLessonNotes)
+  }),
+
+  http.get('/api/v1/notes/entry/:entryId', ({ params }) => {
+    const entryId = Number(params.entryId)
+    const note = testLessonNotes.find((n) => n.schedule_entry_id === entryId)
+    if (!note) {
+      return HttpResponse.json({ detail: 'Not found' }, { status: 404 })
+    }
+    return HttpResponse.json(note)
+  }),
+
+  http.post('/api/v1/notes/', async ({ request }) => {
+    const body = (await request.json()) as {
+      schedule_entry_id?: number
+      subject_name: string
+      lesson_date?: string
+      content: string
+    }
+    const newNote: LessonNote = {
+      id: 100,
+      user_id: 1,
+      schedule_entry_id: body.schedule_entry_id ?? null,
+      subject_name: body.subject_name,
+      lesson_date: body.lesson_date ?? null,
+      content: body.content,
+      created_at: '2026-02-08T00:00:00Z',
+      updated_at: '2026-02-08T00:00:00Z',
+    }
+    return HttpResponse.json(newNote, { status: 201 })
+  }),
+
+  http.put('/api/v1/notes/:noteId', async ({ request, params }) => {
+    const noteId = Number(params.noteId)
+    const body = (await request.json()) as { content: string }
+    const existing = testLessonNotes.find((n) => n.id === noteId)
+    if (!existing) {
+      return HttpResponse.json({ detail: 'Not found' }, { status: 404 })
+    }
+    return HttpResponse.json({
+      ...existing,
+      content: body.content,
+      updated_at: '2026-02-08T12:00:00Z',
+    })
+  }),
+
+  http.delete('/api/v1/notes/:noteId', () => {
     return new HttpResponse(null, { status: 204 })
   }),
 ]

@@ -52,12 +52,8 @@ async def mark_absent(
                 status_code=status.HTTP_404_NOT_FOUND, detail=msg
             ) from e
         if "Already marked" in msg:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail=msg
-            ) from e
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=msg
-        ) from e
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=msg) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg) from e
 
     return AbsenceResponse.model_validate(absence)
 

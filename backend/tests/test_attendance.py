@@ -38,9 +38,7 @@ async def _create_entry(
     client: AsyncClient, headers: dict[str, str], data: dict
 ) -> int:
     """Helper to create a schedule entry and return its ID."""
-    resp = await client.post(
-        "/api/v1/schedule/entries", json=data, headers=headers
-    )
+    resp = await client.post("/api/v1/schedule/entries", json=data, headers=headers)
     assert resp.status_code == 201
     return resp.json()["id"]
 
@@ -268,9 +266,7 @@ class TestGetAttendance:
         two_days_ago = str(date.today() - timedelta(days=2))
         yesterday = str(date.today() - timedelta(days=1))
 
-        await _create_entry(
-            client, auth_headers, _past_entry(lesson_date=two_days_ago)
-        )
+        await _create_entry(client, auth_headers, _past_entry(lesson_date=two_days_ago))
         await _create_entry(
             client, auth_headers, _past_entry("Физика", lesson_date=yesterday)
         )
@@ -386,7 +382,9 @@ class TestGetStats:
         assert len(data["by_subject"]) == 2
 
         math_subj = next(
-            s for s in data["by_subject"] if s["subject_name"] == "Математический анализ"
+            s
+            for s in data["by_subject"]
+            if s["subject_name"] == "Математический анализ"
         )
         physics_subj = next(
             s for s in data["by_subject"] if s["subject_name"] == "Физика"

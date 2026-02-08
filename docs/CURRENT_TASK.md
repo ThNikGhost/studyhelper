@@ -1,46 +1,50 @@
 # Текущая задача
 
 ## Статус
-**08-attendance завершена** — реализована на ветке `main`, ожидает коммит.
+**10-lesson-notes завершена** — реализована на ветке `main`, ожидает коммит.
 
-## Выполнено: 08-attendance (посещаемость)
+## Выполнено: 10-lesson-notes (заметки к парам)
 
 ### Backend
-- [x] `models/attendance.py` — модель Absence (id, user_id FK, schedule_entry_id FK, created_at, UniqueConstraint)
-- [x] `models/__init__.py` — Absence в импорты
-- [x] `schemas/attendance.py` — AbsenceCreate, AbsenceResponse, MarkPresentRequest, AttendanceEntryResponse, SubjectAttendanceStats, AttendanceStatsResponse
-- [x] `services/attendance.py` — mark_absent, mark_present, get_attendance_entries (filters), get_attendance_stats, get_subject_attendance_stats
-- [x] `routers/attendance.py` — POST /mark-absent (201), POST /mark-present (204), GET / (entries), GET /stats, GET /stats/{subject_id}
-- [x] `main.py` — attendance router (prefix="/attendance", tags=["Attendance"])
-- [x] Alembic миграция add_absences_table (df769e398a43)
-- [x] 22 backend тестов (mark_absent: 7, mark_present: 3, get_attendance: 5, get_stats: 5, subject_stats: 2)
+- [x] `models/note.py` — модель LessonNote (id, user_id FK, schedule_entry_id FK nullable, subject_name, lesson_date, content Text, timestamps)
+- [x] `models/__init__.py` — LessonNote в импорты
+- [x] `schemas/note.py` — LessonNoteCreate, LessonNoteUpdate, LessonNoteResponse
+- [x] `services/note.py` — create_note, update_note, delete_note, get_notes (filters: date_from, date_to, subject_name, search), get_note_for_entry
+- [x] `routers/notes.py` — POST / (201), GET / (list with filters), GET /entry/{schedule_entry_id}, PUT /{note_id}, DELETE /{note_id} (204)
+- [x] `main.py` — notes router (prefix="/notes", tags=["Notes"])
+- [x] Alembic миграция add_lesson_notes_table (d62cab669757)
+- [x] 21 backend тестов (create: 6, get_notes: 5, get_note_for_entry: 3, update: 4, delete: 3)
 
 ### Frontend
-- [x] `types/attendance.ts` — AttendanceEntry, AbsenceRecord, SubjectAttendanceStats, AttendanceStats
-- [x] `services/attendanceService.ts` — getEntries, markAbsent, markPresent, getStats, getSubjectStats
-- [x] `lib/attendanceUtils.ts` — formatAttendancePercent, getAttendanceColor, getAttendanceBarColor, lessonTypeLabels
-- [x] `components/attendance/AttendanceStatsCard.tsx` — карточка статистики с ProgressBar и процентом
-- [x] `components/attendance/SubjectAttendanceList.tsx` — список предметов с мини-прогресс-барами, фильтр
-- [x] `components/attendance/AttendanceTable.tsx` — таблица занятий с toggle кнопками Был/Н/Б
-- [x] `pages/AttendancePage.tsx` — полная страница: stats, subject filter, entries table, mutations + toast
-- [x] `App.tsx` — маршрут /attendance (ProtectedRoute + AppLayout)
-- [x] `QuickActions.tsx` — пункт "Посещаемость" (CheckCircle2, text-teal-500)
-- [x] MSW handlers: GET /attendance/, GET /attendance/stats, POST mark-absent, POST mark-present
-- [x] 32 frontend тестов (attendanceUtils: 12, AttendanceStatsCard: 5, AttendanceTable: 7, AttendancePage: 8)
+- [x] `types/note.ts` — LessonNote, LessonNoteCreate, LessonNoteUpdate
+- [x] `services/noteService.ts` — getNotes, getNoteForEntry (404→null), createNote, updateNote, deleteNote
+- [x] `components/notes/NoteEditor.tsx` — autosave debounce 500ms, status indicators (idle/saving/saved/error), char counter 2000
+- [x] `components/notes/NoteCard.tsx` — subject/date, content preview 150 chars, expand/collapse, delete
+- [x] `pages/NotesPage.tsx` — search debounce 300ms, subject filter, NoteCard list, delete confirmation, loading/error/empty states
+- [x] `components/schedule/LessonDetailModal.tsx` — рефакторинг: textarea+save → NoteEditor с autosave через useQuery
+- [x] `components/schedule/LessonCard.tsx` — hasNote prop, StickyNote icon (amber-500)
+- [x] `components/schedule/ScheduleGrid.tsx` — noteEntryIds prop
+- [x] `components/schedule/DayScheduleCard.tsx` — noteEntryIds prop
+- [x] `pages/SchedulePage.tsx` — notes query for current week, noteEntryIds Set
+- [x] `App.tsx` — маршрут /notes (ProtectedRoute + AppLayout)
+- [x] `QuickActions.tsx` — пункт "Заметки" (StickyNote, text-yellow-500)
+- [x] MSW handlers: GET/POST/PUT/DELETE notes, GET notes/entry/:id + testLessonNotes data
+- [x] 23 новых frontend теста (NoteEditor: 10, NoteCard: 5, NotesPage: 8)
+- [x] LessonDetailModal тесты обновлены (17 тестов — new NoteEditor-based behavior)
 - [x] TypeScript, ESLint, build — всё чисто
 
 ## Следующие задачи (приоритет)
 1. **09-dark-theme** — тёмная тема (P2)
 2. **05-ics-export** — экспорт в .ics (P2)
 3. **02-push-notifications** — push-уведомления (P1, зависит от PWA)
-4. **10-lesson-notes** — заметки к парам (P2)
-5. **11-semester-timeline** — timeline семестра (P3)
+4. **11-semester-timeline** — timeline семестра (P3)
 
 ## Заметки
-- Backend: 307 тестов проходят (285 + 22 новых)
-- Frontend: 258 тестов проходят (226 + 32 новых)
+- Backend: 328 тестов проходят (307 + 21 новых)
+- Frontend: 279 тестов проходят (258 - 2 удалённых + 23 новых)
 - Все линтеры чисты
-- Архитектура: absences-only (хранятся только пропуски)
+- Архитектура: одна заметка на entry на пользователя (UniqueConstraint)
+- LessonDetailModal: textarea+save заменён на NoteEditor с autosave
 - Деплой отложен (сервер не готов)
 
 ## Блокеры / Вопросы

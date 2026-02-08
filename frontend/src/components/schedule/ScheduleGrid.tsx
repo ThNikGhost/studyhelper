@@ -1,3 +1,4 @@
+import { StickyNote } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TIME_SLOTS, LESSON_TYPE_COLORS } from '@/lib/constants'
 import type { WeekSchedule, ScheduleEntry } from '@/types/schedule'
@@ -6,6 +7,7 @@ import { lessonTypeLabels } from '@/types/schedule'
 interface ScheduleGridProps {
   weekSchedule: WeekSchedule
   currentEntryId?: number
+  noteEntryIds?: Set<number>
   onEntryClick?: (entry: ScheduleEntry) => void
 }
 
@@ -44,7 +46,7 @@ function isToday(dateStr: string): boolean {
   return dateStr === today
 }
 
-export function ScheduleGrid({ weekSchedule, currentEntryId, onEntryClick }: ScheduleGridProps) {
+export function ScheduleGrid({ weekSchedule, currentEntryId, noteEntryIds, onEntryClick }: ScheduleGridProps) {
   return (
     <div className="overflow-x-auto">
       <div className="min-w-[700px]">
@@ -120,8 +122,13 @@ export function ScheduleGrid({ weekSchedule, currentEntryId, onEntryClick }: Sch
                         }
                       >
                         {/* Subject name */}
-                        <div className="font-semibold line-clamp-2 leading-tight mb-0.5">
-                          {entry.subject_name}
+                        <div className="flex items-start gap-0.5">
+                          <div className="font-semibold line-clamp-2 leading-tight mb-0.5 flex-1">
+                            {entry.subject_name}
+                          </div>
+                          {noteEntryIds?.has(entry.id) && (
+                            <StickyNote className="h-3 w-3 text-amber-600 flex-shrink-0 mt-0.5" />
+                          )}
                         </div>
 
                         {/* Type badge */}

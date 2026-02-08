@@ -2,7 +2,6 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
-import { Toaster } from 'sonner'
 import { http, HttpResponse } from 'msw'
 import { LessonDetailModal } from '../LessonDetailModal'
 import { testScheduleEntries } from '@/test/mocks/handlers'
@@ -31,7 +30,6 @@ function renderModal(props: {
           open={props.open}
           onClose={props.onClose ?? vi.fn()}
         />
-        <Toaster />
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -143,69 +141,36 @@ describe('LessonDetailModal', () => {
     })
   })
 
-  it('shows notes textarea with existing notes', () => {
+  it('shows NoteEditor with existing note loaded from API', async () => {
     renderModal({ entry: fullEntry, open: true })
 
-    const textarea = screen.getByPlaceholderText('Добавить заметку к занятию...')
-    expect(textarea).toHaveValue('Принести тетрадь')
-  })
-
-  it('shows empty textarea when no notes', () => {
-    renderModal({ entry: entryNoSubject, open: true })
-
-    const textarea = screen.getByPlaceholderText('Добавить заметку к занятию...')
-    expect(textarea).toHaveValue('')
-  })
-
-  it('enables save button after editing notes', async () => {
-    const user = userEvent.setup()
-    renderModal({ entry: fullEntry, open: true })
-
-    const saveButton = screen.getByRole('button', { name: /Сохранить/ })
-    expect(saveButton).toBeDisabled()
-
-    const textarea = screen.getByPlaceholderText('Добавить заметку к занятию...')
-    await user.clear(textarea)
-    await user.type(textarea, 'Новая заметка')
-
-    expect(saveButton).toBeEnabled()
-  })
-
-  it('saves notes and shows success toast', async () => {
-    const user = userEvent.setup()
-    renderModal({ entry: fullEntry, open: true })
-
-    const textarea = screen.getByPlaceholderText('Добавить заметку к занятию...')
-    await user.clear(textarea)
-    await user.type(textarea, 'Обновлённая заметка')
-
-    const saveButton = screen.getByRole('button', { name: /Сохранить/ })
-    await user.click(saveButton)
-
+    // NoteEditor loads note via useQuery, wait for it
     await waitFor(() => {
-      expect(screen.getByText('Заметка сохранена')).toBeInTheDocument()
+      const textarea = screen.getByPlaceholderText('Добавить заметку к занятию...')
+      expect(textarea).toHaveValue('Запомнить формулу F=ma и второй закон Ньютона')
     })
   })
 
-  it('shows error toast on save failure', async () => {
+  it('shows empty NoteEditor when no note exists for entry', async () => {
     server.use(
-      http.put('/api/v1/schedule/entries/:id', () => {
-        return HttpResponse.json({ detail: 'Error' }, { status: 500 })
+      http.get('/api/v1/notes/entry/:entryId', () => {
+        return HttpResponse.json({ detail: 'Not found' }, { status: 404 })
       }),
     )
 
-    const user = userEvent.setup()
-    renderModal({ entry: fullEntry, open: true })
-
-    const textarea = screen.getByPlaceholderText('Добавить заметку к занятию...')
-    await user.clear(textarea)
-    await user.type(textarea, 'Новая заметка')
-
-    const saveButton = screen.getByRole('button', { name: /Сохранить/ })
-    await user.click(saveButton)
+    renderModal({ entry: entryNoSubject, open: true })
 
     await waitFor(() => {
-      expect(screen.getByText('Не удалось сохранить заметку')).toBeInTheDocument()
+      const textarea = screen.getByPlaceholderText('Добавить заметку к занятию...')
+      expect(textarea).toHaveValue('')
+    })
+  })
+
+  it('shows character counter in NoteEditor', async () => {
+    renderModal({ entry: fullEntry, open: true })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('char-counter')).toBeInTheDocument()
     })
   })
 

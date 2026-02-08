@@ -12,6 +12,7 @@ import { LessonDetailModal } from '@/components/schedule/LessonDetailModal'
 import { formatDateLocal, getToday } from '@/lib/dateUtils'
 import { toast } from 'sonner'
 import scheduleService from '@/services/scheduleService'
+import { noteService } from '@/services/noteService'
 import type { WeekSchedule, CurrentLesson, ScheduleEntry } from '@/types/schedule'
 
 // Add/subtract days from date string (local timezone)
@@ -46,6 +47,27 @@ export function SchedulePage() {
     queryFn: ({ signal }) => scheduleService.getCurrentLesson(signal),
     refetchInterval: 60000, // 1 minute
   })
+
+  // Fetch notes for the current week to show note icons
+  const { data: weekNotes } = useQuery({
+    queryKey: ['notes', 'week', weekSchedule?.week_start, weekSchedule?.week_end],
+    queryFn: ({ signal }) =>
+      noteService.getNotes(
+        { date_from: weekSchedule!.week_start, date_to: weekSchedule!.week_end },
+        signal,
+      ),
+    enabled: !!weekSchedule,
+  })
+
+  // Set of entry IDs that have notes
+  const noteEntryIds = useMemo(() => {
+    if (!weekNotes) return new Set<number>()
+    return new Set(
+      weekNotes
+        .filter((n) => n.schedule_entry_id != null)
+        .map((n) => n.schedule_entry_id as number),
+    )
+  }, [weekNotes])
 
   // Mutation for refreshing schedule from OmGU
   const refreshMutation = useMutation({
@@ -272,6 +294,7 @@ export function SchedulePage() {
             <ScheduleGrid
               weekSchedule={weekSchedule}
               currentEntryId={currentLesson?.current?.id}
+              noteEntryIds={noteEntryIds}
               onEntryClick={setSelectedEntry}
             />
           )}

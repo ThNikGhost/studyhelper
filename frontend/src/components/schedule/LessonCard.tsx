@@ -1,3 +1,4 @@
+import { StickyNote } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import type { ScheduleEntry } from '@/types/schedule'
 import { LessonType, lessonTypeLabels } from '@/types/schedule'
@@ -6,6 +7,7 @@ import { cn } from '@/lib/utils'
 interface LessonCardProps {
   entry: ScheduleEntry
   isActive?: boolean
+  hasNote?: boolean
   onClick?: (entry: ScheduleEntry) => void
 }
 
@@ -25,7 +27,7 @@ function formatTime(time: string): string {
   return time.slice(0, 5)
 }
 
-export function LessonCard({ entry, isActive = false, onClick }: LessonCardProps) {
+export function LessonCard({ entry, isActive = false, hasNote = false, onClick }: LessonCardProps) {
   const startTime = formatTime(entry.start_time)
   const endTime = formatTime(entry.end_time)
 
@@ -74,9 +76,17 @@ export function LessonCard({ entry, isActive = false, onClick }: LessonCardProps
         </div>
 
         {/* Subject name */}
-        <h3 className="font-semibold text-foreground mb-2 leading-tight">
-          {entry.subject_name}
-        </h3>
+        <div className="flex items-start gap-1.5 mb-2">
+          <h3 className="font-semibold text-foreground leading-tight flex-1">
+            {entry.subject_name}
+          </h3>
+          {hasNote && (
+            <StickyNote
+              className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5"
+              aria-label="Есть заметка"
+            />
+          )}
+        </div>
 
         {/* Teacher and location */}
         <div className="flex flex-col gap-1 text-sm text-muted-foreground">

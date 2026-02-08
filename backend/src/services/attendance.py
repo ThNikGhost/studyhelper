@@ -158,19 +158,21 @@ async def get_attendance_entries(
     for row in result.all():
         entry: ScheduleEntry = row[0]
         absence_id: int | None = row[1]
-        entries.append({
-            "id": entry.id,
-            "lesson_date": str(entry.lesson_date) if entry.lesson_date else None,
-            "subject_name": entry.subject_name,
-            "lesson_type": entry.lesson_type,
-            "start_time": str(entry.start_time) if entry.start_time else None,
-            "end_time": str(entry.end_time) if entry.end_time else None,
-            "teacher_name": entry.teacher_name,
-            "room": entry.room,
-            "subject_id": entry.subject_id,
-            "is_absent": absence_id is not None,
-            "absence_id": absence_id,
-        })
+        entries.append(
+            {
+                "id": entry.id,
+                "lesson_date": str(entry.lesson_date) if entry.lesson_date else None,
+                "subject_name": entry.subject_name,
+                "lesson_type": entry.lesson_type,
+                "start_time": str(entry.start_time) if entry.start_time else None,
+                "end_time": str(entry.end_time) if entry.end_time else None,
+                "teacher_name": entry.teacher_name,
+                "room": entry.room,
+                "subject_id": entry.subject_id,
+                "is_absent": absence_id is not None,
+                "absence_id": absence_id,
+            }
+        )
     return entries
 
 
@@ -238,14 +240,16 @@ async def get_attendance_stats(
         subj_absent = row[3]
         subj_attended = subj_total - subj_absent
         subj_percent = (subj_attended / subj_total * 100) if subj_total > 0 else 100.0
-        by_subject.append({
-            "subject_name": row[0],
-            "subject_id": row[1],
-            "total_classes": subj_total,
-            "absences": subj_absent,
-            "attended": subj_attended,
-            "attendance_percent": round(subj_percent, 1),
-        })
+        by_subject.append(
+            {
+                "subject_name": row[0],
+                "subject_id": row[1],
+                "total_classes": subj_total,
+                "absences": subj_absent,
+                "attended": subj_attended,
+                "attendance_percent": round(subj_percent, 1),
+            }
+        )
 
     return {
         "total_classes": total_classes,

@@ -4,6 +4,7 @@ from src.models.attendance import Absence
 from src.models.base import Base
 from src.models.classmate import Classmate
 from src.models.file import File
+from src.models.note import LessonNote
 from src.models.schedule import ScheduleEntry, ScheduleSnapshot
 from src.models.semester import Semester
 from src.models.subject import Subject
@@ -19,6 +20,7 @@ __all__ = [
     "Classmate",
     "Department",
     "File",
+    "LessonNote",
     "ScheduleEntry",
     "ScheduleSnapshot",
     "Semester",

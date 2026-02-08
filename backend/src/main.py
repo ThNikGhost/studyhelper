@@ -28,6 +28,7 @@ from src.routers import (
     auth,
     classmates,
     files,
+    notes,
     schedule,
     semesters,
     subjects,
@@ -133,6 +134,7 @@ api_v1.include_router(schedule.router, prefix="/schedule", tags=["Schedule"])
 api_v1.include_router(uploads.router, prefix="/uploads", tags=["Uploads"])
 api_v1.include_router(files.router, prefix="/files", tags=["Files"])
 api_v1.include_router(attendance.router, prefix="/attendance", tags=["Attendance"])
+api_v1.include_router(notes.router, prefix="/notes", tags=["Notes"])
 
 app.include_router(api_v1)
 

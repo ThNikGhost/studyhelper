@@ -1,13 +1,11 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Clock, MapPin, User, Users, BookOpen, ExternalLink, Loader2, Save } from 'lucide-react'
-import { toast } from 'sonner'
+import { Clock, MapPin, User, Users, BookOpen, ExternalLink, Loader2 } from 'lucide-react'
 import { Modal } from '@/components/ui/modal'
-import { Button } from '@/components/ui/button'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
-import { scheduleService } from '@/services/scheduleService'
 import { workService } from '@/services/workService'
+import { noteService } from '@/services/noteService'
+import { NoteEditor } from '@/components/notes/NoteEditor'
 import { formatTime } from '@/lib/dateUtils'
 import { cn } from '@/lib/utils'
 import { lessonTypeLabels } from '@/types/schedule'
@@ -41,9 +39,6 @@ interface LessonDetailContentProps {
 
 function LessonDetailContent({ entry, onClose }: LessonDetailContentProps) {
   const isOnline = useNetworkStatus()
-  const queryClient = useQueryClient()
-  const [notes, setNotes] = useState(entry.notes ?? '')
-  const [notesDirty, setNotesDirty] = useState(false)
 
   // Fetch works for the subject
   const { data: works, isLoading: worksLoading } = useQuery({
@@ -53,23 +48,11 @@ function LessonDetailContent({ entry, onClose }: LessonDetailContentProps) {
     enabled: entry.subject_id != null,
   })
 
-  // Mutation for saving notes
-  const notesMutation = useMutation({
-    mutationFn: (newNotes: string) =>
-      scheduleService.updateEntry(entry.id, { notes: newNotes || null }),
-    onSuccess: () => {
-      toast.success('Заметка сохранена')
-      setNotesDirty(false)
-      queryClient.invalidateQueries({ queryKey: ['schedule'] })
-    },
-    onError: () => {
-      toast.error('Не удалось сохранить заметку')
-    },
+  // Fetch existing note for this entry
+  const { data: existingNote, isLoading: noteLoading } = useQuery({
+    queryKey: ['note-for-entry', entry.id],
+    queryFn: ({ signal }) => noteService.getNoteForEntry(entry.id, signal),
   })
-
-  const handleSaveNotes = () => {
-    notesMutation.mutate(notes)
-  }
 
   const location = entry.building && entry.room
     ? `${entry.building}-${entry.room}`
@@ -195,35 +178,20 @@ function LessonDetailContent({ entry, onClose }: LessonDetailContentProps) {
         </div>
       )}
 
-      {/* Notes section */}
-      <div>
-        <h3 className="text-sm font-semibold mb-2">Заметки</h3>
-        <textarea
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-          rows={3}
-          placeholder="Добавить заметку к занятию..."
-          value={notes}
-          onChange={(e) => {
-            setNotes(e.target.value)
-            setNotesDirty(true)
-          }}
+      {/* Notes section — NoteEditor with autosave */}
+      {noteLoading ? (
+        <div className="flex items-center justify-center py-3">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <NoteEditor
+          note={existingNote ?? null}
+          scheduleEntryId={entry.id}
+          subjectName={entry.subject_name}
+          lessonDate={entry.lesson_date}
           disabled={!isOnline}
         />
-        <div className="flex justify-end mt-2">
-          <Button
-            size="sm"
-            onClick={handleSaveNotes}
-            disabled={!notesDirty || !isOnline || notesMutation.isPending}
-          >
-            {notesMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-1" />
-            ) : (
-              <Save className="h-4 w-4 mr-1" />
-            )}
-            Сохранить
-          </Button>
-        </div>
-      </div>
+      )}
     </>
   )
 }

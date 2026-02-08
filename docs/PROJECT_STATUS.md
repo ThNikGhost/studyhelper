@@ -2,11 +2,11 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-08
-- **Сессия**: Реализация 08-attendance (посещаемость)
+- **Сессия**: Реализация 10-lesson-notes (заметки к парам)
 
 ## Общий прогресс
 **Фаза**: Post-MVP реализация
-**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован. 07-progress-bars реализован. 03-file-upload-ui реализован. 08-attendance реализован.
+**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован. 07-progress-bars реализован. 03-file-upload-ui реализован. 08-attendance реализован. 10-lesson-notes реализован.
 
 ---
 
@@ -32,7 +32,7 @@
 - [x] Инициализация проекта (pyproject.toml, uv)
 - [x] Конфигурация (pydantic-settings)
 - [x] База данных (SQLAlchemy 2.0 async)
-- [x] Alembic миграции (11 миграций применено)
+- [x] Alembic миграции (12 миграций применено)
 
 #### Модули:
 | Модуль | Модель | Схемы | Сервис | Роутер | Тесты |
@@ -49,6 +49,7 @@
 | Uploads | — | ✅ | ✅ | ✅ | ✅ 11 |
 | Files | ✅ File | ✅ | ✅ | ✅ | ✅ 21 |
 | Attendance | ✅ Absence | ✅ | ✅ | ✅ | ✅ 22 |
+| Notes | ✅ LessonNote | ✅ | ✅ | ✅ | ✅ 21 |
 
 ### Parser модуль (ЗАВЕРШЁН ✅)
 - [x] `src/parser/` — модуль парсинга
@@ -170,11 +171,32 @@
 - [x] Frontend: 32 теста (attendanceUtils: 12, AttendanceStatsCard: 5, AttendanceTable: 7, AttendancePage: 8)
 - [x] TypeScript, ESLint, build — всё чисто
 
+### 10-lesson-notes (ЗАВЕРШЕНА ✅)
+- [x] Backend: модель LessonNote (user_id FK, schedule_entry_id FK nullable, subject_name, lesson_date, content Text)
+- [x] Backend: UniqueConstraint(user_id, schedule_entry_id), indexes (user_id+lesson_date, user_id+subject_name)
+- [x] Backend: схемы (LessonNoteCreate, LessonNoteUpdate, LessonNoteResponse)
+- [x] Backend: сервис (create_note, update_note, delete_note, get_notes с фильтрами, get_note_for_entry)
+- [x] Backend: роутер (POST / 201, GET /, GET /entry/{id}, PUT /{id}, DELETE /{id} 204)
+- [x] Backend: Alembic миграция add_lesson_notes_table
+- [x] Backend: 21 тест (create: 6, get_notes: 5, get_note_for_entry: 3, update: 4, delete: 3)
+- [x] Frontend: типы (LessonNote, LessonNoteCreate, LessonNoteUpdate)
+- [x] Frontend: сервис (noteService: getNotes, getNoteForEntry, createNote, updateNote, deleteNote)
+- [x] Frontend: NoteEditor (autosave debounce 500ms, status indicator, char counter 2000, disabled)
+- [x] Frontend: NoteCard (subject/date, content preview 150 chars, expand/collapse, delete)
+- [x] Frontend: NotesPage (search debounce 300ms, subject filter, NoteCard list, delete confirm modal)
+- [x] Frontend: LessonDetailModal — рефакторинг: textarea+save заменён на NoteEditor с autosave
+- [x] Frontend: LessonCard — иконка StickyNote (amber-500) при наличии заметки (hasNote prop)
+- [x] Frontend: ScheduleGrid, DayScheduleCard, SchedulePage — noteEntryIds Set из API
+- [x] Frontend: маршрут /notes в App.tsx, пункт "Заметки" (StickyNote, text-yellow-500) в QuickActions
+- [x] Frontend: MSW handlers + testLessonNotes data
+- [x] Frontend: 23 новых теста (NoteEditor: 10, NoteCard: 5, NotesPage: 8) + обновлены LessonDetailModal тесты (17)
+- [x] TypeScript, ESLint, build — всё чисто
+
 ---
 
 ## Что в работе
 
-Нет активных задач. 08-attendance реализован, ожидает коммит.
+Нет активных задач. 10-lesson-notes реализован, ожидает коммит.
 
 ### Следующие задачи (приоритет):
 1. ~~**01-PWA** — manifest, service worker, оффлайн (P0)~~ ✅
@@ -183,10 +205,10 @@
 4. ~~**07-progress-bars** — прогресс-бары по предметам (P2)~~ ✅
 5. ~~**03-file-upload-ui** — UI загрузки файлов (P1)~~ ✅
 6. ~~**08-attendance** — посещаемость (P2)~~ ✅
-7. **09-dark-theme** — тёмная тема (P2)
-8. **05-ics-export** — экспорт в .ics (P2)
-9. **02-push-notifications** — push-уведомления (P1, зависит от PWA ✅)
-10. **10-lesson-notes** — заметки к парам (P2)
+7. ~~**10-lesson-notes** — заметки к парам (P2)~~ ✅
+8. **09-dark-theme** — тёмная тема (P2)
+9. **05-ics-export** — экспорт в .ics (P2)
+10. **02-push-notifications** — push-уведомления (P1, зависит от PWA ✅)
 11. **11-semester-timeline** — timeline семестра (P3)
 
 ### Деплой
@@ -247,6 +269,7 @@ Vite на Windows может не слушать на правильном ад�
 - **Clickable schedule**: LessonDetailModal с работами и заметками, onClick/onEntryClick на LessonCard/ScheduleGrid/TodayScheduleWidget
 - **Progress bars**: ProgressBar (a11y, size variants), SubjectProgressCard, SemesterProgressWidget (top-3 lowest), calculateSemesterProgress в progressUtils
 - **File upload**: File модель (immutable), FileDropzone (HTML5 DnD), FileList, magic bytes validation, StreamingResponse для download, path traversal protection
+- **Lesson notes**: LessonNote модель (one per entry per user), NoteEditor (autosave debounce 500ms), NoteCard, NotesPage, LessonDetailModal интеграция через useQuery
 
 ---
 
@@ -254,14 +277,14 @@ Vite на Windows может не слушать на правильном ад�
 
 | Метрика | Значение |
 |---------|----------|
-| Тестов backend | 285 |
-| Тестов frontend | 226 |
+| Тестов backend | 328 |
+| Тестов frontend | 279 |
 | Покрытие тестами | ~80% |
-| API endpoints | ~59 |
-| Моделей | 14 |
-| Миграций | 10 |
+| API endpoints | ~64 |
+| Моделей | 15 |
+| Миграций | 12 |
 | Линтер backend | ✅ Ruff проходит |
 | Линтер frontend | ✅ ESLint проходит (кроме shadcn/ui) |
-| Frontend тесты | ✅ Vitest проходит (226 тестов) |
+| Frontend тесты | ✅ Vitest проходит (279 тестов) |
 | Frontend build | ✅ TypeScript + Vite |
-| Frontend страниц | 9 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files) |
+| Frontend страниц | 11 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Notes) |
