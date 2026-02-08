@@ -532,3 +532,7 @@ notification_settings — настройки уведомлений
 | 2026-02-08 | stored_filename = UUID | Исключает коллизии и спецсимволы |
 | 2026-02-08 | Нативный DnD без react-dropzone | Одна зона, не нужна библиотека |
 | 2026-02-08 | FileCategory: StrEnum + as const | Удобная сериализация в API |
+| 2026-02-08 | LessonNote отдельно от ScheduleEntry.notes | entry.notes — системные/парсерные, LessonNote — пользовательские |
+| 2026-02-08 | Autosave debounce 500ms вместо кнопки | UX: не нужно помнить сохранять, меньше потерь данных |
+| 2026-02-08 | getNoteForEntry: 404 → null | useQuery получает null как успешный результат, NoteEditor рендерится пустым |
+| 2026-02-08 | noteEntryIds Set через отдельный query | Не модифицируем schedule API, заметки — отдельный домен |
