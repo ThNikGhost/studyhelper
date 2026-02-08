@@ -2,11 +2,11 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-08
-- **Сессия**: Реализация 11-semester-timeline (timeline семестра)
+- **Сессия**: Реализация 09-dark-theme (тёмная тема)
 
 ## Общий прогресс
 **Фаза**: Post-MVP реализация
-**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован. 07-progress-bars реализован. 03-file-upload-ui реализован. 08-attendance реализован. 10-lesson-notes реализован. 11-semester-timeline реализован.
+**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован. 07-progress-bars реализован. 03-file-upload-ui реализован. 08-attendance реализован. 10-lesson-notes реализован. 11-semester-timeline реализован. 09-dark-theme реализована.
 
 ---
 
@@ -214,11 +214,25 @@
 - [x] Frontend: 42 новых теста (timelineUtils: 21, TimelineBar: 8, SemesterTimelineWidget: 5, TimelinePage: 8)
 - [x] TypeScript, ESLint, build — всё чисто
 
+### 09-dark-theme (ЗАВЕРШЕНА ✅)
+- [x] Frontend: `lib/theme.ts` — ThemeMode, getSavedTheme, saveTheme, resolveTheme, applyTheme
+- [x] Frontend: `hooks/useTheme.ts` — React hook (mode, resolvedTheme, setTheme), system preference listener
+- [x] Frontend: `index.html` — inline FOUC prevention script, dark fallback styles
+- [x] Frontend: `components/ThemeToggle.tsx` — cycling button (Sun → Moon → Monitor), aria-label
+- [x] Frontend: `components/AppLayout.tsx` — ThemeToggle в fixed bottom-right z-50
+- [x] Frontend: `main.tsx` — theme="system" на Toaster (sonner)
+- [x] Frontend: `lib/attendanceUtils.ts` — text-*-600 → + dark:text-*-400
+- [x] Frontend: `components/attendance/AttendanceStatsCard.tsx` — + dark:text-red-400
+- [x] Frontend: `components/attendance/AttendanceTable.tsx` — + dark:bg-red-950/30
+- [x] Frontend: `public/offline.html` — @media (prefers-color-scheme: dark)
+- [x] Frontend: 30 новых тестов (theme: 14, useTheme: 6, ThemeToggle: 6, AppLayout: +1, attendanceUtils: updated 3)
+- [x] TypeScript, ESLint, build — всё чисто
+
 ---
 
 ## Что в работе
 
-Нет активных задач. 11-semester-timeline реализован, ожидает коммит.
+Нет активных задач. 09-dark-theme реализована, ожидает коммит.
 
 ### Следующие задачи (приоритет):
 1. ~~**01-PWA** — manifest, service worker, оффлайн (P0)~~ ✅
@@ -229,7 +243,7 @@
 6. ~~**08-attendance** — посещаемость (P2)~~ ✅
 7. ~~**10-lesson-notes** — заметки к парам (P2)~~ ✅
 8. ~~**11-semester-timeline** — timeline семестра (P3)~~ ✅
-9. **09-dark-theme** — тёмная тема (P2)
+9. ~~**09-dark-theme** — тёмная тема (P2)~~ ✅
 10. **05-ics-export** — экспорт в .ics (P2)
 11. **02-push-notifications** — push-уведомления (P1, зависит от PWA ✅)
 
@@ -293,6 +307,7 @@ Vite на Windows может не слушать на правильном ад�
 - **File upload**: File модель (immutable), FileDropzone (HTML5 DnD), FileList, magic bytes validation, StreamingResponse для download, path traversal protection
 - **Lesson notes**: LessonNote модель (one per entry per user), NoteEditor (autosave debounce 500ms), NoteCard, NotesPage, LessonDetailModal интеграция через useQuery
 - **Semester timeline**: start_date/end_date на Semester (nullable), TimelineBar (CSS positioning via left%), TimelineMarker (Popover tooltips), getPositionPercent/getMonthLabels/getSemesterProgress утилиты, TimelinePage с фильтрами, SemesterTimelineWidget на Dashboard
+- **Dark theme**: ThemeMode (light/dark/system), FOUC prevention (inline script), cycling toggle (Sun/Moon/Monitor), localStorage persistence, .dark CSS class, theme-color meta update, dark: variants для hardcoded цветов
 
 ---
 
@@ -301,13 +316,13 @@ Vite на Windows может не слушать на правильном ад�
 | Метрика | Значение |
 |---------|----------|
 | Тестов backend | 337 |
-| Тестов frontend | 321 |
+| Тестов frontend | 351 |
 | Покрытие тестами | ~80% |
 | API endpoints | ~65 |
 | Моделей | 15 |
 | Миграций | 13 |
 | Линтер backend | ✅ Ruff проходит |
 | Линтер frontend | ✅ ESLint проходит (кроме shadcn/ui) |
-| Frontend тесты | ✅ Vitest проходит (321 тестов) |
+| Frontend тесты | ✅ Vitest проходит (351 тестов) |
 | Frontend build | ✅ TypeScript + Vite |
 | Frontend страниц | 12 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Notes, Timeline) |

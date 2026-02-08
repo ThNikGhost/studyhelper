@@ -47,7 +47,7 @@ export function AttendanceTable({
               <tr
                 key={entry.id}
                 className={`border-b last:border-b-0 ${
-                  entry.is_absent ? 'bg-red-50' : ''
+                  entry.is_absent ? 'bg-red-50 dark:bg-red-950/30' : ''
                 }`}
               >
                 <td className="px-3 py-2 whitespace-nowrap tabular-nums">

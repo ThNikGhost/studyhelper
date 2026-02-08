@@ -38,7 +38,7 @@ export function AttendanceStatsCard({ stats }: AttendanceStatsCardProps) {
 
         {stats.absences > 0 && (
           <p className="text-sm text-muted-foreground">
-            Пропущено: <span className="font-medium text-red-600">{stats.absences}</span>{' '}
+            Пропущено: <span className="font-medium text-red-600 dark:text-red-400">{stats.absences}</span>{' '}
             {stats.absences === 1
               ? 'занятие'
               : stats.absences < 5

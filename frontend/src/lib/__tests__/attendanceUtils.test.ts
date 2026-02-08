@@ -26,18 +26,18 @@ describe('formatAttendancePercent', () => {
 
 describe('getAttendanceColor', () => {
   it('returns green for >= 80%', () => {
-    expect(getAttendanceColor(80)).toBe('text-green-600')
-    expect(getAttendanceColor(100)).toBe('text-green-600')
+    expect(getAttendanceColor(80)).toBe('text-green-600 dark:text-green-400')
+    expect(getAttendanceColor(100)).toBe('text-green-600 dark:text-green-400')
   })
 
   it('returns yellow for >= 60% and < 80%', () => {
-    expect(getAttendanceColor(60)).toBe('text-yellow-600')
-    expect(getAttendanceColor(79)).toBe('text-yellow-600')
+    expect(getAttendanceColor(60)).toBe('text-yellow-600 dark:text-yellow-400')
+    expect(getAttendanceColor(79)).toBe('text-yellow-600 dark:text-yellow-400')
   })
 
   it('returns red for < 60%', () => {
-    expect(getAttendanceColor(59)).toBe('text-red-600')
-    expect(getAttendanceColor(0)).toBe('text-red-600')
+    expect(getAttendanceColor(59)).toBe('text-red-600 dark:text-red-400')
+    expect(getAttendanceColor(0)).toBe('text-red-600 dark:text-red-400')
   })
 })
 
