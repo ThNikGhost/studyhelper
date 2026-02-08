@@ -541,6 +541,37 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 17. CI fix решения (2026-02-08)
+
+### ESLint: globalIgnores для shadcn/ui
+
+**Решение:** Добавить `src/components/ui` в `globalIgnores` в `eslint.config.js`.
+
+**Обоснование:**
+- shadcn/ui компоненты генерируются CLI, не наш код
+- 3 ошибки (react-refresh/only-export-components, no-empty-object-type) не имеют смысла для сгенерированного кода
+- Стандартная практика — исключать UI-библиотечные файлы из строгого линтинга
+
+### uv sync --extra dev вместо --dev
+
+**Решение:** В CI использовать `uv sync --extra dev` вместо `uv sync --dev`.
+
+**Обоснование:**
+- dev-зависимости (ruff, pytest) объявлены в `[project.optional-dependencies].dev`
+- `uv sync --dev` устанавливает `[dependency-groups].dev`, которой в проекте нет
+- `uv sync --extra dev` корректно устанавливает optional extras
+
+### Кросс-платформенная path traversal защита
+
+**Решение:** Явно отклонять `\` и `..` в filename до `Path.resolve()`.
+
+**Обоснование:**
+- На Linux `\` не является разделителем путей — `..\\..\\etc\\passwd` не распознаётся как path traversal через `resolve()`
+- `resolve()` на Linux оставляет бэкслэш как часть имени файла → файл не найден → 404 вместо 400
+- Явная проверка `'\\' in filename or '..' in filename` работает одинаково на всех ОС
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -581,3 +612,6 @@ notification_settings — настройки уведомлений
 | 2026-02-08 | Cycling button для темы | Меньше кликов, компактнее dropdown |
 | 2026-02-08 | Inline script для FOUC prevention | React рендерится слишком поздно |
 | 2026-02-08 | 500-level цвета без dark: | Читаемы на обоих фонах, минимизация diff |
+| 2026-02-08 | globalIgnores для shadcn/ui | Сгенерированный код не должен линтоваться строго |
+| 2026-02-08 | uv sync --extra dev в CI | dev deps в optional-dependencies, не dependency-groups |
+| 2026-02-08 | Явная проверка \\ и .. в filename | resolve() не ловит бэкслэш на Linux |

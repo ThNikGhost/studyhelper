@@ -2,7 +2,7 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-08
-- **Сессия**: Реализация 09-dark-theme (тёмная тема)
+- **Сессия**: Fix CI (ESLint shadcn/ui + backend ruff + upload path traversal)
 
 ## Общий прогресс
 **Фаза**: Post-MVP реализация
@@ -26,7 +26,7 @@
 - [x] Локальный PostgreSQL — для Windows
 - [x] .env.example — переменные окружения (backend + frontend)
 - [x] GitHub repository
-- [x] GitHub Actions CI (backend lint+test + frontend lint+build)
+- [x] GitHub Actions CI (backend lint+test + frontend lint+build) — fixed
 
 ### Backend (ЗАВЕРШЁН)
 - [x] Инициализация проекта (pyproject.toml, uv)
@@ -230,9 +230,16 @@
 
 ---
 
+### CI Fix (ЗАВЕРШЕНА ✅)
+- [x] `frontend/eslint.config.js` — globalIgnores для `src/components/ui` (shadcn/ui)
+- [x] `.github/workflows/ci.yml` — `uv sync --extra dev` вместо `uv sync --dev`
+- [x] `backend/src/services/upload.py` — кросс-платформенная path traversal защита (бэкслэш + `..`)
+
+---
+
 ## Что в работе
 
-Нет активных задач. 09-dark-theme реализована, ожидает коммит.
+Нет активных задач.
 
 ### Следующие задачи (приоритет):
 1. ~~**01-PWA** — manifest, service worker, оффлайн (P0)~~ ✅
@@ -271,10 +278,8 @@
 Vite на Windows может не слушать на правильном адресе из-за IPv6/IPv4 резолвинга.
 **Решение**: Явно указать `host: '127.0.0.1'` в vite.config.ts
 
-### ESLint: pre-existing ошибки в shadcn/ui
-3 ошибки в shadcn/ui компонентах (button.tsx, input.tsx, label.tsx) — не связаны с нашим кодом.
-- `react-refresh/only-export-components` в button.tsx
-- `@typescript-eslint/no-empty-object-type` в input.tsx и label.tsx
+### ~~ESLint: pre-existing ошибки в shadcn/ui~~ ✅ РЕШЕНО
+~~3 ошибки в shadcn/ui компонентах~~ — `src/components/ui` добавлен в globalIgnores ESLint.
 
 ### Vitest: процесс подвисает при завершении (Windows)
 При `vitest run` на Windows процесс не завершается после прохождения всех тестов (MSW + jsdom удерживают сокеты).
@@ -322,7 +327,7 @@ Vite на Windows может не слушать на правильном ад�
 | Моделей | 15 |
 | Миграций | 13 |
 | Линтер backend | ✅ Ruff проходит |
-| Линтер frontend | ✅ ESLint проходит (кроме shadcn/ui) |
+| Линтер frontend | ✅ ESLint проходит (shadcn/ui исключён из линтинга) |
 | Frontend тесты | ✅ Vitest проходит (351 тестов) |
 | Frontend build | ✅ TypeScript + Vite |
 | Frontend страниц | 12 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Notes, Timeline) |
