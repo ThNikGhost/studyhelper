@@ -157,7 +157,7 @@ def delete_avatar_file(filename: str) -> bool:
     upload_dir = get_upload_dir()
 
     # Reject backslashes (path traversal on Windows, invalid on Linux)
-    if '\\' in filename or '..' in filename:
+    if "\\" in filename or ".." in filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid filename",
