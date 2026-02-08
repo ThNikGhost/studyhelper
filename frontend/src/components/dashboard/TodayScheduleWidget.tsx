@@ -42,17 +42,35 @@ interface LessonRowProps {
   entry: ScheduleEntry
   state: 'past' | 'current' | 'upcoming'
   timeUntil?: number | null
+  onClick?: (entry: ScheduleEntry) => void
 }
 
-function LessonRow({ entry, state, timeUntil }: LessonRowProps) {
+function LessonRow({ entry, state, timeUntil, onClick }: LessonRowProps) {
   const opacity = state === 'past' ? 'opacity-50' : ''
   const highlight =
     state === 'current'
       ? 'border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950/30 pl-3'
       : 'pl-4'
 
+  const handleClick = () => {
+    onClick?.(entry)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault()
+      onClick(entry)
+    }
+  }
+
   return (
-    <div className={`py-2 ${opacity} ${highlight} rounded-r-lg`}>
+    <div
+      className={`py-2 ${opacity} ${highlight} rounded-r-lg ${onClick ? 'cursor-pointer hover:bg-accent/50' : ''}`}
+      onClick={onClick ? handleClick : undefined}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+    >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -100,6 +118,7 @@ interface TodayScheduleWidgetProps {
   currentLesson: CurrentLesson | undefined
   isLoading: boolean
   isError: boolean
+  onEntryClick?: (entry: ScheduleEntry) => void
 }
 
 export function TodayScheduleWidget({
@@ -107,6 +126,7 @@ export function TodayScheduleWidget({
   currentLesson,
   isLoading,
   isError,
+  onEntryClick,
 }: TodayScheduleWidgetProps) {
   const entries = todaySchedule?.entries ?? []
   const count = entries.length
@@ -149,7 +169,13 @@ export function TodayScheduleWidget({
               const timeUntil = isNextUpcoming ? currentLesson?.time_until_next : null
 
               return (
-                <LessonRow key={entry.id} entry={entry} state={state} timeUntil={timeUntil} />
+                <LessonRow
+                  key={entry.id}
+                  entry={entry}
+                  state={state}
+                  timeUntil={timeUntil}
+                  onClick={onEntryClick}
+                />
               )
             })}
           </div>

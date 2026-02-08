@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useAuthStore } from '@/stores/authStore'
 import { Button } from '@/components/ui/button'
 import { LogOut } from 'lucide-react'
@@ -7,9 +8,12 @@ import { workService } from '@/services/workService'
 import { TodayScheduleWidget } from '@/components/dashboard/TodayScheduleWidget'
 import { DeadlinesWidget } from '@/components/dashboard/DeadlinesWidget'
 import { QuickActions } from '@/components/dashboard/QuickActions'
+import { LessonDetailModal } from '@/components/schedule/LessonDetailModal'
+import type { ScheduleEntry } from '@/types/schedule'
 
 export default function DashboardPage() {
   const { user, logout } = useAuthStore()
+  const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
 
   const handleLogout = async () => {
     if (!confirm('Вы уверены, что хотите выйти?')) return
@@ -81,6 +85,7 @@ export default function DashboardPage() {
             currentLesson={currentLesson}
             isLoading={todayLoading || currentLoading}
             isError={todayError}
+            onEntryClick={setSelectedEntry}
           />
           <DeadlinesWidget
             data={upcomingWorks}
@@ -92,6 +97,12 @@ export default function DashboardPage() {
         {/* Quick actions grid */}
         <QuickActions />
       </main>
+
+      <LessonDetailModal
+        entry={selectedEntry}
+        open={!!selectedEntry}
+        onClose={() => setSelectedEntry(null)}
+      />
     </div>
   )
 }

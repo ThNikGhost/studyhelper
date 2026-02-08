@@ -6,6 +6,7 @@ interface DayScheduleCardProps {
   day: DaySchedule
   currentEntryId?: number
   isToday?: boolean
+  onEntryClick?: (entry: ScheduleEntry) => void
 }
 
 // Format date to "DD.MM"
@@ -20,6 +21,7 @@ export function DayScheduleCard({
   day,
   currentEntryId,
   isToday = false,
+  onEntryClick,
 }: DayScheduleCardProps) {
   const hasEntries = day.entries.length > 0
 
@@ -58,6 +60,7 @@ export function DayScheduleCard({
               key={entry.id}
               entry={entry}
               isActive={entry.id === currentEntryId}
+              onClick={onEntryClick}
             />
           ))}
         </div>

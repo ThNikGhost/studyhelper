@@ -8,10 +8,11 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScheduleGrid } from '@/components/schedule/ScheduleGrid'
+import { LessonDetailModal } from '@/components/schedule/LessonDetailModal'
 import { formatDateLocal, getToday } from '@/lib/dateUtils'
 import { toast } from 'sonner'
 import scheduleService from '@/services/scheduleService'
-import type { WeekSchedule, CurrentLesson } from '@/types/schedule'
+import type { WeekSchedule, CurrentLesson, ScheduleEntry } from '@/types/schedule'
 
 // Add/subtract days from date string (local timezone)
 function addDays(dateStr: string, days: number): string {
@@ -24,6 +25,7 @@ export function SchedulePage() {
   const isOnline = useNetworkStatus()
   const [targetDate, setTargetDate] = useState<string | undefined>(undefined)
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
   const today = getToday()
   const queryClient = useQueryClient()
 
@@ -270,6 +272,7 @@ export function SchedulePage() {
             <ScheduleGrid
               weekSchedule={weekSchedule}
               currentEntryId={currentLesson?.current?.id}
+              onEntryClick={setSelectedEntry}
             />
           )}
 
@@ -283,6 +286,12 @@ export function SchedulePage() {
           )}
         </div>
       </div>
+
+      <LessonDetailModal
+        entry={selectedEntry}
+        open={!!selectedEntry}
+        onClose={() => setSelectedEntry(null)}
+      />
     </div>
   )
 }

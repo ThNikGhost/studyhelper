@@ -6,6 +6,7 @@ import { lessonTypeLabels } from '@/types/schedule'
 interface ScheduleGridProps {
   weekSchedule: WeekSchedule
   currentEntryId?: number
+  onEntryClick?: (entry: ScheduleEntry) => void
 }
 
 // Day names
@@ -43,7 +44,7 @@ function isToday(dateStr: string): boolean {
   return dateStr === today
 }
 
-export function ScheduleGrid({ weekSchedule, currentEntryId }: ScheduleGridProps) {
+export function ScheduleGrid({ weekSchedule, currentEntryId, onEntryClick }: ScheduleGridProps) {
   return (
     <div className="overflow-x-auto">
       <div className="min-w-[700px]">
@@ -101,8 +102,22 @@ export function ScheduleGrid({ weekSchedule, currentEntryId }: ScheduleGridProps
                         className={cn(
                           'h-full p-1.5 rounded border text-xs',
                           LESSON_TYPE_COLORS[entry.lesson_type],
-                          isActive && 'ring-2 ring-primary'
+                          isActive && 'ring-2 ring-primary',
+                          onEntryClick && 'cursor-pointer hover:opacity-80'
                         )}
+                        onClick={onEntryClick ? () => onEntryClick(entry) : undefined}
+                        role={onEntryClick ? 'button' : undefined}
+                        tabIndex={onEntryClick ? 0 : undefined}
+                        onKeyDown={
+                          onEntryClick
+                            ? (e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  onEntryClick(entry)
+                                }
+                              }
+                            : undefined
+                        }
                       >
                         {/* Subject name */}
                         <div className="font-semibold line-clamp-2 leading-tight mb-0.5">

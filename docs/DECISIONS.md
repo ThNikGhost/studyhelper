@@ -404,6 +404,29 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 13. Clickable schedule решения (2026-02-08)
+
+### key prop вместо useEffect для сброса состояния модала
+
+**Решение:** Разделить `LessonDetailModal` на обёртку и `LessonDetailContent`, используя `key={entry.id}` для сброса состояния.
+
+**Обоснование:**
+- React 19 ESLint запрещает `setState` внутри `useEffect` (`react-hooks/set-state-in-effect`)
+- React 19 ESLint запрещает доступ к ref.current во время рендера (`react-hooks/refs`)
+- `key` prop вызывает полное пересоздание компонента при смене entry — чистый сброс всего состояния
+- `useState(entry.notes ?? '')` в `LessonDetailContent` — инициализация без side effects
+
+### tsconfig.app.json exclude для тестов
+
+**Решение:** Добавить exclude `__tests__`, `*.test.ts`, `*.test.tsx`, `test/` в tsconfig.app.json.
+
+**Обоснование:**
+- `tsc -b` (используется в `npm run build`) включал тестовые файлы, которые зависят от Vitest глобалов (describe, it, vi)
+- tsconfig.app.json не имел exclude — тестовые файлы компилировались без типов Vitest
+- Раньше скрывалось кэшем `.tsbuildinfo`, но при любом `--clean` build ломался
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -427,3 +450,5 @@ notification_settings — настройки уведомлений
 | 2026-02-07 | registerType: prompt | Пользователь контролирует момент обновления |
 | 2026-02-07 | NetworkFirst для API (3s timeout) | Свежие данные с fallback на кеш |
 | 2026-02-07 | pwa-mock.ts для тестов | vi.hoisted() нельзя экспортировать из setup.ts |
+| 2026-02-08 | key prop для сброса состояния модала | React 19 ESLint запрещает setState в useEffect |
+| 2026-02-08 | tsconfig.app exclude тестов | tsc -b включал тесты без Vitest типов |

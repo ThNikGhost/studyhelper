@@ -77,6 +77,10 @@ export interface CurrentLesson {
   time_until_next: number | null
 }
 
+export interface ScheduleEntryUpdate {
+  notes?: string | null
+}
+
 // Helper to get lesson type label in Russian
 export const lessonTypeLabels: Record<LessonType, string> = {
   [LessonType.LECTURE]: 'Лекция',

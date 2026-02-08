@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 interface LessonCardProps {
   entry: ScheduleEntry
   isActive?: boolean
+  onClick?: (entry: ScheduleEntry) => void
 }
 
 // Colors for lesson types
@@ -24,7 +25,7 @@ function formatTime(time: string): string {
   return time.slice(0, 5)
 }
 
-export function LessonCard({ entry, isActive = false }: LessonCardProps) {
+export function LessonCard({ entry, isActive = false, onClick }: LessonCardProps) {
   const startTime = formatTime(entry.start_time)
   const endTime = formatTime(entry.end_time)
 
@@ -33,12 +34,28 @@ export function LessonCard({ entry, isActive = false }: LessonCardProps) {
     ? `${entry.building}-${entry.room}`
     : entry.room || entry.building || null
 
+  const handleClick = () => {
+    onClick?.(entry)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault()
+      onClick(entry)
+    }
+  }
+
   return (
     <Card
       className={cn(
         'transition-all',
-        isActive && 'ring-2 ring-primary border-primary'
+        isActive && 'ring-2 ring-primary border-primary',
+        onClick && 'cursor-pointer hover:shadow-md hover:border-primary/50'
       )}
+      onClick={onClick ? handleClick : undefined}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? handleKeyDown : undefined}
     >
       <CardContent className="p-4">
         {/* Time and type */}

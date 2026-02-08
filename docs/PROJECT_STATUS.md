@@ -1,12 +1,12 @@
 # Статус проекта StudyHelper
 
 ## Последнее обновление
-- **Дата**: 2026-02-07
-- **Сессия**: Реализация 04-dashboard-widget (улучшение виджетов Dashboard)
+- **Дата**: 2026-02-08
+- **Сессия**: Реализация 06-clickable-schedule (кликабельные элементы расписания)
 
 ## Общий прогресс
 **Фаза**: Post-MVP реализация
-**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован.
+**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован.
 
 ---
 
@@ -115,16 +115,26 @@
 - [x] 27 новых тестов (TodayScheduleWidget: 10, DeadlinesWidget: 10, dateUtils: 7)
 - [x] TypeScript, ESLint, build — всё чисто
 
+### 06-clickable-schedule (ЗАВЕРШЕНА ✅)
+- [x] `LessonDetailModal` — модал с полной информацией о занятии, работами по предмету, редактируемыми заметками
+- [x] `LessonCard`, `ScheduleGrid`, `DayScheduleCard`, `TodayScheduleWidget` — onClick/onEntryClick props, hover, keyboard a11y
+- [x] `SchedulePage`, `DashboardPage` — интеграция selectedEntry state + LessonDetailModal
+- [x] `ScheduleEntryUpdate` тип + `updateEntry()` метод в scheduleService
+- [x] MSW handlers: PUT schedule entry, GET works с фильтром subject_id
+- [x] `tsconfig.app.json` — exclude тестовых файлов из build (fix pre-existing issue)
+- [x] 31 новый тест (LessonDetailModal: 19, LessonCard: 12)
+- [x] TypeScript, ESLint, build — всё чисто
+
 ---
 
 ## Что в работе
 
-Нет активных задач. 04-dashboard-widget реализован, ожидает коммит.
+Нет активных задач. 06-clickable-schedule реализован, ожидает коммит.
 
 ### Следующие задачи (приоритет):
 1. ~~**01-PWA** — manifest, service worker, оффлайн (P0)~~ ✅
 2. ~~**04-dashboard-widget** — виджеты Dashboard (P1)~~ ✅
-3. **06-clickable-schedule** — кликабельные элементы расписания (P1)
+3. ~~**06-clickable-schedule** — кликабельные элементы расписания (P1)~~ ✅
 4. **09-dark-theme** — тёмная тема (P2)
 5. **07-progress-bars** — прогресс-бары по предметам (P2)
 6. **03-file-upload-ui** — UI загрузки файлов (P1)
@@ -189,6 +199,7 @@ Vite на Windows может не слушать на правильном ад�
 - **Frontend тесты**: Vitest + @testing-library/react + MSW для моков API
 - **PWA**: vite-plugin-pwa (generateSW), registerType: prompt, NetworkFirst для API, offline.html fallback
 - **Dashboard виджеты**: TodayScheduleWidget, DeadlinesWidget, QuickActions — отдельные компоненты в `components/dashboard/`
+- **Clickable schedule**: LessonDetailModal с работами и заметками, onClick/onEntryClick на LessonCard/ScheduleGrid/TodayScheduleWidget
 
 ---
 
@@ -197,13 +208,13 @@ Vite на Windows может не слушать на правильном ад�
 | Метрика | Значение |
 |---------|----------|
 | Тестов backend | 264 |
-| Тестов frontend | 114 |
+| Тестов frontend | 145 |
 | Покрытие тестами | ~80% |
 | API endpoints | ~55 |
 | Моделей | 13 |
 | Миграций | 9 |
 | Линтер backend | ✅ Ruff проходит |
 | Линтер frontend | ✅ ESLint проходит (кроме shadcn/ui) |
-| Frontend тесты | ✅ Vitest проходит (114 тестов) |
+| Frontend тесты | ✅ Vitest проходит (145 тестов) |
 | Frontend build | ✅ TypeScript + Vite |
 | Frontend страниц | 8 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates) |

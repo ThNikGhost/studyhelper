@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import type { WeekSchedule, DaySchedule, CurrentLesson } from '@/types/schedule'
+import type { WeekSchedule, DaySchedule, CurrentLesson, ScheduleEntry, ScheduleEntryUpdate } from '@/types/schedule'
 
 export const scheduleService = {
   /**
@@ -27,6 +27,14 @@ export const scheduleService = {
    */
   async getCurrentLesson(signal?: AbortSignal): Promise<CurrentLesson> {
     const response = await api.get<CurrentLesson>('/schedule/current', { signal })
+    return response.data
+  },
+
+  /**
+   * Update a schedule entry (e.g. notes).
+   */
+  async updateEntry(id: number, data: ScheduleEntryUpdate): Promise<ScheduleEntry> {
+    const response = await api.put<ScheduleEntry>(`/schedule/entries/${id}`, data)
     return response.data
   },
 
