@@ -24,6 +24,7 @@ from starlette.responses import Response
 
 from src.config import settings
 from src.routers import (
+    attendance,
     auth,
     classmates,
     files,
@@ -131,6 +132,7 @@ api_v1.include_router(classmates.router, prefix="/classmates", tags=["Classmates
 api_v1.include_router(schedule.router, prefix="/schedule", tags=["Schedule"])
 api_v1.include_router(uploads.router, prefix="/uploads", tags=["Uploads"])
 api_v1.include_router(files.router, prefix="/files", tags=["Files"])
+api_v1.include_router(attendance.router, prefix="/attendance", tags=["Attendance"])
 
 app.include_router(api_v1)
 

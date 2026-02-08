@@ -11,6 +11,7 @@ import SemestersPage from '@/pages/SemestersPage'
 import WorksPage from '@/pages/WorksPage'
 import ClassmatesPage from '@/pages/ClassmatesPage'
 import FilesPage from '@/pages/FilesPage'
+import AttendancePage from '@/pages/AttendancePage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -97,6 +98,16 @@ function App() {
           <ProtectedRoute>
             <AppLayout>
               <FilesPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/attendance"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <AttendancePage />
             </AppLayout>
           </ProtectedRoute>
         }

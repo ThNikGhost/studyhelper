@@ -1,5 +1,6 @@
 """SQLAlchemy models."""
 
+from src.models.attendance import Absence
 from src.models.base import Base
 from src.models.classmate import Classmate
 from src.models.file import File
@@ -12,6 +13,7 @@ from src.models.user import User
 from src.models.work import Work, WorkStatus, WorkStatusHistory
 
 __all__ = [
+    "Absence",
     "Base",
     "Building",
     "Classmate",

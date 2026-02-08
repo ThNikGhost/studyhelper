@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import type { User, TokenResponse } from '@/types/auth'
+import type { AttendanceEntry, AttendanceStats } from '@/types/attendance'
 import type { StudyFile } from '@/types/file'
 import type { CurrentLesson, DaySchedule, ScheduleEntry } from '@/types/schedule'
 import type { Subject } from '@/types/subject'
@@ -371,6 +372,81 @@ export const testUpcomingWorks: UpcomingWork[] = [
   },
 ]
 
+export const testAttendanceEntries: AttendanceEntry[] = [
+  {
+    id: 10,
+    lesson_date: '2026-02-05',
+    subject_name: 'Физика',
+    lesson_type: 'lecture',
+    start_time: '08:30:00',
+    end_time: '10:05:00',
+    teacher_name: 'Петров П.П.',
+    room: '201',
+    subject_id: 2,
+    is_absent: true,
+    absence_id: 1,
+  },
+  {
+    id: 1,
+    lesson_date: '2026-02-05',
+    subject_name: 'Математический анализ',
+    lesson_type: 'lecture',
+    start_time: '10:30:00',
+    end_time: '12:05:00',
+    teacher_name: 'Иванов И.И.',
+    room: '301',
+    subject_id: 1,
+    is_absent: false,
+    absence_id: null,
+  },
+  {
+    id: 11,
+    lesson_date: '2026-02-06',
+    subject_name: 'Программирование',
+    lesson_type: 'practice',
+    start_time: '13:00:00',
+    end_time: '14:35:00',
+    teacher_name: 'Сидоров С.С.',
+    room: '405',
+    subject_id: 3,
+    is_absent: false,
+    absence_id: null,
+  },
+]
+
+export const testAttendanceStats: AttendanceStats = {
+  total_classes: 10,
+  absences: 2,
+  attended: 8,
+  attendance_percent: 80.0,
+  by_subject: [
+    {
+      subject_name: 'Математический анализ',
+      subject_id: 1,
+      total_classes: 4,
+      absences: 0,
+      attended: 4,
+      attendance_percent: 100.0,
+    },
+    {
+      subject_name: 'Физика',
+      subject_id: 2,
+      total_classes: 3,
+      absences: 1,
+      attended: 2,
+      attendance_percent: 66.7,
+    },
+    {
+      subject_name: 'Программирование',
+      subject_id: 3,
+      total_classes: 3,
+      absences: 1,
+      attended: 2,
+      attendance_percent: 66.7,
+    },
+  ],
+}
+
 export const handlers = [
   // Auth endpoints
   http.post('/api/v1/auth/login', () => {
@@ -452,6 +528,30 @@ export const handlers = [
   }),
 
   http.delete('/api/v1/files/:id', () => {
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  // Attendance endpoints
+  http.get('/api/v1/attendance/', () => {
+    return HttpResponse.json(testAttendanceEntries)
+  }),
+
+  http.get('/api/v1/attendance/stats', () => {
+    return HttpResponse.json(testAttendanceStats)
+  }),
+
+  http.get('/api/v1/attendance/stats/:subjectId', () => {
+    return HttpResponse.json(testAttendanceStats.by_subject[0])
+  }),
+
+  http.post('/api/v1/attendance/mark-absent', () => {
+    return HttpResponse.json(
+      { id: 99, user_id: 1, schedule_entry_id: 1, created_at: '2026-02-08T00:00:00Z' },
+      { status: 201 },
+    )
+  }),
+
+  http.post('/api/v1/attendance/mark-present', () => {
     return new HttpResponse(null, { status: 204 })
   }),
 ]

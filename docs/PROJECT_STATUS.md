@@ -2,11 +2,11 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-08
-- **Сессия**: Реализация 03-file-upload-ui (файловое хранилище)
+- **Сессия**: Реализация 08-attendance (посещаемость)
 
 ## Общий прогресс
 **Фаза**: Post-MVP реализация
-**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован. 07-progress-bars реализован. 03-file-upload-ui реализован.
+**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован. 07-progress-bars реализован. 03-file-upload-ui реализован. 08-attendance реализован.
 
 ---
 
@@ -32,7 +32,7 @@
 - [x] Инициализация проекта (pyproject.toml, uv)
 - [x] Конфигурация (pydantic-settings)
 - [x] База данных (SQLAlchemy 2.0 async)
-- [x] Alembic миграции (10 миграций применено)
+- [x] Alembic миграции (11 миграций применено)
 
 #### Модули:
 | Модуль | Модель | Схемы | Сервис | Роутер | Тесты |
@@ -48,6 +48,7 @@
 | Parser | ✅ | ✅ | ✅ | CLI | ✅ 74 |
 | Uploads | — | ✅ | ✅ | ✅ | ✅ 11 |
 | Files | ✅ File | ✅ | ✅ | ✅ | ✅ 21 |
+| Attendance | ✅ Absence | ✅ | ✅ | ✅ | ✅ 22 |
 
 ### Parser модуль (ЗАВЕРШЁН ✅)
 - [x] `src/parser/` — модуль парсинга
@@ -150,11 +151,30 @@
 - [x] Frontend: 43 теста (fileUtils: 20, FileDropzone: 8, FileList: 7, FilesPage: 8)
 - [x] TypeScript, ESLint, build — всё чисто
 
+### 08-attendance (ЗАВЕРШЕНА ✅)
+- [x] Backend: модель Absence (absences-only), UniqueConstraint(user_id, schedule_entry_id), indexes
+- [x] Backend: схемы (AbsenceCreate, AbsenceResponse, AttendanceEntryResponse, SubjectAttendanceStats, AttendanceStatsResponse)
+- [x] Backend: сервис (mark_absent, mark_present, get_attendance_entries, get_attendance_stats, get_subject_attendance_stats)
+- [x] Backend: роутер (POST mark-absent 201, POST mark-present 204, GET entries, GET stats, GET stats/{subject_id})
+- [x] Backend: Alembic миграция add_absences_table
+- [x] Backend: 22 теста (mark_absent: 7, mark_present: 3, entries: 5, stats: 5, subject_stats: 2)
+- [x] Frontend: типы (AttendanceEntry, AbsenceRecord, AttendanceStats, SubjectAttendanceStats)
+- [x] Frontend: сервис (attendanceService: getEntries, markAbsent, markPresent, getStats, getSubjectStats)
+- [x] Frontend: утилиты (formatAttendancePercent, getAttendanceColor, getAttendanceBarColor, lessonTypeLabels)
+- [x] Frontend: AttendanceStatsCard (ProgressBar + общая статистика)
+- [x] Frontend: SubjectAttendanceList (per-subject mini progress bars, clickable filter)
+- [x] Frontend: AttendanceTable (entries list with toggle buttons Был/Н/Б)
+- [x] Frontend: AttendancePage (stats card, subject filter, entries table, TanStack Query + mutations)
+- [x] Frontend: маршрут /attendance в App.tsx, пункт "Посещаемость" (CheckCircle2, text-teal-500) в QuickActions
+- [x] Frontend: MSW handlers + testAttendanceEntries + testAttendanceStats
+- [x] Frontend: 32 теста (attendanceUtils: 12, AttendanceStatsCard: 5, AttendanceTable: 7, AttendancePage: 8)
+- [x] TypeScript, ESLint, build — всё чисто
+
 ---
 
 ## Что в работе
 
-Нет активных задач. 03-file-upload-ui реализован, ожидает коммит.
+Нет активных задач. 08-attendance реализован, ожидает коммит.
 
 ### Следующие задачи (приоритет):
 1. ~~**01-PWA** — manifest, service worker, оффлайн (P0)~~ ✅
@@ -162,10 +182,10 @@
 3. ~~**06-clickable-schedule** — кликабельные элементы расписания (P1)~~ ✅
 4. ~~**07-progress-bars** — прогресс-бары по предметам (P2)~~ ✅
 5. ~~**03-file-upload-ui** — UI загрузки файлов (P1)~~ ✅
-6. **09-dark-theme** — тёмная тема (P2)
-7. **05-ics-export** — экспорт в .ics (P2)
-8. **02-push-notifications** — push-уведомления (P1, зависит от PWA ✅)
-9. **08-attendance** — посещаемость (P2)
+6. ~~**08-attendance** — посещаемость (P2)~~ ✅
+7. **09-dark-theme** — тёмная тема (P2)
+8. **05-ics-export** — экспорт в .ics (P2)
+9. **02-push-notifications** — push-уведомления (P1, зависит от PWA ✅)
 10. **10-lesson-notes** — заметки к парам (P2)
 11. **11-semester-timeline** — timeline семестра (P3)
 

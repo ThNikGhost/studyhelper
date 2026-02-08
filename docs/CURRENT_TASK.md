@@ -1,47 +1,46 @@
 # Текущая задача
 
 ## Статус
-**03-file-upload-ui завершена** — реализована на ветке `main`, ожидает коммит.
+**08-attendance завершена** — реализована на ветке `main`, ожидает коммит.
 
-## Выполнено: 03-file-upload-ui (файловое хранилище)
+## Выполнено: 08-attendance (посещаемость)
 
 ### Backend
-- [x] `models/file.py` — модель File (id, filename, stored_filename, mime_type, size, category, subject_id FK, uploaded_by FK, created_at)
-- [x] `schemas/file.py` — FileCategory StrEnum, FileResponse, FileListResponse
-- [x] `services/file.py` — upload_file, get_files, get_file_by_id, delete_file, path traversal protection
-- [x] `services/upload.py` — _FILE_SIGNATURES, validate_file_content(), параметризованный read_upload_streaming(max_size_mb)
-- [x] `routers/files.py` — POST /upload, GET /, GET /{id}/download, DELETE /{id}
-- [x] `config.py` — max_file_size_mb=50, allowed_file_extensions, allowed_file_mime_types
-- [x] `models/__init__.py` — File в импорты
-- [x] `main.py` — files router
-- [x] Alembic миграция add_files_table
-- [x] 21 backend тестов (upload: 10, list: 5, download: 3, delete: 3)
+- [x] `models/attendance.py` — модель Absence (id, user_id FK, schedule_entry_id FK, created_at, UniqueConstraint)
+- [x] `models/__init__.py` — Absence в импорты
+- [x] `schemas/attendance.py` — AbsenceCreate, AbsenceResponse, MarkPresentRequest, AttendanceEntryResponse, SubjectAttendanceStats, AttendanceStatsResponse
+- [x] `services/attendance.py` — mark_absent, mark_present, get_attendance_entries (filters), get_attendance_stats, get_subject_attendance_stats
+- [x] `routers/attendance.py` — POST /mark-absent (201), POST /mark-present (204), GET / (entries), GET /stats, GET /stats/{subject_id}
+- [x] `main.py` — attendance router (prefix="/attendance", tags=["Attendance"])
+- [x] Alembic миграция add_absences_table (df769e398a43)
+- [x] 22 backend тестов (mark_absent: 7, mark_present: 3, get_attendance: 5, get_stats: 5, subject_stats: 2)
 
 ### Frontend
-- [x] `types/file.ts` — FileCategory, fileCategoryLabels, StudyFile interface
-- [x] `services/fileService.ts` — uploadFile (onProgress), getFiles, deleteFile, getDownloadUrl
-- [x] `lib/fileUtils.ts` — formatFileSize, getFileIcon, isAllowedFileType, MAX_FILE_SIZE_MB, ALLOWED_EXTENSIONS
-- [x] `components/files/FileDropzone.tsx` — HTML5 drag & drop, file preview, category/subject selects, progress bar, disabled state
-- [x] `components/files/FileList.tsx` — список файлов с иконками, metadata, download/delete
-- [x] `pages/FilesPage.tsx` — dropzone, фильтры, список, модал удаления, TanStack Query
-- [x] `App.tsx` — маршрут /files (ProtectedRoute + AppLayout)
-- [x] `QuickActions.tsx` — пункт "Файлы" (FolderOpen, text-amber-500)
-- [x] MSW handlers: GET /files/, POST /files/upload, DELETE /files/:id, testFiles data
-- [x] 43 frontend тестов (fileUtils: 20, FileDropzone: 8, FileList: 7, FilesPage: 8)
+- [x] `types/attendance.ts` — AttendanceEntry, AbsenceRecord, SubjectAttendanceStats, AttendanceStats
+- [x] `services/attendanceService.ts` — getEntries, markAbsent, markPresent, getStats, getSubjectStats
+- [x] `lib/attendanceUtils.ts` — formatAttendancePercent, getAttendanceColor, getAttendanceBarColor, lessonTypeLabels
+- [x] `components/attendance/AttendanceStatsCard.tsx` — карточка статистики с ProgressBar и процентом
+- [x] `components/attendance/SubjectAttendanceList.tsx` — список предметов с мини-прогресс-барами, фильтр
+- [x] `components/attendance/AttendanceTable.tsx` — таблица занятий с toggle кнопками Был/Н/Б
+- [x] `pages/AttendancePage.tsx` — полная страница: stats, subject filter, entries table, mutations + toast
+- [x] `App.tsx` — маршрут /attendance (ProtectedRoute + AppLayout)
+- [x] `QuickActions.tsx` — пункт "Посещаемость" (CheckCircle2, text-teal-500)
+- [x] MSW handlers: GET /attendance/, GET /attendance/stats, POST mark-absent, POST mark-present
+- [x] 32 frontend тестов (attendanceUtils: 12, AttendanceStatsCard: 5, AttendanceTable: 7, AttendancePage: 8)
 - [x] TypeScript, ESLint, build — всё чисто
 
 ## Следующие задачи (приоритет)
 1. **09-dark-theme** — тёмная тема (P2)
 2. **05-ics-export** — экспорт в .ics (P2)
 3. **02-push-notifications** — push-уведомления (P1, зависит от PWA)
-4. **08-attendance** — посещаемость (P2)
-5. **10-lesson-notes** — заметки к парам (P2)
-6. **11-semester-timeline** — timeline семестра (P3)
+4. **10-lesson-notes** — заметки к парам (P2)
+5. **11-semester-timeline** — timeline семестра (P3)
 
 ## Заметки
-- Backend: 285 тестов проходят (264 + 21 новых)
-- Frontend: 226 тестов проходят (183 + 43 новых)
+- Backend: 307 тестов проходят (285 + 22 новых)
+- Frontend: 258 тестов проходят (226 + 32 новых)
 - Все линтеры чисты
+- Архитектура: absences-only (хранятся только пропуски)
 - Деплой отложен (сервер не готов)
 
 ## Блокеры / Вопросы
