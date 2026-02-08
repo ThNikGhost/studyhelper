@@ -4,7 +4,8 @@ import type { AttendanceEntry, AttendanceStats } from '@/types/attendance'
 import type { StudyFile } from '@/types/file'
 import type { LessonNote } from '@/types/note'
 import type { CurrentLesson, DaySchedule, ScheduleEntry } from '@/types/schedule'
-import type { Subject } from '@/types/subject'
+import type { Semester, Subject } from '@/types/subject'
+import type { TimelineData, TimelineDeadline, TimelineExam } from '@/types/timeline'
 import type { UpcomingWork, WorkWithStatus } from '@/types/work'
 
 // Test data factories
@@ -481,6 +482,83 @@ export const testLessonNotes: LessonNote[] = [
   },
 ]
 
+export const testSemester: Semester = {
+  id: 1,
+  number: 1,
+  year_start: 2025,
+  year_end: 2026,
+  name: 'Осенний 2025/2026',
+  is_current: true,
+  start_date: '2025-09-01',
+  end_date: '2026-01-31',
+  created_at: '2025-09-01T00:00:00Z',
+  updated_at: '2025-09-01T00:00:00Z',
+}
+
+export const testSemesterNoDates: Semester = {
+  ...testSemester,
+  id: 2,
+  start_date: null,
+  end_date: null,
+}
+
+export const testTimelineDeadlines: TimelineDeadline[] = [
+  {
+    work_id: 101,
+    title: 'Контрольная работа №1',
+    work_type: 'test',
+    deadline: '2025-10-15T23:59:00Z',
+    subject_name: 'Математический анализ',
+    subject_id: 1,
+    status: 'completed',
+  },
+  {
+    work_id: 102,
+    title: 'Лабораторная №1',
+    work_type: 'lab',
+    deadline: '2025-11-01T23:59:00Z',
+    subject_name: 'Программирование',
+    subject_id: 3,
+    status: 'in_progress',
+  },
+  {
+    work_id: 103,
+    title: 'Реферат',
+    work_type: 'report',
+    deadline: '2025-12-20T23:59:00Z',
+    subject_name: 'Физика',
+    subject_id: 2,
+    status: null,
+  },
+]
+
+export const testTimelineExams: TimelineExam[] = [
+  {
+    schedule_entry_id: 200,
+    subject_name: 'Математический анализ',
+    lesson_date: '2026-01-15',
+    start_time: '09:00:00',
+    end_time: '12:00:00',
+    room: '301',
+    teacher_name: 'Иванов И.И.',
+  },
+  {
+    schedule_entry_id: 201,
+    subject_name: 'Физика',
+    lesson_date: '2026-01-20',
+    start_time: '10:00:00',
+    end_time: '13:00:00',
+    room: '201',
+    teacher_name: 'Петров П.П.',
+  },
+]
+
+export const testTimelineData: TimelineData = {
+  semester: testSemester,
+  deadlines: testTimelineDeadlines,
+  exams: testTimelineExams,
+}
+
 export const handlers = [
   // Auth endpoints
   http.post('/api/v1/auth/login', () => {
@@ -497,6 +575,23 @@ export const handlers = [
 
   http.post('/api/v1/auth/logout', () => {
     return new HttpResponse(null, { status: 204 })
+  }),
+
+  // Semester endpoints
+  http.get('/api/v1/semesters/current', () => {
+    return HttpResponse.json(testSemester)
+  }),
+
+  http.get('/api/v1/semesters/:id/timeline', ({ params }) => {
+    const id = Number(params.id)
+    if (id === testSemester.id) {
+      return HttpResponse.json(testTimelineData)
+    }
+    return HttpResponse.json({ detail: 'Not found' }, { status: 404 })
+  }),
+
+  http.get('/api/v1/semesters', () => {
+    return HttpResponse.json([testSemester])
   }),
 
   // Subject endpoints

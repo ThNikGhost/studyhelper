@@ -13,6 +13,7 @@ import ClassmatesPage from '@/pages/ClassmatesPage'
 import FilesPage from '@/pages/FilesPage'
 import AttendancePage from '@/pages/AttendancePage'
 import NotesPage from '@/pages/NotesPage'
+import TimelinePage from '@/pages/TimelinePage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -119,6 +120,16 @@ function App() {
           <ProtectedRoute>
             <AppLayout>
               <NotesPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/timeline"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <TimelinePage />
             </AppLayout>
           </ProtectedRoute>
         }

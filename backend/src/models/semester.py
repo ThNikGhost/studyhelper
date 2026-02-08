@@ -1,8 +1,9 @@
 """Semester model."""
 
+from datetime import date
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Integer, String
+from sqlalchemy import Boolean, Date, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models.base import Base, TimestampMixin
@@ -22,6 +23,8 @@ class Semester(Base, TimestampMixin):
     year_end: Mapped[int] = mapped_column(Integer, nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     is_current: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Relationships
     subjects: Mapped[list["Subject"]] = relationship(

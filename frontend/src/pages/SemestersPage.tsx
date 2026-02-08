@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
 import { toast } from 'sonner'
 import subjectService from '@/services/subjectService'
-import type { Semester, SemesterCreate } from '@/types/subject'
+import type { Semester, SemesterCreate, SemesterUpdate } from '@/types/subject'
 
 // Get current academic year
 function getCurrentAcademicYear(): { yearStart: number; yearEnd: number } {
@@ -33,14 +33,16 @@ export function SemestersPage() {
 
   // Default form values
   const { yearStart, yearEnd } = getCurrentAcademicYear()
-  const defaultFormData: SemesterCreate = {
+  const defaultFormData: SemesterCreate & { start_date: string; end_date: string } = {
     number: 1,
     year_start: yearStart,
     year_end: yearEnd,
     name: '',
+    start_date: '',
+    end_date: '',
   }
 
-  const [formData, setFormData] = useState<SemesterCreate>(defaultFormData)
+  const [formData, setFormData] = useState<typeof defaultFormData>(defaultFormData)
 
   // Fetch semesters
   const {
@@ -125,6 +127,8 @@ export function SemestersPage() {
       year_start: semester.year_start,
       year_end: semester.year_end,
       name: semester.name,
+      start_date: semester.start_date ?? '',
+      end_date: semester.end_date ?? '',
     })
     setEditingSemester(semester)
     setIsAddModalOpen(true)
@@ -138,10 +142,15 @@ export function SemestersPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    const payload = {
+      ...formData,
+      start_date: formData.start_date || null,
+      end_date: formData.end_date || null,
+    }
     if (editingSemester) {
-      updateMutation.mutate({ id: editingSemester.id, data: formData })
+      updateMutation.mutate({ id: editingSemester.id, data: payload as SemesterUpdate })
     } else {
-      createMutation.mutate(formData)
+      createMutation.mutate(payload)
     }
   }
 
@@ -239,6 +248,9 @@ export function SemestersPage() {
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
                       Семестр #{semester.number} • {semester.year_start}/{semester.year_end}
+                      {semester.start_date && semester.end_date && (
+                        <> • {new Date(semester.start_date).toLocaleDateString('ru-RU')} – {new Date(semester.end_date).toLocaleDateString('ru-RU')}</>
+                      )}
                     </p>
                   </div>
                   <div className="flex gap-1 shrink-0">
@@ -353,6 +365,30 @@ export function SemestersPage() {
                 Нечётный = осенний, чётный = весенний
               </p>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="start_date">Дата начала</Label>
+                <Input
+                  id="start_date"
+                  type="date"
+                  value={formData.start_date}
+                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="end_date">Дата окончания</Label>
+                <Input
+                  id="end_date"
+                  type="date"
+                  value={formData.end_date}
+                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Необязательно. Нужны для Timeline семестра.
+            </p>
 
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="outline" className="flex-1" onClick={closeModal}>

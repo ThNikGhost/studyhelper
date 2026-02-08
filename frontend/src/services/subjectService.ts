@@ -1,5 +1,6 @@
 import api from '@/lib/api'
 import type { Subject, SubjectCreate, SubjectUpdate, Semester, SemesterCreate, SemesterUpdate } from '@/types/subject'
+import type { TimelineData } from '@/types/timeline'
 
 export const subjectService = {
   // Subjects
@@ -55,6 +56,11 @@ export const subjectService = {
 
   async setCurrentSemester(id: number): Promise<Semester> {
     const response = await api.post<Semester>(`/semesters/${id}/set-current`)
+    return response.data
+  },
+
+  async getSemesterTimeline(semesterId: number, signal?: AbortSignal): Promise<TimelineData> {
+    const response = await api.get<TimelineData>(`/semesters/${semesterId}/timeline`, { signal })
     return response.data
   },
 }

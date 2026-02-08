@@ -7,6 +7,8 @@ export interface Semester {
   year_end: number
   name: string
   is_current: boolean
+  start_date: string | null
+  end_date: string | null
   created_at: string
   updated_at: string
 }
@@ -16,6 +18,8 @@ export interface SemesterCreate {
   year_start: number
   year_end: number
   name: string
+  start_date?: string | null
+  end_date?: string | null
 }
 
 export interface SemesterUpdate {
@@ -23,6 +27,8 @@ export interface SemesterUpdate {
   year_start?: number
   year_end?: number
   name?: string
+  start_date?: string | null
+  end_date?: string | null
 }
 
 export interface Subject {

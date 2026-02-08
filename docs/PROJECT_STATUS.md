@@ -2,11 +2,11 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-08
-- **Сессия**: Реализация 10-lesson-notes (заметки к парам)
+- **Сессия**: Реализация 11-semester-timeline (timeline семестра)
 
 ## Общий прогресс
 **Фаза**: Post-MVP реализация
-**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован. 07-progress-bars реализован. 03-file-upload-ui реализован. 08-attendance реализован. 10-lesson-notes реализован.
+**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован. 07-progress-bars реализован. 03-file-upload-ui реализован. 08-attendance реализован. 10-lesson-notes реализован. 11-semester-timeline реализован.
 
 ---
 
@@ -32,13 +32,13 @@
 - [x] Инициализация проекта (pyproject.toml, uv)
 - [x] Конфигурация (pydantic-settings)
 - [x] База данных (SQLAlchemy 2.0 async)
-- [x] Alembic миграции (12 миграций применено)
+- [x] Alembic миграции (13 миграций применено)
 
 #### Модули:
 | Модуль | Модель | Схемы | Сервис | Роутер | Тесты |
 |--------|--------|-------|--------|--------|-------|
 | Auth | ✅ User | ✅ | ✅ | ✅ | ✅ 16 |
-| Semesters | ✅ | ✅ | ✅ | ✅ | ✅ 17 |
+| Semesters | ✅ (+start_date, end_date) | ✅ (+Timeline) | ✅ (+timeline) | ✅ (+timeline) | ✅ 26 |
 | Subjects | ✅ | ✅ | ✅ | ✅ | ✅ 18 |
 | Works | ✅ Work, WorkStatus, WorkStatusHistory | ✅ | ✅ | ✅ | ✅ 23 |
 | Teachers | ✅ | ✅ | ✅ | ✅ | ✅ 20 |
@@ -192,11 +192,33 @@
 - [x] Frontend: 23 новых теста (NoteEditor: 10, NoteCard: 5, NotesPage: 8) + обновлены LessonDetailModal тесты (17)
 - [x] TypeScript, ESLint, build — всё чисто
 
+### 11-semester-timeline (ЗАВЕРШЕНА ✅)
+- [x] Backend: start_date/end_date в модели Semester (Date, nullable), Alembic миграция
+- [x] Backend: model_validator на SemesterCreate/SemesterUpdate (start_date < end_date)
+- [x] Backend: TimelineDeadline, TimelineExam, TimelineResponse схемы
+- [x] Backend: get_semester_timeline() сервис (works с deadline + user status, exams в диапазоне дат)
+- [x] Backend: GET /api/v1/semesters/{id}/timeline endpoint (400 no dates, 404 not found)
+- [x] Backend: 9 новых тестов (create/update with dates, invalid dates, timeline success/deadlines/no_dates/not_found/unauthorized/empty)
+- [x] Frontend: типы TimelineDeadline, TimelineExam, TimelineData
+- [x] Frontend: getSemesterTimeline() в subjectService
+- [x] Frontend: timelineUtils (getPositionPercent, getMonthLabels, getSemesterProgress, getMarkerColor, getExamMarkerColor)
+- [x] Frontend: TimelineBar (горизонтальная полоса, маркеры дедлайнов/экзаменов, "Сегодня", ось месяцев)
+- [x] Frontend: TimelineMarker (Popover tooltip, circle/diamond variants)
+- [x] Frontend: TimelineLegend, TimelineEventList
+- [x] Frontend: TimelinePage (фильтры showDeadlines/showExams, subject dropdown, loading/error/empty states)
+- [x] Frontend: SemesterTimelineWidget (dashboard widget, simplified bar)
+- [x] Frontend: SemestersPage — date pickers в форме создания/редактирования
+- [x] Frontend: DashboardPage — SemesterTimelineWidget в grid
+- [x] Frontend: маршрут /timeline, пункт "Timeline" (BarChart3, text-indigo-500) в QuickActions
+- [x] Frontend: MSW handlers + testSemester/testTimelineData
+- [x] Frontend: 42 новых теста (timelineUtils: 21, TimelineBar: 8, SemesterTimelineWidget: 5, TimelinePage: 8)
+- [x] TypeScript, ESLint, build — всё чисто
+
 ---
 
 ## Что в работе
 
-Нет активных задач. 10-lesson-notes реализован, ожидает коммит.
+Нет активных задач. 11-semester-timeline реализован, ожидает коммит.
 
 ### Следующие задачи (приоритет):
 1. ~~**01-PWA** — manifest, service worker, оффлайн (P0)~~ ✅
@@ -206,10 +228,10 @@
 5. ~~**03-file-upload-ui** — UI загрузки файлов (P1)~~ ✅
 6. ~~**08-attendance** — посещаемость (P2)~~ ✅
 7. ~~**10-lesson-notes** — заметки к парам (P2)~~ ✅
-8. **09-dark-theme** — тёмная тема (P2)
-9. **05-ics-export** — экспорт в .ics (P2)
-10. **02-push-notifications** — push-уведомления (P1, зависит от PWA ✅)
-11. **11-semester-timeline** — timeline семестра (P3)
+8. ~~**11-semester-timeline** — timeline семестра (P3)~~ ✅
+9. **09-dark-theme** — тёмная тема (P2)
+10. **05-ics-export** — экспорт в .ics (P2)
+11. **02-push-notifications** — push-уведомления (P1, зависит от PWA ✅)
 
 ### Деплой
 Отложен до разбирательства с сервером.
@@ -270,6 +292,7 @@ Vite на Windows может не слушать на правильном ад�
 - **Progress bars**: ProgressBar (a11y, size variants), SubjectProgressCard, SemesterProgressWidget (top-3 lowest), calculateSemesterProgress в progressUtils
 - **File upload**: File модель (immutable), FileDropzone (HTML5 DnD), FileList, magic bytes validation, StreamingResponse для download, path traversal protection
 - **Lesson notes**: LessonNote модель (one per entry per user), NoteEditor (autosave debounce 500ms), NoteCard, NotesPage, LessonDetailModal интеграция через useQuery
+- **Semester timeline**: start_date/end_date на Semester (nullable), TimelineBar (CSS positioning via left%), TimelineMarker (Popover tooltips), getPositionPercent/getMonthLabels/getSemesterProgress утилиты, TimelinePage с фильтрами, SemesterTimelineWidget на Dashboard
 
 ---
 
@@ -277,14 +300,14 @@ Vite на Windows может не слушать на правильном ад�
 
 | Метрика | Значение |
 |---------|----------|
-| Тестов backend | 328 |
-| Тестов frontend | 279 |
+| Тестов backend | 337 |
+| Тестов frontend | 321 |
 | Покрытие тестами | ~80% |
-| API endpoints | ~64 |
+| API endpoints | ~65 |
 | Моделей | 15 |
-| Миграций | 12 |
+| Миграций | 13 |
 | Линтер backend | ✅ Ruff проходит |
 | Линтер frontend | ✅ ESLint проходит (кроме shadcn/ui) |
-| Frontend тесты | ✅ Vitest проходит (279 тестов) |
+| Frontend тесты | ✅ Vitest проходит (321 тестов) |
 | Frontend build | ✅ TypeScript + Vite |
-| Frontend страниц | 11 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Notes) |
+| Frontend страниц | 12 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Notes, Timeline) |

@@ -26,6 +26,19 @@ def semester_data_2() -> dict:
     }
 
 
+@pytest.fixture
+def semester_data_with_dates() -> dict:
+    """Sample semester data with start/end dates."""
+    return {
+        "number": 1,
+        "year_start": 2025,
+        "year_end": 2026,
+        "name": "Осенний 2025/2026",
+        "start_date": "2025-09-01",
+        "end_date": "2026-01-31",
+    }
+
+
 class TestGetSemesters:
     """Tests for GET /api/v1/semesters."""
 
@@ -63,9 +76,45 @@ class TestCreateSemester:
         assert data["year_end"] == semester_data["year_end"]
         assert data["name"] == semester_data["name"]
         assert data["is_current"] is False
+        assert data["start_date"] is None
+        assert data["end_date"] is None
         assert "id" in data
         assert "created_at" in data
         assert "updated_at" in data
+
+    async def test_create_semester_with_dates(
+        self, client: AsyncClient, auth_headers: dict, semester_data_with_dates: dict
+    ):
+        """Test creating semester with start/end dates."""
+        response = await client.post(
+            "/api/v1/semesters",
+            json=semester_data_with_dates,
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["start_date"] == "2025-09-01"
+        assert data["end_date"] == "2026-01-31"
+
+    async def test_create_semester_invalid_dates(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Test creating semester with start_date >= end_date fails."""
+        response = await client.post(
+            "/api/v1/semesters",
+            json={
+                "number": 1,
+                "year_start": 2025,
+                "year_end": 2026,
+                "name": "Test",
+                "start_date": "2026-01-31",
+                "end_date": "2025-09-01",
+            },
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 422
 
     async def test_create_semester_unauthorized(
         self, client: AsyncClient, semester_data: dict
@@ -174,6 +223,28 @@ class TestUpdateSemester:
         data = response.json()
         assert data["name"] == "Updated Name"
         assert data["number"] == semester_data["number"]
+
+    async def test_update_semester_with_dates(
+        self, client: AsyncClient, auth_headers: dict, semester_data: dict
+    ):
+        """Test updating semester to add dates."""
+        create_response = await client.post(
+            "/api/v1/semesters",
+            json=semester_data,
+            headers=auth_headers,
+        )
+        semester_id = create_response.json()["id"]
+
+        response = await client.put(
+            f"/api/v1/semesters/{semester_id}",
+            json={"start_date": "2024-09-01", "end_date": "2025-01-31"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["start_date"] == "2024-09-01"
+        assert data["end_date"] == "2025-01-31"
 
     async def test_update_semester_not_found(
         self, client: AsyncClient, auth_headers: dict
@@ -357,3 +428,130 @@ class TestSetCurrentSemester:
         )
 
         assert response.status_code == 404
+
+
+class TestGetSemesterTimeline:
+    """Tests for GET /api/v1/semesters/{id}/timeline."""
+
+    async def test_timeline_success(
+        self, client: AsyncClient, auth_headers: dict, semester_data_with_dates: dict
+    ):
+        """Test getting timeline for semester with dates."""
+        # Create semester with dates
+        create_resp = await client.post(
+            "/api/v1/semesters",
+            json=semester_data_with_dates,
+            headers=auth_headers,
+        )
+        semester_id = create_resp.json()["id"]
+
+        response = await client.get(
+            f"/api/v1/semesters/{semester_id}/timeline",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "semester" in data
+        assert "deadlines" in data
+        assert "exams" in data
+        assert data["semester"]["id"] == semester_id
+        assert isinstance(data["deadlines"], list)
+        assert isinstance(data["exams"], list)
+
+    async def test_timeline_with_deadlines(
+        self, client: AsyncClient, auth_headers: dict, semester_data_with_dates: dict
+    ):
+        """Test timeline includes works with deadlines."""
+        # Create semester
+        sem_resp = await client.post(
+            "/api/v1/semesters",
+            json=semester_data_with_dates,
+            headers=auth_headers,
+        )
+        semester_id = sem_resp.json()["id"]
+
+        # Create subject in this semester
+        subj_resp = await client.post(
+            "/api/v1/subjects",
+            json={"name": "Математика", "semester_id": semester_id},
+            headers=auth_headers,
+        )
+        subject_id = subj_resp.json()["id"]
+
+        # Create work with deadline
+        await client.post(
+            "/api/v1/works",
+            json={
+                "title": "Контрольная",
+                "work_type": "test",
+                "deadline": "2025-10-15T23:59:00Z",
+                "subject_id": subject_id,
+            },
+            headers=auth_headers,
+        )
+
+        response = await client.get(
+            f"/api/v1/semesters/{semester_id}/timeline",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["deadlines"]) == 1
+        assert data["deadlines"][0]["title"] == "Контрольная"
+        assert data["deadlines"][0]["subject_name"] == "Математика"
+
+    async def test_timeline_no_dates_returns_400(
+        self, client: AsyncClient, auth_headers: dict, semester_data: dict
+    ):
+        """Test timeline for semester without dates returns 400."""
+        create_resp = await client.post(
+            "/api/v1/semesters",
+            json=semester_data,
+            headers=auth_headers,
+        )
+        semester_id = create_resp.json()["id"]
+
+        response = await client.get(
+            f"/api/v1/semesters/{semester_id}/timeline",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 400
+
+    async def test_timeline_not_found(self, client: AsyncClient, auth_headers: dict):
+        """Test timeline for non-existent semester returns 404."""
+        response = await client.get(
+            "/api/v1/semesters/99999/timeline",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 404
+
+    async def test_timeline_unauthorized(self, client: AsyncClient):
+        """Test timeline without auth fails."""
+        response = await client.get("/api/v1/semesters/1/timeline")
+
+        assert response.status_code == 401
+
+    async def test_timeline_empty_semester(
+        self, client: AsyncClient, auth_headers: dict, semester_data_with_dates: dict
+    ):
+        """Test timeline for semester with no subjects returns empty lists."""
+        create_resp = await client.post(
+            "/api/v1/semesters",
+            json=semester_data_with_dates,
+            headers=auth_headers,
+        )
+        semester_id = create_resp.json()["id"]
+
+        response = await client.get(
+            f"/api/v1/semesters/{semester_id}/timeline",
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["deadlines"] == []
+        assert data["exams"] == []

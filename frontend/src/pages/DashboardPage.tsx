@@ -10,9 +10,11 @@ import { calculateSemesterProgress } from '@/lib/progressUtils'
 import { TodayScheduleWidget } from '@/components/dashboard/TodayScheduleWidget'
 import { DeadlinesWidget } from '@/components/dashboard/DeadlinesWidget'
 import { SemesterProgressWidget } from '@/components/dashboard/SemesterProgressWidget'
+import { SemesterTimelineWidget } from '@/components/dashboard/SemesterTimelineWidget'
 import { QuickActions } from '@/components/dashboard/QuickActions'
 import { LessonDetailModal } from '@/components/schedule/LessonDetailModal'
 import type { ScheduleEntry } from '@/types/schedule'
+import type { Semester } from '@/types/subject'
 
 export default function DashboardPage() {
   const { user, logout } = useAuthStore()
@@ -73,6 +75,27 @@ export default function DashboardPage() {
     staleTime: 60000,
   })
 
+  const {
+    data: currentSemester,
+    isLoading: currentSemesterLoading,
+    isError: currentSemesterError,
+  } = useQuery<Semester | null>({
+    queryKey: ['semesters', 'current'],
+    queryFn: ({ signal }) => subjectService.getCurrentSemester(signal),
+    staleTime: 60000,
+  })
+
+  const {
+    data: timeline,
+    isLoading: timelineLoading,
+    isError: timelineError,
+  } = useQuery({
+    queryKey: ['timeline', currentSemester?.id],
+    queryFn: ({ signal }) => subjectService.getSemesterTimeline(currentSemester!.id, signal),
+    enabled: !!currentSemester?.start_date && !!currentSemester?.end_date,
+    staleTime: 60000,
+  })
+
   const semesterProgress = useMemo(
     () => calculateSemesterProgress(allWorks, subjects),
     [allWorks, subjects],
@@ -124,6 +147,12 @@ export default function DashboardPage() {
             progress={semesterProgress}
             isLoading={subjectsLoading || allWorksLoading}
             isError={subjectsError || allWorksError}
+          />
+          <SemesterTimelineWidget
+            semester={currentSemester}
+            timeline={timeline}
+            isLoading={currentSemesterLoading || timelineLoading}
+            isError={currentSemesterError || timelineError}
           />
         </div>
 

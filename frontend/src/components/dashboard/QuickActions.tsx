@@ -14,6 +14,7 @@ import {
   FolderOpen,
   CheckCircle2,
   StickyNote,
+  BarChart3,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -66,6 +67,13 @@ const menuItems = [
     icon: CheckCircle2,
     href: '/attendance',
     color: 'text-teal-500',
+  },
+  {
+    title: 'Timeline',
+    description: 'Timeline семестра',
+    icon: BarChart3,
+    href: '/timeline',
+    color: 'text-indigo-500',
   },
   {
     title: 'Семестры',
