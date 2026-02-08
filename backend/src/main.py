@@ -26,6 +26,7 @@ from src.config import settings
 from src.routers import (
     auth,
     classmates,
+    files,
     schedule,
     semesters,
     subjects,
@@ -129,6 +130,7 @@ api_v1.include_router(university.router, prefix="/university", tags=["University
 api_v1.include_router(classmates.router, prefix="/classmates", tags=["Classmates"])
 api_v1.include_router(schedule.router, prefix="/schedule", tags=["Schedule"])
 api_v1.include_router(uploads.router, prefix="/uploads", tags=["Uploads"])
+api_v1.include_router(files.router, prefix="/files", tags=["Files"])
 
 app.include_router(api_v1)
 

@@ -10,6 +10,7 @@ import SubjectsPage from '@/pages/SubjectsPage'
 import SemestersPage from '@/pages/SemestersPage'
 import WorksPage from '@/pages/WorksPage'
 import ClassmatesPage from '@/pages/ClassmatesPage'
+import FilesPage from '@/pages/FilesPage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -86,6 +87,16 @@ function App() {
           <ProtectedRoute>
             <AppLayout>
               <ClassmatesPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/files"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <FilesPage />
             </AppLayout>
           </ProtectedRoute>
         }

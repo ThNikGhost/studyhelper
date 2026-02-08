@@ -40,6 +40,36 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = 5
     allowed_image_types: list[str] = ["image/jpeg", "image/png", "image/webp"]
 
+    # Study file uploads
+    max_file_size_mb: int = 50
+    allowed_file_extensions: list[str] = [
+        "pdf",
+        "doc",
+        "docx",
+        "xls",
+        "xlsx",
+        "ppt",
+        "pptx",
+        "jpg",
+        "jpeg",
+        "png",
+        "gif",
+        "webp",
+    ]
+    allowed_file_mime_types: list[str] = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+    ]
+
     # Timezone
     timezone: str = "Asia/Omsk"
 

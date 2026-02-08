@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import type { User, TokenResponse } from '@/types/auth'
+import type { StudyFile } from '@/types/file'
 import type { CurrentLesson, DaySchedule, ScheduleEntry } from '@/types/schedule'
 import type { Subject } from '@/types/subject'
 import type { UpcomingWork, WorkWithStatus } from '@/types/work'
@@ -310,6 +311,45 @@ export const testWorksForSubject: WorkWithStatus[] = [
   },
 ]
 
+export const testFiles: StudyFile[] = [
+  {
+    id: 1,
+    filename: 'Лекция_01.pdf',
+    stored_filename: 'a1b2c3.pdf',
+    mime_type: 'application/pdf',
+    size: 2 * 1024 * 1024,
+    category: 'lecture',
+    subject_id: 1,
+    subject_name: 'Математический анализ',
+    uploaded_by: 1,
+    created_at: '2026-01-15T10:00:00Z',
+  },
+  {
+    id: 2,
+    filename: 'Задачник.docx',
+    stored_filename: 'd4e5f6.docx',
+    mime_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    size: 512 * 1024,
+    category: 'problem_set',
+    subject_id: 2,
+    subject_name: 'Физика',
+    uploaded_by: 1,
+    created_at: '2026-01-20T14:00:00Z',
+  },
+  {
+    id: 3,
+    filename: 'Шпаргалка.png',
+    stored_filename: 'g7h8i9.png',
+    mime_type: 'image/png',
+    size: 150 * 1024,
+    category: 'cheatsheet',
+    subject_id: null,
+    subject_name: null,
+    uploaded_by: 1,
+    created_at: '2026-02-01T08:00:00Z',
+  },
+]
+
 export const testUpcomingWorks: UpcomingWork[] = [
   {
     id: 1,
@@ -388,5 +428,30 @@ export const handlers = [
 
   http.get('/api/v1/works/upcoming', () => {
     return HttpResponse.json(testUpcomingWorks)
+  }),
+
+  // Files endpoints
+  http.get('/api/v1/files/', () => {
+    return HttpResponse.json(testFiles)
+  }),
+
+  http.post('/api/v1/files/upload', () => {
+    const newFile: StudyFile = {
+      id: 100,
+      filename: 'uploaded.pdf',
+      stored_filename: 'abc123.pdf',
+      mime_type: 'application/pdf',
+      size: 1024 * 1024,
+      category: 'lecture',
+      subject_id: null,
+      subject_name: null,
+      uploaded_by: 1,
+      created_at: '2026-02-01T00:00:00Z',
+    }
+    return HttpResponse.json(newFile, { status: 201 })
+  }),
+
+  http.delete('/api/v1/files/:id', () => {
+    return new HttpResponse(null, { status: 204 })
   }),
 ]

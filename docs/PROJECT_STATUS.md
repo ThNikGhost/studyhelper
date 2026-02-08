@@ -2,11 +2,11 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-08
-- **Сессия**: Реализация 07-progress-bars (прогресс-бары по предметам)
+- **Сессия**: Реализация 03-file-upload-ui (файловое хранилище)
 
 ## Общий прогресс
 **Фаза**: Post-MVP реализация
-**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован. 07-progress-bars реализован.
+**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован. 07-progress-bars реализован. 03-file-upload-ui реализован.
 
 ---
 
@@ -32,7 +32,7 @@
 - [x] Инициализация проекта (pyproject.toml, uv)
 - [x] Конфигурация (pydantic-settings)
 - [x] База данных (SQLAlchemy 2.0 async)
-- [x] Alembic миграции (9 миграций применено)
+- [x] Alembic миграции (10 миграций применено)
 
 #### Модули:
 | Модуль | Модель | Схемы | Сервис | Роутер | Тесты |
@@ -47,6 +47,7 @@
 | Schedule | ✅ ScheduleEntry, ScheduleSnapshot | ✅ | ✅ | ✅ | ✅ 24+11 |
 | Parser | ✅ | ✅ | ✅ | CLI | ✅ 74 |
 | Uploads | — | ✅ | ✅ | ✅ | ✅ 11 |
+| Files | ✅ File | ✅ | ✅ | ✅ | ✅ 21 |
 
 ### Parser модуль (ЗАВЕРШЁН ✅)
 - [x] `src/parser/` — модуль парсинга
@@ -136,19 +137,32 @@
 - [x] 38 новых тестов (progressUtils: 15, ProgressBar: 8, SubjectProgressCard: 7, SemesterProgressWidget: 8)
 - [x] TypeScript, ESLint, build — всё чисто
 
+### 03-file-upload-ui (ЗАВЕРШЕНА ✅)
+- [x] Backend: модель File, схемы (FileCategory, FileResponse), сервис (upload/list/download/delete), роутер, миграция
+- [x] Backend: validate_file_content (magic bytes), параметризованный read_upload_streaming, path traversal protection
+- [x] Backend: config (max_file_size_mb=50, allowed_file_extensions, allowed_file_mime_types)
+- [x] Backend: 21 тест (upload: 10, list: 5, download: 3, delete: 3)
+- [x] Frontend: типы (FileCategory, StudyFile), сервис (fileService), утилиты (fileUtils)
+- [x] Frontend: FileDropzone (HTML5 drag & drop, валидация, category/subject selects, progress bar)
+- [x] Frontend: FileList (иконки по типу, metadata, download/delete)
+- [x] Frontend: FilesPage (dropzone, фильтры, список, модал удаления, TanStack Query)
+- [x] Frontend: маршрут /files в App.tsx, пункт "Файлы" в QuickActions
+- [x] Frontend: 43 теста (fileUtils: 20, FileDropzone: 8, FileList: 7, FilesPage: 8)
+- [x] TypeScript, ESLint, build — всё чисто
+
 ---
 
 ## Что в работе
 
-Нет активных задач. 07-progress-bars реализован, ожидает коммит.
+Нет активных задач. 03-file-upload-ui реализован, ожидает коммит.
 
 ### Следующие задачи (приоритет):
 1. ~~**01-PWA** — manifest, service worker, оффлайн (P0)~~ ✅
 2. ~~**04-dashboard-widget** — виджеты Dashboard (P1)~~ ✅
 3. ~~**06-clickable-schedule** — кликабельные элементы расписания (P1)~~ ✅
 4. ~~**07-progress-bars** — прогресс-бары по предметам (P2)~~ ✅
-5. **09-dark-theme** — тёмная тема (P2)
-6. **03-file-upload-ui** — UI загрузки файлов (P1)
+5. ~~**03-file-upload-ui** — UI загрузки файлов (P1)~~ ✅
+6. **09-dark-theme** — тёмная тема (P2)
 7. **05-ics-export** — экспорт в .ics (P2)
 8. **02-push-notifications** — push-уведомления (P1, зависит от PWA ✅)
 9. **08-attendance** — посещаемость (P2)
@@ -212,6 +226,7 @@ Vite на Windows может не слушать на правильном ад�
 - **Dashboard виджеты**: TodayScheduleWidget, DeadlinesWidget, QuickActions — отдельные компоненты в `components/dashboard/`
 - **Clickable schedule**: LessonDetailModal с работами и заметками, onClick/onEntryClick на LessonCard/ScheduleGrid/TodayScheduleWidget
 - **Progress bars**: ProgressBar (a11y, size variants), SubjectProgressCard, SemesterProgressWidget (top-3 lowest), calculateSemesterProgress в progressUtils
+- **File upload**: File модель (immutable), FileDropzone (HTML5 DnD), FileList, magic bytes validation, StreamingResponse для download, path traversal protection
 
 ---
 
@@ -219,14 +234,14 @@ Vite на Windows может не слушать на правильном ад�
 
 | Метрика | Значение |
 |---------|----------|
-| Тестов backend | 264 |
-| Тестов frontend | 183 |
+| Тестов backend | 285 |
+| Тестов frontend | 226 |
 | Покрытие тестами | ~80% |
-| API endpoints | ~55 |
-| Моделей | 13 |
-| Миграций | 9 |
+| API endpoints | ~59 |
+| Моделей | 14 |
+| Миграций | 10 |
 | Линтер backend | ✅ Ruff проходит |
 | Линтер frontend | ✅ ESLint проходит (кроме shadcn/ui) |
-| Frontend тесты | ✅ Vitest проходит (183 тестов) |
+| Frontend тесты | ✅ Vitest проходит (226 тестов) |
 | Frontend build | ✅ TypeScript + Vite |
-| Frontend страниц | 8 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates) |
+| Frontend страниц | 9 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files) |

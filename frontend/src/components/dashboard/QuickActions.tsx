@@ -11,6 +11,7 @@ import {
   ClipboardList,
   Users,
   GraduationCap,
+  FolderOpen,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -44,6 +45,13 @@ const menuItems = [
     color: 'text-purple-500',
   },
   {
+    title: 'Файлы',
+    description: 'Учебные материалы',
+    icon: FolderOpen,
+    href: '/files',
+    color: 'text-amber-500',
+  },
+  {
     title: 'Семестры',
     description: 'Управление семестрами',
     icon: GraduationCap,
@@ -54,7 +62,7 @@ const menuItems = [
 
 export function QuickActions() {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
       {menuItems.map((item) => (
         <Link key={item.href} to={item.href}>
           <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">

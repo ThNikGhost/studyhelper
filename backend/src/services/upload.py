@@ -15,6 +15,22 @@ _IMAGE_SIGNATURES: dict[str, tuple[bytes, ...]] = {
     ".webp": (b"RIFF",),
 }
 
+# Magic bytes for study file format validation
+_FILE_SIGNATURES: dict[str, tuple[bytes, ...]] = {
+    ".pdf": (b"%PDF",),
+    ".doc": (b"\xd0\xcf\x11\xe0",),  # OLE2 Compound Document
+    ".xls": (b"\xd0\xcf\x11\xe0",),
+    ".ppt": (b"\xd0\xcf\x11\xe0",),
+    ".docx": (b"PK\x03\x04",),  # ZIP-based OOXML
+    ".xlsx": (b"PK\x03\x04",),
+    ".pptx": (b"PK\x03\x04",),
+    ".jpg": (b"\xff\xd8\xff",),
+    ".jpeg": (b"\xff\xd8\xff",),
+    ".png": (b"\x89PNG",),
+    ".gif": (b"GIF8",),
+    ".webp": (b"RIFF",),
+}
+
 CHUNK_SIZE = 8192
 
 
@@ -48,11 +64,37 @@ def validate_image_content(content: bytes) -> str | None:
     return None
 
 
-async def read_upload_streaming(file: UploadFile) -> bytes:
+def validate_file_content(content: bytes, extension: str) -> bool:
+    """Validate file content by checking magic bytes.
+
+    Args:
+        content: Raw file bytes to validate.
+        extension: Expected file extension (e.g. '.pdf').
+
+    Returns:
+        True if magic bytes match the expected format.
+    """
+    ext = extension.lower()
+    signatures = _FILE_SIGNATURES.get(ext)
+    if not signatures:
+        return False
+    for sig in signatures:
+        if content[: len(sig)] == sig:
+            # Additional check for WEBP: must have WEBP at offset 8
+            if ext == ".webp" and content[8:12] != b"WEBP":
+                continue
+            return True
+    return False
+
+
+async def read_upload_streaming(
+    file: UploadFile, max_size_mb: int | None = None
+) -> bytes:
     """Read uploaded file in chunks with size validation.
 
     Args:
         file: The uploaded file.
+        max_size_mb: Maximum file size in MB. Defaults to settings.max_upload_size_mb.
 
     Returns:
         File content as bytes.
@@ -60,7 +102,8 @@ async def read_upload_streaming(file: UploadFile) -> bytes:
     Raises:
         HTTPException: If file exceeds maximum size.
     """
-    max_size = settings.max_upload_size_mb * 1024 * 1024
+    limit = max_size_mb if max_size_mb is not None else settings.max_upload_size_mb
+    max_size = limit * 1024 * 1024
     chunks: list[bytes] = []
     total_size = 0
 
@@ -72,7 +115,7 @@ async def read_upload_streaming(file: UploadFile) -> bytes:
         if total_size > max_size:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"File too large. Maximum size: {settings.max_upload_size_mb}MB",
+                detail=f"File too large. Maximum size: {limit}MB",
             )
         chunks.append(chunk)
 
