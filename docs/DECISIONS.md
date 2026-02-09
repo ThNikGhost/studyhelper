@@ -627,6 +627,45 @@ notification_settings — настройки уведомлений
 - Inline script в index.html для FOUC prevention (тёмная тема) не может быть вынесен в файл — должен выполниться до загрузки CSS
 - `unsafe-inline` — компромисс между безопасностью и UX
 
+## 19. Production Deployment решения (2026-02-09)
+
+### Регенерация секретов на сервере
+
+**Решение:** Генерировать SECRET_KEY (64 символа) и POSTGRES_PASSWORD (32 символа) прямо на сервере через `openssl rand`.
+
+**Обоснование:**
+- Секреты не хранятся в git, не передаются через insecure каналы
+- `openssl rand -hex 32` → 64 hex символа (достаточно для JWT)
+- `openssl rand -base64 24` → ~32 base64 символа (достаточно для PostgreSQL)
+- Защита от брутфорса и подделки токенов
+
+### ALLOWED_ORIGINS в JSON формате
+
+**Решение:** В `.env.production` хранить ALLOWED_ORIGINS как JSON-массив: `["http://89.110.93.63"]`.
+
+**Обоснование:**
+- Pydantic v2 для `list[str]` полей пытается парсить env-переменную как JSON
+- Строковый формат (`http://89.110.93.63`) вызывает `JSONDecodeError`
+- JSON-формат универсален для любого количества origins
+
+### COPY README.md в backend Dockerfile
+
+**Решение:** Копировать `README.md` перед `uv sync --frozen --no-dev` (установка самого проекта).
+
+**Обоснование:**
+- `pyproject.toml` содержит `readme = "README.md"`
+- `uv sync` без `--no-install-project` устанавливает сам проект (hatchling требует README.md)
+- Без файла: `OSError: Readme file does not exist: README.md`
+
+### Приоритет исправлений при деплое
+
+**Решение:** При обнаружении ошибки сборки/запуска — сначала фиксить локально, коммитить, пушить, затем пулить на сервере.
+
+**Обоснование:**
+- Git — единственный source of truth
+- Локальные исправления на сервере ведут к divergence и конфликтам
+- CI проверяет исправление перед деплоем
+
 ---
 
 ## История изменений
@@ -672,6 +711,10 @@ notification_settings — настройки уведомлений
 | 2026-02-08 | globalIgnores для shadcn/ui | Сгенерированный код не должен линтоваться строго |
 | 2026-02-08 | uv sync --extra dev в CI | dev deps в optional-dependencies, не dependency-groups |
 | 2026-02-08 | Явная проверка \\ и .. в filename | resolve() не ловит бэкслэш на Linux |
+| 2026-02-09 | openssl rand для секретов | Генерация на сервере, не в git |
+| 2026-02-09 | ALLOWED_ORIGINS в JSON | Pydantic требует JSON для list[str] |
+| 2026-02-09 | COPY README.md в Dockerfile | uv sync устанавливает проект, hatchling требует readme |
+| 2026-02-09 | Fix-commit-push-pull workflow | Git как source of truth, не править на сервере |
 | 2026-02-09 | Multi-stage Docker builds | Минимальные образы без build tools |
 | 2026-02-09 | nginx единая точка входа | Rate limiting + proxy-headers + PWA caching |
 | 2026-02-09 | Memory limits ~1.3GB | VPS 2GB: 512+512+192+128 + OS headroom |
