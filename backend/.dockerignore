@@ -1,0 +1,38 @@
+# Virtual environments
+.venv/
+venv/
+
+# Tests
+tests/
+
+# Uploads (mounted as volume)
+uploads/
+
+# Python cache
+__pycache__/
+*.py[codz]
+*.pyo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+
+# Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Ruff cache
+.ruff_cache/
+
+# Test output
+test_output.txt
+
+# Docker
+Dockerfile
+.dockerignore

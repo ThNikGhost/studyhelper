@@ -1,12 +1,12 @@
 # Статус проекта StudyHelper
 
 ## Последнее обновление
-- **Дата**: 2026-02-08
-- **Сессия**: Fix CI (ESLint shadcn/ui + backend ruff + upload path traversal)
+- **Дата**: 2026-02-09
+- **Сессия**: Production Docker Configuration
 
 ## Общий прогресс
 **Фаза**: Post-MVP реализация
-**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован. 07-progress-bars реализован. 03-file-upload-ui реализован. 08-attendance реализован. 10-lesson-notes реализован. 11-semester-timeline реализован. 09-dark-theme реализована.
+**Прогресс**: MVP 100% завершён. 01-PWA реализована. 04-dashboard-widget реализован. 06-clickable-schedule реализован. 07-progress-bars реализован. 03-file-upload-ui реализован. 08-attendance реализован. 10-lesson-notes реализован. 11-semester-timeline реализован. 09-dark-theme реализована. Production Docker config создан.
 
 ---
 
@@ -235,6 +235,17 @@
 - [x] `.github/workflows/ci.yml` — `uv sync --extra dev` вместо `uv sync --dev`
 - [x] `backend/src/services/upload.py` — кросс-платформенная path traversal защита (бэкслэш + `..`)
 
+### Production Docker (ЗАВЕРШЕНА ✅)
+- [x] `backend/Dockerfile` — multi-stage build (python:3.12-slim + uv), non-root user (UID 1000), healthcheck
+- [x] `backend/entrypoint.sh` — wait for PostgreSQL, alembic migrate, uvicorn с --proxy-headers
+- [x] `backend/.dockerignore` — исключает .venv, tests, uploads, __pycache__
+- [x] `nginx/nginx.conf` — reverse proxy, rate limiting (30r/s API, 5r/m auth), gzip, security headers, PWA caching
+- [x] `nginx/Dockerfile` — multi-stage (node:22 build → nginx:1.27-alpine serve)
+- [x] `docker-compose.prod.yml` — 4 сервиса: db (512MB), redis (192MB), backend (512MB), nginx (128MB)
+- [x] `.env.production.example` — шаблон env для продакшена
+- [x] `.dockerignore` (корень) — для nginx build context
+- [x] `.gitignore` — добавлено `!.env.production.example`
+
 ---
 
 ## Что в работе
@@ -255,7 +266,7 @@
 11. **02-push-notifications** — push-уведомления (P1, зависит от PWA ✅)
 
 ### Деплой
-Отложен до разбирательства с сервером.
+Production Docker конфигурация создана. Готово к деплою на сервер.
 
 ---
 
@@ -264,7 +275,7 @@
 ### Отдельный PR (из Code Review)
 - httpOnly cookies вместо localStorage
 - Механизм отзыва JWT
-- Docker production config
+- ~~Docker production config~~ ✅
 
 ---
 
@@ -313,6 +324,7 @@ Vite на Windows может не слушать на правильном ад�
 - **Lesson notes**: LessonNote модель (one per entry per user), NoteEditor (autosave debounce 500ms), NoteCard, NotesPage, LessonDetailModal интеграция через useQuery
 - **Semester timeline**: start_date/end_date на Semester (nullable), TimelineBar (CSS positioning via left%), TimelineMarker (Popover tooltips), getPositionPercent/getMonthLabels/getSemesterProgress утилиты, TimelinePage с фильтрами, SemesterTimelineWidget на Dashboard
 - **Dark theme**: ThemeMode (light/dark/system), FOUC prevention (inline script), cycling toggle (Sun/Moon/Monitor), localStorage persistence, .dark CSS class, theme-color meta update, dark: variants для hardcoded цветов
+- **Production Docker**: multi-stage builds (uv для backend, node для frontend), nginx reverse proxy, rate limiting (nginx + slowapi), --proxy-headers для корректного client IP, memory limits ~1.3GB total, PostgreSQL tuning (shared_buffers=256MB), Redis LRU (128mb)
 
 ---
 

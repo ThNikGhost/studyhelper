@@ -1,0 +1,45 @@
+# Backend internals (not needed for nginx/frontend build)
+backend/.venv/
+backend/venv/
+backend/tests/
+backend/uploads/
+backend/__pycache__/
+backend/.pytest_cache/
+backend/.ruff_cache/
+backend/.env
+backend/test_output.txt
+
+# Frontend dev artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# Docs
+docs/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
+
+# Docker
+docker-compose.yml
+docker-compose.prod.yml
+.dockerignore
+
+# Misc
+nul
+*.log

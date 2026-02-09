@@ -572,6 +572,63 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 18. Production Docker решения (2026-02-09)
+
+### Multi-stage builds для backend и frontend
+
+**Решение:** Использовать multi-stage Docker builds для обоих сервисов.
+
+**Обоснование:**
+- Backend: builder с uv (python:3.12-slim + `ghcr.io/astral-sh/uv:latest`) → runtime без uv и dev-зависимостей
+- Frontend: node:22-alpine build → nginx:1.27-alpine serve (статика)
+- Итоговые образы минимальны — нет build tools в runtime
+
+### nginx как единая точка входа
+
+**Решение:** nginx :80 → /api/ → backend, / → frontend static.
+
+**Обоснование:**
+- Единый порт для клиента, нет CORS-проблем
+- Rate limiting на уровне nginx (30r/s API, 5r/m login/register) + backend slowapi
+- `--proxy-headers` на uvicorn + `X-Forwarded-For` в nginx → slowapi получает реальный IP клиента
+- Gzip, security headers, PWA caching (sw.js no-cache, assets/ immutable 1y) — на уровне nginx
+
+### Memory limits ~1.3GB из 2GB
+
+**Решение:** PostgreSQL 512MB, backend 512MB, Redis 192MB, nginx 128MB.
+
+**Обоснование:**
+- VPS с 2GB RAM — ~700MB остаётся для OS и буферов
+- PostgreSQL tuning: shared_buffers=256MB, work_mem=4MB, max_connections=50
+- Redis: maxmemory 128mb, allkeys-lru eviction, appendonly для persistence
+
+### Non-root user в backend container
+
+**Решение:** Создать пользователя `appuser` (UID 1000) и запускать uvicorn от него.
+
+**Обоснование:**
+- Минимизация attack surface — процесс не имеет root-привилегий
+- Upload директории создаются с правами appuser
+
+### sed для line endings в entrypoint.sh
+
+**Решение:** `sed -i 's/\r$//'` на entrypoint.sh в Dockerfile.
+
+**Обоснование:**
+- Файл разрабатывается на Windows, где Git может сохранять CRLF
+- Linux контейнер ожидает LF — CRLF ломает shebang (`/bin/sh\r: not found`)
+- sed выполняется при build — гарантированно исправляет line endings
+
+### CSP с unsafe-inline
+
+**Решение:** `script-src 'self' 'unsafe-inline'` в Content-Security-Policy.
+
+**Обоснование:**
+- Inline script в index.html для FOUC prevention (тёмная тема) не может быть вынесен в файл — должен выполниться до загрузки CSS
+- `unsafe-inline` — компромисс между безопасностью и UX
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -615,3 +672,9 @@ notification_settings — настройки уведомлений
 | 2026-02-08 | globalIgnores для shadcn/ui | Сгенерированный код не должен линтоваться строго |
 | 2026-02-08 | uv sync --extra dev в CI | dev deps в optional-dependencies, не dependency-groups |
 | 2026-02-08 | Явная проверка \\ и .. в filename | resolve() не ловит бэкслэш на Linux |
+| 2026-02-09 | Multi-stage Docker builds | Минимальные образы без build tools |
+| 2026-02-09 | nginx единая точка входа | Rate limiting + proxy-headers + PWA caching |
+| 2026-02-09 | Memory limits ~1.3GB | VPS 2GB: 512+512+192+128 + OS headroom |
+| 2026-02-09 | Non-root user в контейнере | Минимизация attack surface |
+| 2026-02-09 | sed для line endings | Windows CRLF → Linux LF при build |
+| 2026-02-09 | CSP unsafe-inline | FOUC prevention script требует inline |
