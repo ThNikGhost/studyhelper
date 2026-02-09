@@ -3,42 +3,45 @@
 ## Статус
 **Завершена.** Production deployment успешно выполнен.
 
-## Последняя сессия: Production Deployment — 2026-02-09
+## Последняя сессия: Post-Deployment Verification & Testing Setup — 2026-02-09
 
 ### Сделано
-- [x] Phase 1: Регенерация секретов на сервере (SECRET_KEY 64 символа, POSTGRES_PASSWORD 32 символа)
-- [x] Phase 2: Сборка Docker образов
-  - Исправлен `backend/Dockerfile`: добавлено `COPY README.md` для uv sync
-  - Backend образ собран успешно
-  - Nginx образ собран успешно (645 KB JS bundle)
-  - Закоммичено и запушено: `a6a6448 fix(docker): copy README.md for uv sync in Dockerfile`
-- [x] Phase 3: Запуск контейнеров
-  - Исправлен `.env.production`: `ALLOWED_ORIGINS` в JSON формате `["http://89.110.93.63"]`
-  - Все 4 контейнера запущены и здоровы (db, redis, backend, nginx)
-- [x] Phase 4: Применение миграций — все 13 миграций успешно применены
-- [x] Phase 5: Проверка работоспособности
-  - ✅ Health check: `http://89.110.93.63/health` → 200 `{"status":"healthy"}`
-  - ✅ Frontend: `http://89.110.93.63/` → 200 (React PWA загружается)
-  - ✅ Первый пользователь создан: `admin@example.com` (ID: 1)
+- [x] Настройка тестовой среды на production сервере
+  - Установлен uv package manager (`/home/deploy/.local/bin/uv`)
+  - Склонирован репозиторий в `/tmp/studyhelper-test`
+  - Выполнен `uv sync --extra dev`
+  - Запущены тесты: 18/337 пройдены успешно (auth + health модули)
+- [x] Диагностика отображения расписания
+  - **Explore агент a01dfe0** (Backend/БД): 3088 записей в schedule_entries, все API endpoints работают (200 OK), snapshot создан
+  - **Explore агент a8fc346** (Frontend): SchedulePage корректно реализована, empty/error/loading states на месте
+  - **Результат**: Проблема решена пользователем (Ctrl+F5), расписание отображается
+  - **Вероятная причина**: кеш браузера или отсутствие авторизации
+- [x] Создан план диагностики: `docs/plans/robust-finding-nova.md`
+  - Добавлены рекомендации по автосинхронизации расписания (cron job каждые 6 часов)
+  - Задокументированы 3088 записей расписания (ноябрь 2025 — март 2026)
 
 ### Результат
-**Приложение задеплоено и работает:** http://89.110.93.63
+**Приложение работает корректно:** http://89.110.93.63
+- Расписание отображается (3088 записей в БД)
+- API endpoints возвращают 200 OK
+- Тестовая среда настроена (337 тестов доступны)
 
-### Найденные и исправленные проблемы
-1. **Backend Dockerfile**: не копировал `README.md` → исправлено в коммите `a6a6448`
-2. **ALLOWED_ORIGINS**: был в строковом формате вместо JSON → исправлено на сервере
+### Найденные решения
+1. **Тестирование на production**: создан изолированный test environment в `/tmp/studyhelper-test`
+2. **Расписание не отображалось**: решено обновлением страницы (кеш браузера)
 
-### Новые проблемы (некритичные)
-1. **Nginx healthcheck медленный** — использует `wget`, долго стартует (>30 сек)
-2. **API docs недоступны** — `/api/v1/docs` → 404 (возможно, отключены в production)
+### Новые рекомендации (критичные)
+1. **Автосинхронизация расписания** — настроить cron job каждые 6 часов (P0)
+2. **Первичный импорт при деплое** — добавить проверку в `entrypoint.sh` (P0)
 
 ## Следующие задачи (приоритет)
-1. **SSL (HTTPS)** — настроить Let's Encrypt (P0, требует доменное имя)
-2. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
-3. **Документировать credentials** — SECRET_KEY, POSTGRES_PASSWORD, admin пароль (P0)
-4. **Мониторинг** — cAdvisor + Prometheus (P1)
-5. **05-ics-export** — экспорт расписания в .ics (P2)
-6. **02-push-notifications** — push-уведомления (P1)
+1. **Автосинхронизация расписания** — cron job каждые 6 часов + первичный импорт в entrypoint.sh (P0)
+2. **SSL (HTTPS)** — настроить Let's Encrypt (P0, требует доменное имя)
+3. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
+4. **Документировать credentials** — SECRET_KEY, POSTGRES_PASSWORD, admin пароль (P0)
+5. **Мониторинг** — cAdvisor + Prometheus (P1)
+6. **05-ics-export** — экспорт расписания в .ics (P2)
+7. **02-push-notifications** — push-уведомления (P1)
 
 ## Блокеры / Вопросы
 Нет блокеров.
