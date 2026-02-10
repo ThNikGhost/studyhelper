@@ -146,6 +146,12 @@ target/
 # ===== Uploads =====
 uploads/
 
+# ===== Test Output =====
+backend/test_output.txt
+
+# ===== Windows Artifacts =====
+nul
+
 # ===== Other =====
 /site
 .abstra/

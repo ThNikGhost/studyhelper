@@ -26,6 +26,10 @@ dependencies = [
     "httpx>=0.28.0",
     # Rate limiting
     "slowapi>=0.1.9",
+    # Scheduler
+    "apscheduler>=3.10.0,<4.0",
+    # Redis (for distributed locks)
+    "redis>=5.0.0",
 ]
 
 [project.optional-dependencies]

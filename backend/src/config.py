@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     # Schedule parser
     schedule_url: str = "https://eservice.omsu.ru/schedule/#/schedule/group/5028"
     schedule_update_interval_hours: int = 6
+    schedule_sync_enabled: bool = True
+    schedule_sync_lock_ttl_seconds: int = 600
 
     # File uploads
     upload_dir: str = "uploads"

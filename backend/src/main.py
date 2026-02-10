@@ -65,11 +65,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan events."""
+    from src.scheduler import start_scheduler, stop_scheduler
+
     # Startup
     setup_logging()
     logger.info("StudyHelper API starting up")
+    await start_scheduler()
     yield
     # Shutdown
+    await stop_scheduler()
     logger.info("StudyHelper API shutting down")
 
 

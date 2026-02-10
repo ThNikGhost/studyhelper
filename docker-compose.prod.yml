@@ -83,6 +83,8 @@ services:
       MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-50}
       TIMEZONE: ${TIMEZONE:-Asia/Omsk}
       SCHEDULE_URL: ${SCHEDULE_URL:-https://eservice.omsu.ru/schedule/#/schedule/group/5028}
+      SCHEDULE_SYNC_ENABLED: ${SCHEDULE_SYNC_ENABLED:-true}
+      SCHEDULE_UPDATE_INTERVAL_HOURS: ${SCHEDULE_UPDATE_INTERVAL_HOURS:-6}
     volumes:
       - uploads_data:/app/uploads
     networks:

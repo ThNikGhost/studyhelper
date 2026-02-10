@@ -668,6 +668,45 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 20. Schedule auto-sync решения (2026-02-10)
+
+### APScheduler 3.x вместо Celery Beat
+
+**Решение:** Использовать APScheduler `AsyncIOScheduler` в lifespan FastAPI вместо Celery Beat.
+
+**Обоснование:**
+- APScheduler встраивается в process FastAPI — не нужен отдельный процесс/контейнер
+- Celery+Beat требует 2 дополнительных процесса (worker + beat) и настройку broker
+- Для одной задачи каждые 6 часов Celery избыточен
+- AsyncIOScheduler нативно работает с asyncio (FastAPI event loop)
+
+**Альтернативы рассмотренные:**
+- Celery Beat — требует worker + beat + broker, избыточно для 1 задачи
+- Cron в Docker — требует supervisord или второй entrypoint, сложнее управлять
+- asyncio.create_task + sleep — нет graceful shutdown, нет retry логики
+
+### Redis distributed lock вместо file lock
+
+**Решение:** Redis lock с `blocking=False` и TTL 600s для предотвращения одновременного запуска sync.
+
+**Обоснование:**
+- uvicorn с `--workers 2` запускает 2 процесса — каждый запустит свой scheduler
+- File lock не работает между контейнерами (если масштабировать)
+- Redis уже используется в стеке (redis:7-alpine для кеша)
+- TTL 600s — auto-release если worker упал посреди sync
+- `blocking=False` — не ждать lock, просто пропустить эту итерацию
+
+### Initial sync в entrypoint.sh
+
+**Решение:** Первичная синхронизация расписания при старте контейнера (если snapshot нет).
+
+**Обоснование:**
+- Первый деплой не будет ждать 6 часов до первого sync
+- Non-blocking (`|| echo WARNING`) — если sync упадёт, контейнер всё равно стартует
+- Проверяет `get_latest_snapshot(db)` — если данные есть, пропускает sync
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -721,3 +760,10 @@ notification_settings — настройки уведомлений
 | 2026-02-09 | Non-root user в контейнере | Минимизация attack surface |
 | 2026-02-09 | sed для line endings | Windows CRLF → Linux LF при build |
 | 2026-02-09 | CSP unsafe-inline | FOUC prevention script требует inline |
+| 2026-02-10 | APScheduler вместо Celery Beat | Одна задача, встраивается в FastAPI, не нужен worker |
+| 2026-02-10 | Redis distributed lock | 2 uvicorn workers, нужна координация |
+| 2026-02-10 | Initial sync в entrypoint.sh | Первый деплой не ждёт 6 часов |
+| 2026-02-10 | jitter=60 в IntervalTrigger | 2 workers не стучатся в lock одновременно |
+| 2026-02-10 | misfire_grace_time=3600 | Пропущенный job выполнится в течение часа |
+| 2026-02-10 | Redis ping healthcheck | Мёртвый клиент пересоздаётся автоматически |
+| 2026-02-10 | .gitattributes *.sh eol=lf | entrypoint.sh с CRLF не запустится в Docker |

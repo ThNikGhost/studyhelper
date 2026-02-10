@@ -1,8 +1,8 @@
 # Статус проекта StudyHelper
 
 ## Последнее обновление
-- **Дата**: 2026-02-09
-- **Сессия**: Post-Deployment Verification & Testing Setup
+- **Дата**: 2026-02-10
+- **Сессия**: Scheduler Code Review Fixes
 
 ## Общий прогресс
 **Фаза**: Production
@@ -230,6 +230,20 @@
 
 ---
 
+### 12-schedule-auto-sync (ЗАВЕРШЕНА ✅)
+- [x] Backend: `src/scheduler.py` — APScheduler `AsyncIOScheduler` + Redis distributed lock
+- [x] Backend: `_sync_schedule_with_lock()` — non-blocking Redis lock (TTL 600s), calls `sync_schedule(db)`
+- [x] Backend: `start_scheduler()` / `stop_scheduler()` — lifecycle в lifespan FastAPI
+- [x] Backend: config: `schedule_sync_enabled`, `schedule_sync_lock_ttl_seconds`
+- [x] Backend: зависимости: `apscheduler>=3.10.0,<4.0`, `redis>=5.0.0`
+- [x] Backend: 11 тестов (lock acquire+run, lock skip, lock release on error, lock expired, redis reconnect, disabled, enabled, stop, stop noop)
+- [x] `entrypoint.sh` — первичная синхронизация при запуске (если snapshot нет), non-blocking
+- [x] `docker-compose.prod.yml` — env vars: `SCHEDULE_SYNC_ENABLED`, `SCHEDULE_UPDATE_INTERVAL_HOURS`
+- [x] Code review fixes: jitter=60, misfire_grace_time=3600, Redis reconnect, LockNotOwnedError
+- [x] `.gitattributes` — `*.sh text eol=lf` для Docker совместимости
+- [x] Ruff check + format — чисто
+- [x] 348 тестов backend — все проходят
+
 ### CI Fix (ЗАВЕРШЕНА ✅)
 - [x] `frontend/eslint.config.js` — globalIgnores для `src/components/ui` (shadcn/ui)
 - [x] `.github/workflows/ci.yml` — `uv sync --extra dev` вместо `uv sync --dev`
@@ -278,7 +292,7 @@
 8. ~~**11-semester-timeline** — timeline семестра (P3)~~ ✅
 9. ~~**09-dark-theme** — тёмная тема (P2)~~ ✅
 10. ~~**Production deployment**~~ ✅
-11. **Автосинхронизация расписания** — cron job каждые 6 часов (P0)
+11. ~~**Автосинхронизация расписания** — APScheduler + Redis lock каждые 6 часов (P0)~~ ✅
 12. **SSL (HTTPS)** — Let's Encrypt (P0, требует доменное имя)
 13. **Бэкапы PostgreSQL** — cron + pg_dump (P0)
 14. **05-ics-export** — экспорт в .ics (P2)
@@ -355,6 +369,7 @@ Nginx healthcheck использует `wget`, который может дол�
 - **Semester timeline**: start_date/end_date на Semester (nullable), TimelineBar (CSS positioning via left%), TimelineMarker (Popover tooltips), getPositionPercent/getMonthLabels/getSemesterProgress утилиты, TimelinePage с фильтрами, SemesterTimelineWidget на Dashboard
 - **Dark theme**: ThemeMode (light/dark/system), FOUC prevention (inline script), cycling toggle (Sun/Moon/Monitor), localStorage persistence, .dark CSS class, theme-color meta update, dark: variants для hardcoded цветов
 - **Production Docker**: multi-stage builds (uv для backend, node для frontend), nginx reverse proxy, rate limiting (nginx + slowapi), --proxy-headers для корректного client IP, memory limits ~1.3GB total, PostgreSQL tuning (shared_buffers=256MB), Redis LRU (128mb)
+- **Schedule auto-sync**: APScheduler 3.x AsyncIOScheduler в lifespan FastAPI, IntervalTrigger(hours=6, jitter=60), misfire_grace_time=3600, Redis distributed lock (non-blocking, TTL 600s, LockNotOwnedError handling), Redis auto-reconnect (ping healthcheck), initial sync в entrypoint.sh (если snapshot нет), configurable via SCHEDULE_SYNC_ENABLED/SCHEDULE_UPDATE_INTERVAL_HOURS
 
 ---
 
@@ -362,7 +377,7 @@ Nginx healthcheck использует `wget`, который может дол�
 
 | Метрика | Значение |
 |---------|----------|
-| Тестов backend | 337 |
+| Тестов backend | 348 |
 | Тестов frontend | 351 |
 | Покрытие тестами | ~80% |
 | API endpoints | ~65 |

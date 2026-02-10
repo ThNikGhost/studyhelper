@@ -1,47 +1,38 @@
 # Текущая задача
 
 ## Статус
-**Завершена.** Production deployment успешно выполнен.
+**Завершена.** Code review scheduler + все исправления применены.
 
-## Последняя сессия: Post-Deployment Verification & Testing Setup — 2026-02-09
+## Последняя сессия: Scheduler Code Review Fixes — 2026-02-10
 
 ### Сделано
-- [x] Настройка тестовой среды на production сервере
-  - Установлен uv package manager (`/home/deploy/.local/bin/uv`)
-  - Склонирован репозиторий в `/tmp/studyhelper-test`
-  - Выполнен `uv sync --extra dev`
-  - Запущены тесты: 18/337 пройдены успешно (auth + health модули)
-- [x] Диагностика отображения расписания
-  - **Explore агент a01dfe0** (Backend/БД): 3088 записей в schedule_entries, все API endpoints работают (200 OK), snapshot создан
-  - **Explore агент a8fc346** (Frontend): SchedulePage корректно реализована, empty/error/loading states на месте
-  - **Результат**: Проблема решена пользователем (Ctrl+F5), расписание отображается
-  - **Вероятная причина**: кеш браузера или отсутствие авторизации
-- [x] Создан план диагностики: `docs/plans/robust-finding-nova.md`
-  - Добавлены рекомендации по автосинхронизации расписания (cron job каждые 6 часов)
-  - Задокументированы 3088 записей расписания (ноябрь 2025 — март 2026)
+- [x] Code review всех незакоммиченных изменений (schedule auto-sync)
+- [x] P1: Добавлен `jitter=60` в IntervalTrigger (разнос запусков между workers)
+- [x] P1: Redis auto-reconnect в `_get_redis()` (ping healthcheck + recreate)
+- [x] P2: `LockNotOwnedError` вместо bare `Exception` при release lock
+- [x] P2: `misfire_grace_time=3600` на scheduler job
+- [x] P2: `contextlib.suppress(Exception)` вместо try/except/pass (ruff SIM105)
+- [x] P3: `.gitignore` — добавлены `nul`, `backend/test_output.txt`
+- [x] P3: `.gitattributes` — `*.sh text eol=lf` для Docker совместимости
+- [x] 4 новых теста: lock expired, redis create/reuse/reconnect
+- [x] 348 тестов backend — все проходят
+- [x] Ruff lint + format — чисто
 
-### Результат
-**Приложение работает корректно:** http://89.110.93.63
-- Расписание отображается (3088 записей в БД)
-- API endpoints возвращают 200 OK
-- Тестовая среда настроена (337 тестов доступны)
-
-### Найденные решения
-1. **Тестирование на production**: создан изолированный test environment в `/tmp/studyhelper-test`
-2. **Расписание не отображалось**: решено обновлением страницы (кеш браузера)
-
-### Новые рекомендации (критичные)
-1. **Автосинхронизация расписания** — настроить cron job каждые 6 часов (P0)
-2. **Первичный импорт при деплое** — добавить проверку в `entrypoint.sh` (P0)
+### Не закоммичено
+Все изменения (schedule auto-sync + code review fixes) требуют коммита и пуша.
 
 ## Следующие задачи (приоритет)
-1. **Автосинхронизация расписания** — cron job каждые 6 часов + первичный импорт в entrypoint.sh (P0)
-2. **SSL (HTTPS)** — настроить Let's Encrypt (P0, требует доменное имя)
-3. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
-4. **Документировать credentials** — SECRET_KEY, POSTGRES_PASSWORD, admin пароль (P0)
-5. **Мониторинг** — cAdvisor + Prometheus (P1)
-6. **05-ics-export** — экспорт расписания в .ics (P2)
-7. **02-push-notifications** — push-уведомления (P1)
+1. **SSL (HTTPS)** — настроить Let's Encrypt (P0, требует доменное имя)
+2. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
+3. **05-ics-export** — экспорт расписания в .ics (P2)
+4. **02-push-notifications** — push-уведомления (P1)
+
+## Деплой на сервер
+После коммита — пересобрать и перезапустить контейнеры:
+```bash
+docker compose -f docker-compose.prod.yml build backend
+docker compose -f docker-compose.prod.yml up -d
+```
 
 ## Блокеры / Вопросы
 Нет блокеров.
