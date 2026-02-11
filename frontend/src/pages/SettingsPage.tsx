@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { scheduleService } from '@/services/scheduleService'
-import { getSubgroupsFromWeek } from '@/lib/subgroupFilter'
 import { getPeTeachersFromWeek } from '@/lib/peTeacherFilter'
 
 export default function SettingsPage() {
@@ -26,7 +25,6 @@ export default function SettingsPage() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const availableSubgroups = weekSchedule ? getSubgroupsFromWeek(weekSchedule) : []
   const availablePeTeachers = weekSchedule ? getPeTeachersFromWeek(weekSchedule) : []
 
   return (
@@ -61,38 +59,22 @@ export default function SettingsPage() {
               {subgroup === null && <Check className="h-4 w-4" />}
               Все подгруппы
             </Button>
-            {availableSubgroups.length > 0 ? (
-              availableSubgroups.map((sg) => (
-                <Button
-                  key={sg}
-                  variant={subgroup === sg ? 'default' : 'outline'}
-                  onClick={() => setSubgroup(sg)}
-                  className="gap-2"
-                >
-                  {subgroup === sg && <Check className="h-4 w-4" />}
-                  {sg} подгруппа
-                </Button>
-              ))
-            ) : (
-              <>
-                <Button
-                  variant={subgroup === 1 ? 'default' : 'outline'}
-                  onClick={() => setSubgroup(1)}
-                  className="gap-2"
-                >
-                  {subgroup === 1 && <Check className="h-4 w-4" />}
-                  1 подгруппа
-                </Button>
-                <Button
-                  variant={subgroup === 2 ? 'default' : 'outline'}
-                  onClick={() => setSubgroup(2)}
-                  className="gap-2"
-                >
-                  {subgroup === 2 && <Check className="h-4 w-4" />}
-                  2 подгруппа
-                </Button>
-              </>
-            )}
+            <Button
+              variant={subgroup === 1 ? 'default' : 'outline'}
+              onClick={() => setSubgroup(1)}
+              className="gap-2"
+            >
+              {subgroup === 1 && <Check className="h-4 w-4" />}
+              1 подгруппа
+            </Button>
+            <Button
+              variant={subgroup === 2 ? 'default' : 'outline'}
+              onClick={() => setSubgroup(2)}
+              className="gap-2"
+            >
+              {subgroup === 2 && <Check className="h-4 w-4" />}
+              2 подгруппа
+            </Button>
           </div>
           {subgroup !== null && (
             <p className="mt-3 text-sm text-muted-foreground">
