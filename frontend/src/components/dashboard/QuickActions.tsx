@@ -16,6 +16,7 @@ import {
   StickyNote,
   BarChart3,
   Settings,
+  Award,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -82,6 +83,13 @@ const menuItems = [
     icon: GraduationCap,
     href: '/semesters',
     color: 'text-cyan-500',
+  },
+  {
+    title: 'Зачётка',
+    description: 'Оценки из ЛК ОмГУ',
+    icon: Award,
+    href: '/grades',
+    color: 'text-violet-500',
   },
   {
     title: 'Настройки',

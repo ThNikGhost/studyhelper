@@ -18,6 +18,9 @@ class SubjectBase(BaseModel):
     planned_classes: int | None = Field(
         None, ge=0, le=500, description="Planned classes for semester"
     )
+    total_hours: int | None = Field(
+        None, ge=0, le=2000, description="Total hours from LK curriculum"
+    )
 
 
 class SubjectCreate(SubjectBase):
@@ -34,6 +37,7 @@ class SubjectUpdate(BaseModel):
     description: str | None = Field(None, max_length=2000)
     semester_id: int | None = Field(None)
     planned_classes: int | None = Field(None, ge=0, le=500)
+    total_hours: int | None = Field(None, ge=0, le=2000)
 
 
 class SubjectResponse(SubjectBase):

@@ -13,9 +13,11 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.lk import LkCredentials, SemesterDiscipline, SessionGrade
+from src.models.semester import Semester
+from src.models.subject import Subject
 from src.parser.lk_exceptions import LkAuthError
 from src.parser.lk_parser import LkParser, LkStudentData
-from src.schemas.lk import LkCredentialsCreate
+from src.schemas.lk import LkCredentialsCreate, LkImportResult
 from src.utils.crypto import decrypt_credential, encrypt_credential
 from src.utils.exceptions import LkCredentialsNotFound, LkSyncError
 
@@ -143,11 +145,24 @@ async def sync_from_lk(db: AsyncSession, user_id: int) -> tuple[int, int]:
     except Exception as e:
         raise LkSyncError(f"Failed to fetch data: {e}") from e
 
+    # Log raw data for debugging
+    logger.debug("Raw LK data: sessions=%d, sem_info=%d", len(data.sessions), len(data.sem_info))
+    logger.debug("Sessions: %s", data.sessions[:2] if data.sessions else "empty")
+    logger.debug("SemInfo: %s", data.sem_info[:2] if data.sem_info else "empty")
+
     # Sync grades
-    grades_count = await _sync_grades(db, user_id, data)
+    try:
+        grades_count = await _sync_grades(db, user_id, data)
+    except Exception as e:
+        logger.exception("Failed to sync grades: %s", e)
+        raise LkSyncError(f"Failed to sync grades: {e}") from e
 
     # Sync disciplines
-    disciplines_count = await _sync_disciplines(db, user_id, data)
+    try:
+        disciplines_count = await _sync_disciplines(db, user_id, data)
+    except Exception as e:
+        logger.exception("Failed to sync disciplines: %s", e)
+        raise LkSyncError(f"Failed to sync disciplines: {e}") from e
 
     # Update last_sync_at
     creds.last_sync_at = datetime.now(UTC)
@@ -221,14 +236,9 @@ async def _sync_disciplines(db: AsyncSession, user_id: int, data: LkStudentData)
     count = 0
     now = datetime.now(UTC)
 
-    for item in data.sem_info:
-        semester_number = item.get("semester", 0)
-        discipline_name = item.get("discipline", "")
-        control_form = item.get("controlForm", "")
-        hours = item.get("length", 0)
-
-        if not discipline_name:
-            continue
+    # semInfo structure: [{number: 1, entries: [{discipline, controlForm, length}, ...]}, ...]
+    for semester in data.sem_info:
+        semester_number = semester.get("number", 0)
 
         # Ensure semester_number is int
         try:
@@ -236,31 +246,40 @@ async def _sync_disciplines(db: AsyncSession, user_id: int, data: LkStudentData)
         except (ValueError, TypeError):
             continue
 
-        # Ensure hours is int
-        try:
-            hours = int(hours)
-        except (ValueError, TypeError):
-            hours = 0
+        entries = semester.get("entries", [])
+        for item in entries:
+            discipline_name = item.get("discipline", "")
+            control_form = item.get("controlForm", "")
+            hours = item.get("length", 0)
 
-        # Use PostgreSQL upsert
-        stmt = pg_insert(SemesterDiscipline).values(
-            user_id=user_id,
-            semester_number=semester_number,
-            discipline_name=discipline_name,
-            control_form=control_form,
-            hours=hours,
-            synced_at=now,
-        )
-        stmt = stmt.on_conflict_do_update(
-            index_elements=["user_id", "semester_number", "discipline_name"],
-            set_={
-                "control_form": control_form,
-                "hours": hours,
-                "synced_at": now,
-            },
-        )
-        await db.execute(stmt)
-        count += 1
+            if not discipline_name:
+                continue
+
+            # Ensure hours is int
+            try:
+                hours = int(hours)
+            except (ValueError, TypeError):
+                hours = 0
+
+            # Use PostgreSQL upsert
+            stmt = pg_insert(SemesterDiscipline).values(
+                user_id=user_id,
+                semester_number=semester_number,
+                discipline_name=discipline_name,
+                control_form=control_form,
+                hours=hours,
+                synced_at=now,
+            )
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["user_id", "semester_number", "discipline_name"],
+                set_={
+                    "control_form": control_form,
+                    "hours": hours,
+                    "synced_at": now,
+                },
+            )
+            await db.execute(stmt)
+            count += 1
 
     await db.commit()
     return count
@@ -360,3 +379,139 @@ async def get_unique_semesters(db: AsyncSession, user_id: int) -> list[int]:
         .order_by(SemesterDiscipline.semester_number)
     )
     return [row[0] for row in result.all()]
+
+
+async def import_to_app(db: AsyncSession, user_id: int) -> LkImportResult:
+    """Import semesters and subjects from LK data to app.
+
+    Creates or updates semesters and subjects based on previously
+    synced SemesterDiscipline records.
+
+    Args:
+        db: Database session.
+        user_id: User ID.
+
+    Returns:
+        LkImportResult with counts of created/updated records.
+
+    Raises:
+        LkCredentialsNotFound: If no credentials saved.
+        LkSyncError: If no disciplines to import.
+    """
+    # Check if user has synced disciplines
+    disciplines = await get_disciplines(db, user_id)
+    if not disciplines:
+        raise LkSyncError("No disciplines to import. Sync from LK first.")
+
+    # Get current academic year based on date
+    now = datetime.now(UTC)
+    # Academic year starts in September
+    if now.month >= 9:
+        current_year_start = now.year
+        current_year_end = now.year + 1
+    else:
+        current_year_start = now.year - 1
+        current_year_end = now.year
+
+    # Group disciplines by semester number
+    disciplines_by_semester: dict[int, list[SemesterDiscipline]] = {}
+    for disc in disciplines:
+        if disc.semester_number not in disciplines_by_semester:
+            disciplines_by_semester[disc.semester_number] = []
+        disciplines_by_semester[disc.semester_number].append(disc)
+
+    semesters_created = 0
+    semesters_updated = 0
+    subjects_created = 0
+    subjects_updated = 0
+
+    # Process each semester
+    for semester_number, sem_disciplines in disciplines_by_semester.items():
+        # Calculate year_start/year_end based on semester number
+        # Assuming current semester is the max semester number
+        max_semester = max(disciplines_by_semester.keys())
+
+        # Calculate how many years back this semester is
+        years_back = (max_semester - semester_number) // 2
+        year_start = current_year_start - years_back
+        year_end = current_year_end - years_back
+
+        # Adjust for even/odd semester within academic year
+        # Odd = fall (first half), Even = spring (second half)
+        # If max_semester is even (spring) and this is odd, it's previous year
+        if max_semester % 2 == 0 and semester_number % 2 == 1:
+            year_start -= 1
+            year_end -= 1
+
+        # Generate semester name
+        season = "Осенний" if semester_number % 2 == 1 else "Весенний"
+        name = f"{season} семестр {year_start}/{year_end}"
+
+        # Find or create semester
+        result = await db.execute(
+            select(Semester).where(Semester.number == semester_number)
+        )
+        semester = result.scalar_one_or_none()
+
+        if semester:
+            # Update existing semester
+            semester.year_start = year_start
+            semester.year_end = year_end
+            semester.name = name
+            semesters_updated += 1
+        else:
+            # Create new semester
+            semester = Semester(
+                number=semester_number,
+                year_start=year_start,
+                year_end=year_end,
+                name=name,
+                is_current=semester_number == max_semester,
+            )
+            db.add(semester)
+            await db.flush()
+            semesters_created += 1
+
+        # Create/update subjects for this semester
+        for disc in sem_disciplines:
+            # Find existing subject by name and semester
+            result = await db.execute(
+                select(Subject).where(
+                    Subject.name == disc.discipline_name,
+                    Subject.semester_id == semester.id,
+                )
+            )
+            subject = result.scalar_one_or_none()
+
+            if subject:
+                # Update total_hours if changed
+                if subject.total_hours != disc.hours:
+                    subject.total_hours = disc.hours
+                    subjects_updated += 1
+            else:
+                # Create new subject
+                subject = Subject(
+                    name=disc.discipline_name,
+                    semester_id=semester.id,
+                    total_hours=disc.hours,
+                )
+                db.add(subject)
+                subjects_created += 1
+
+    await db.commit()
+
+    logger.info(
+        "Imported from LK for user %d: %d/%d semesters, %d/%d subjects",
+        user_id,
+        semesters_created,
+        semesters_updated,
+        subjects_created,
+        subjects_updated,
+    )
+
+    return LkImportResult(
+        semesters_created=semesters_created,
+        semesters_updated=semesters_updated,
+        subjects_created=subjects_created,
+        subjects_updated=subjects_updated,
+    )

@@ -25,6 +25,7 @@ class Subject(Base, TimestampMixin):
         Integer, ForeignKey("semesters.id", ondelete="CASCADE"), nullable=False
     )
     planned_classes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    total_hours: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Relationships
     semester: Mapped["Semester"] = relationship("Semester", back_populates="subjects")

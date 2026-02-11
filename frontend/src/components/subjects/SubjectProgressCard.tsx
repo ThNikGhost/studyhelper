@@ -50,6 +50,11 @@ export function SubjectProgressCard({
               {subject.short_name}
             </span>
           )}
+          {subject.total_hours && (
+            <span className="text-xs text-muted-foreground shrink-0">
+              {subject.total_hours} ч.
+            </span>
+          )}
         </div>
 
         {hasWorks ? (

@@ -27,12 +27,13 @@ export function SubjectsPage() {
   const [deleteConfirmSubject, setDeleteConfirmSubject] = useState<Subject | null>(null)
 
   // Form state
-  const [formData, setFormData] = useState<SubjectCreate>({
+  const [formData, setFormData] = useState<SubjectCreate & { total_hours: number | null }>({
     name: '',
     short_name: '',
     description: '',
     semester_id: 0,
     planned_classes: null,
+    total_hours: null,
   })
 
   // Fetch semesters
@@ -130,6 +131,7 @@ export function SubjectsPage() {
       description: '',
       semester_id: effectiveSemesterId || semesters[0]?.id || 0,
       planned_classes: null,
+      total_hours: null,
     })
     setEditingSubject(null)
     setIsAddModalOpen(true)
@@ -142,6 +144,7 @@ export function SubjectsPage() {
       description: subject.description || '',
       semester_id: subject.semester_id,
       planned_classes: subject.planned_classes,
+      total_hours: subject.total_hours,
     })
     setEditingSubject(subject)
     setIsAddModalOpen(true)
@@ -156,6 +159,7 @@ export function SubjectsPage() {
       description: '',
       semester_id: 0,
       planned_classes: null,
+      total_hours: null,
     })
   }
 
@@ -361,26 +365,46 @@ export function SubjectsPage() {
               />
             </div>
 
-            <div>
-              <Label htmlFor="planned_classes">Количество пар за семестр</Label>
-              <Input
-                id="planned_classes"
-                type="number"
-                min={0}
-                max={500}
-                value={formData.planned_classes ?? ''}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    planned_classes: e.target.value ? Number(e.target.value) : null,
-                  })
-                }
-                placeholder="Например: 32"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Для расчёта посещаемости. Можно оставить пустым.
-              </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="planned_classes">Кол-во пар</Label>
+                <Input
+                  id="planned_classes"
+                  type="number"
+                  min={0}
+                  max={500}
+                  value={formData.planned_classes ?? ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      planned_classes: e.target.value ? Number(e.target.value) : null,
+                    })
+                  }
+                  placeholder="32"
+                />
+              </div>
+              <div>
+                <Label htmlFor="total_hours">Всего часов</Label>
+                <Input
+                  id="total_hours"
+                  type="number"
+                  min={0}
+                  max={2000}
+                  value={formData.total_hours ?? ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      total_hours: e.target.value ? Number(e.target.value) : null,
+                    })
+                  }
+                  placeholder="108"
+                  disabled={editingSubject?.total_hours !== null && editingSubject?.total_hours !== undefined}
+                />
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Количество пар для посещаемости. Часы импортируются из ЛК.
+            </p>
 
             <div>
               <Label htmlFor="modal-semester">Семестр *</Label>

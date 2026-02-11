@@ -11,6 +11,7 @@ from src.dependencies import get_current_user
 from src.models.user import User
 from src.schemas.lk import (
     LkCredentialsCreate,
+    LkImportResult,
     LkStatusResponse,
     LkSyncResponse,
     SemesterDisciplineResponse,
@@ -92,13 +93,21 @@ async def sync_from_lk(
         400: If credentials not saved.
         502: If LK sync fails.
     """
-    grades_count, disciplines_count = await lk_service.sync_from_lk(db, current_user.id)
-    creds = await lk_service.get_credentials(db, current_user.id)
-    return LkSyncResponse(
-        grades_synced=grades_count,
-        disciplines_synced=disciplines_count,
-        last_sync_at=creds.last_sync_at,  # type: ignore
-    )
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        logger.info("Starting LK sync for user %d", current_user.id)
+        grades_count, disciplines_count = await lk_service.sync_from_lk(db, current_user.id)
+        logger.info("LK sync completed: %d grades, %d disciplines", grades_count, disciplines_count)
+        creds = await lk_service.get_credentials(db, current_user.id)
+        return LkSyncResponse(
+            grades_synced=grades_count,
+            disciplines_synced=disciplines_count,
+            last_sync_at=creds.last_sync_at,  # type: ignore
+        )
+    except Exception as e:
+        logger.exception("LK sync failed: %s", e)
+        raise
 
 
 @router.get("/grades", response_model=list[SessionGradeResponse])
@@ -153,3 +162,21 @@ async def get_semesters(
     Useful for populating semester filter dropdown.
     """
     return await lk_service.get_unique_semesters(db, current_user.id)
+
+
+@router.post("/import", response_model=LkImportResult)
+async def import_from_lk(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> LkImportResult:
+    """Import semesters and subjects from LK to app.
+
+    Creates or updates Semester and Subject records based on
+    previously synced SemesterDiscipline data.
+
+    Requires that LK data has been synced first (POST /sync).
+
+    Raises:
+        400: If no disciplines to import.
+    """
+    return await lk_service.import_to_app(db, current_user.id)

@@ -38,6 +38,7 @@ export interface Subject {
   description: string | null
   semester_id: number
   planned_classes: number | null
+  total_hours: number | null
   created_at: string
   updated_at: string
 }
@@ -48,6 +49,7 @@ export interface SubjectCreate {
   description?: string | null
   semester_id: number
   planned_classes?: number | null
+  total_hours?: number | null
 }
 
 export interface SubjectUpdate {
@@ -56,4 +58,5 @@ export interface SubjectUpdate {
   description?: string | null
   semester_id?: number
   planned_classes?: number | null
+  total_hours?: number | null
 }

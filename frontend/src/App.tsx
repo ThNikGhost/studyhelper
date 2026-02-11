@@ -15,6 +15,8 @@ import AttendancePage from '@/pages/AttendancePage'
 import NotesPage from '@/pages/NotesPage'
 import TimelinePage from '@/pages/TimelinePage'
 import SettingsPage from '@/pages/SettingsPage'
+import GradesPage from '@/pages/GradesPage'
+import LkTestPage from '@/pages/LkTestPage'
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -141,6 +143,26 @@ function App() {
           <ProtectedRoute>
             <AppLayout>
               <SettingsPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/grades"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <GradesPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/lk-test"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <LkTestPage />
             </AppLayout>
           </ProtectedRoute>
         }

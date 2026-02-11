@@ -126,3 +126,39 @@ export function formatLocation(
   }
   return cleanRoom || cleanBuilding || null
 }
+
+/**
+ * Format a date as a human-readable relative time string in Russian.
+ *
+ * @param date - Date to format.
+ * @returns Formatted string like "только что", "5 минут назад", "2 часа назад", "вчера".
+ */
+export function formatDistanceToNow(date: Date): string {
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMinutes = Math.floor(diffMs / (1000 * 60))
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffMinutes < 1) {
+    return 'только что'
+  }
+  if (diffMinutes < 60) {
+    return `${diffMinutes} мин. назад`
+  }
+  if (diffHours < 24) {
+    return `${diffHours} ч. назад`
+  }
+  if (diffDays === 1) {
+    return 'вчера'
+  }
+  if (diffDays < 7) {
+    return `${diffDays} дн. назад`
+  }
+
+  return date.toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}

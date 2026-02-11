@@ -315,16 +315,19 @@ class TestLkSync:
             ],
             sem_info=[
                 {
-                    "semester": 5,
-                    "discipline": "Математический анализ",
-                    "controlForm": "Экзамен",
-                    "length": 108,
-                },
-                {
-                    "semester": 5,
-                    "discipline": "Физика",
-                    "controlForm": "Зачет",
-                    "length": 72,
+                    "number": 5,
+                    "entries": [
+                        {
+                            "discipline": "Математический анализ",
+                            "controlForm": "Экзамен",
+                            "length": 108,
+                        },
+                        {
+                            "discipline": "Физика",
+                            "controlForm": "Зачет",
+                            "length": 72,
+                        },
+                    ],
                 },
             ],
         )
@@ -564,10 +567,14 @@ class TestLkDisciplines:
         mock_data = LkStudentData(
             sem_info=[
                 {
-                    "semester": 5,
-                    "discipline": "Математический анализ",
-                    "controlForm": "Экзамен",
-                    "length": 108,
+                    "number": 5,
+                    "entries": [
+                        {
+                            "discipline": "Математический анализ",
+                            "controlForm": "Экзамен",
+                            "length": 108,
+                        },
+                    ],
                 },
             ],
         )
@@ -604,16 +611,24 @@ class TestLkDisciplines:
         mock_data = LkStudentData(
             sem_info=[
                 {
-                    "semester": 4,
-                    "discipline": "Физика",
-                    "controlForm": "Зачет",
-                    "length": 72,
+                    "number": 4,
+                    "entries": [
+                        {
+                            "discipline": "Физика",
+                            "controlForm": "Зачет",
+                            "length": 72,
+                        },
+                    ],
                 },
                 {
-                    "semester": 5,
-                    "discipline": "Математика",
-                    "controlForm": "Экзамен",
-                    "length": 108,
+                    "number": 5,
+                    "entries": [
+                        {
+                            "discipline": "Математика",
+                            "controlForm": "Экзамен",
+                            "length": 108,
+                        },
+                    ],
                 },
             ],
         )
@@ -678,22 +693,22 @@ class TestLkSemesters:
         mock_data = LkStudentData(
             sem_info=[
                 {
-                    "semester": 3,
-                    "discipline": "A",
-                    "controlForm": "Зачет",
-                    "length": 36,
+                    "number": 3,
+                    "entries": [
+                        {"discipline": "A", "controlForm": "Зачет", "length": 36},
+                    ],
                 },
                 {
-                    "semester": 4,
-                    "discipline": "B",
-                    "controlForm": "Экзамен",
-                    "length": 72,
+                    "number": 4,
+                    "entries": [
+                        {"discipline": "B", "controlForm": "Экзамен", "length": 72},
+                    ],
                 },
                 {
-                    "semester": 5,
-                    "discipline": "C",
-                    "controlForm": "Экзамен",
-                    "length": 108,
+                    "number": 5,
+                    "entries": [
+                        {"discipline": "C", "controlForm": "Экзамен", "length": 108},
+                    ],
                 },
             ],
         )

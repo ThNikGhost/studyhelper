@@ -60,3 +60,12 @@ class LkStudentInfo(BaseModel):
     faculty: str | None = None
     course: int | None = None
     speciality: str | None = None
+
+
+class LkImportResult(BaseModel):
+    """Result of import operation to app."""
+
+    semesters_created: int
+    semesters_updated: int
+    subjects_created: int
+    subjects_updated: int

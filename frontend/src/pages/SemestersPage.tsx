@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
-import { Plus, Pencil, Trash2, ArrowLeft, Calendar, Check, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, ArrowLeft, Calendar, Check, Loader2, Download } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
 import { toast } from 'sonner'
 import subjectService from '@/services/subjectService'
+import { lkService } from '@/services/lkService'
 import type { Semester, SemesterCreate, SemesterUpdate } from '@/types/subject'
 
 // Get current academic year
@@ -43,6 +44,14 @@ export function SemestersPage() {
   }
 
   const [formData, setFormData] = useState<typeof defaultFormData>(defaultFormData)
+  const [importModalOpen, setImportModalOpen] = useState(false)
+
+  // Fetch LK status
+  const { data: lkStatus } = useQuery({
+    queryKey: ['lk', 'status'],
+    queryFn: ({ signal }) => lkService.getStatus(signal),
+    staleTime: 1000 * 60,
+  })
 
   // Fetch semesters
   const {
@@ -104,6 +113,22 @@ export function SemestersPage() {
     },
     onError: () => {
       toast.error('Не удалось изменить текущий семестр')
+    },
+  })
+
+  // Import from LK mutation
+  const importMutation = useMutation({
+    mutationFn: () => lkService.importToApp(),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['semesters'] })
+      queryClient.invalidateQueries({ queryKey: ['subjects'] })
+      setImportModalOpen(false)
+      const created = result.semesters_created + result.subjects_created
+      const updated = result.semesters_updated + result.subjects_updated
+      toast.success(`Импортировано: ${created} создано, ${updated} обновлено`)
+    },
+    onError: () => {
+      toast.error('Не удалось импортировать данные из ЛК. Сначала выполните синхронизацию.')
     },
   })
 
@@ -175,7 +200,8 @@ export function SemestersPage() {
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteMutation.isPending ||
-    setCurrentMutation.isPending
+    setCurrentMutation.isPending ||
+    importMutation.isPending
 
   // Loading state
   if (isLoading) {
@@ -224,11 +250,24 @@ export function SemestersPage() {
           <h1 className="text-2xl font-bold flex-1">Семестры</h1>
         </div>
 
-        {/* Add button */}
-        <Button className="w-full mb-6" onClick={openAddModal} disabled={!isOnline}>
-          <Plus className="h-4 w-4 mr-2" />
-          Добавить семестр
-        </Button>
+        {/* Action buttons */}
+        <div className="flex gap-2 mb-6">
+          <Button className="flex-1" onClick={openAddModal} disabled={!isOnline}>
+            <Plus className="h-4 w-4 mr-2" />
+            Добавить семестр
+          </Button>
+          {lkStatus?.has_credentials && (
+            <Button
+              variant="outline"
+              onClick={() => setImportModalOpen(true)}
+              disabled={!isOnline || isMutating}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Импорт из ЛК
+            </Button>
+          )}
+        </div>
 
         {/* Semesters list */}
         <div className="space-y-3">
@@ -437,6 +476,43 @@ export function SemestersPage() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 'Удалить'
+              )}
+            </Button>
+          </div>
+        </Modal>
+
+        {/* Import from LK confirmation modal */}
+        <Modal
+          open={importModalOpen}
+          onClose={() => setImportModalOpen(false)}
+          title="Импорт из личного кабинета"
+        >
+          <p className="text-muted-foreground mb-4">
+            Будут созданы семестры и предметы на основе вашего учебного плана из ЛК ОмГУ.
+            Существующие семестры и предметы с совпадающими названиями будут обновлены.
+          </p>
+          <p className="text-sm text-amber-600 dark:text-amber-400 mb-4">
+            Убедитесь, что вы уже выполнили синхронизацию в Настройках.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => setImportModalOpen(false)}
+            >
+              Отмена
+            </Button>
+            <Button
+              type="button"
+              className="flex-1"
+              disabled={importMutation.isPending}
+              onClick={() => importMutation.mutate()}
+            >
+              {importMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Импортировать'
               )}
             </Button>
           </div>
