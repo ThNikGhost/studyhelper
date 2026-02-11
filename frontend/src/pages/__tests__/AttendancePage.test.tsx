@@ -39,10 +39,12 @@ describe('AttendancePage', () => {
     renderAttendancePage()
 
     await waitFor(() => {
-      expect(screen.getByText('80.0%')).toBeInTheDocument()
+      // New format uses total_planned (96) instead of total_classes
+      expect(screen.getByText(/8 из 96/)).toBeInTheDocument()
     })
 
-    expect(screen.getByText(/8 из 10 занятий/)).toBeInTheDocument()
+    // Percentage is now based on total_planned
+    expect(screen.getByText(/8\.3%/)).toBeInTheDocument()
   })
 
   it('renders subject breakdown', async () => {

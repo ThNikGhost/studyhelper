@@ -53,7 +53,8 @@ class SubjectAttendanceStats(BaseModel):
 
     subject_name: str
     subject_id: int | None = None
-    total_classes: int
+    planned_classes: int = 0  # From Subject.planned_classes
+    total_classes: int  # Completed lessons count
     absences: int
     attended: int
     attendance_percent: float
@@ -62,7 +63,9 @@ class SubjectAttendanceStats(BaseModel):
 class AttendanceStatsResponse(BaseModel):
     """Overall attendance statistics."""
 
-    total_classes: int
+    total_planned: int = 0  # Sum of Subject.planned_classes
+    total_completed: int = 0  # Completed lessons count
+    total_classes: int  # Backwards compat (= total_completed)
     absences: int
     attended: int
     attendance_percent: float

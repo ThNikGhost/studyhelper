@@ -15,6 +15,9 @@ class SubjectBase(BaseModel):
     description: str | None = Field(
         None, max_length=2000, description="Subject description"
     )
+    planned_classes: int | None = Field(
+        None, ge=0, le=500, description="Planned classes for semester"
+    )
 
 
 class SubjectCreate(SubjectBase):
@@ -30,6 +33,7 @@ class SubjectUpdate(BaseModel):
     short_name: str | None = Field(None, max_length=50)
     description: str | None = Field(None, max_length=2000)
     semester_id: int | None = Field(None)
+    planned_classes: int | None = Field(None, ge=0, le=500)
 
 
 class SubjectResponse(SubjectBase):

@@ -32,6 +32,7 @@ export function SubjectsPage() {
     short_name: '',
     description: '',
     semester_id: 0,
+    planned_classes: null,
   })
 
   // Fetch semesters
@@ -128,6 +129,7 @@ export function SubjectsPage() {
       short_name: '',
       description: '',
       semester_id: effectiveSemesterId || semesters[0]?.id || 0,
+      planned_classes: null,
     })
     setEditingSubject(null)
     setIsAddModalOpen(true)
@@ -139,6 +141,7 @@ export function SubjectsPage() {
       short_name: subject.short_name || '',
       description: subject.description || '',
       semester_id: subject.semester_id,
+      planned_classes: subject.planned_classes,
     })
     setEditingSubject(subject)
     setIsAddModalOpen(true)
@@ -152,6 +155,7 @@ export function SubjectsPage() {
       short_name: '',
       description: '',
       semester_id: 0,
+      planned_classes: null,
     })
   }
 
@@ -355,6 +359,27 @@ export function SubjectsPage() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Дополнительная информация о предмете"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="planned_classes">Количество пар за семестр</Label>
+              <Input
+                id="planned_classes"
+                type="number"
+                min={0}
+                max={500}
+                value={formData.planned_classes ?? ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    planned_classes: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+                placeholder="Например: 32"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Для расчёта посещаемости. Можно оставить пустым.
+              </p>
             </div>
 
             <div>

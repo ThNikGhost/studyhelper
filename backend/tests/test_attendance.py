@@ -43,6 +43,28 @@ async def _create_entry(
     return resp.json()["id"]
 
 
+async def _create_semester_with_dates(
+    client: AsyncClient, headers: dict[str, str]
+) -> int:
+    """Create a semester with start_date and end_date for testing."""
+    start = date.today() - timedelta(days=30)
+    end = date.today() + timedelta(days=30)
+    resp = await client.post(
+        "/api/v1/semesters",
+        json={
+            "number": 1,
+            "year_start": 2025,
+            "year_end": 2026,
+            "name": "Test Semester",
+            "start_date": str(start),
+            "end_date": str(end),
+        },
+        headers=headers,
+    )
+    assert resp.status_code == 201
+    return resp.json()["id"]
+
+
 class TestMarkAbsent:
     """Tests for POST /api/v1/attendance/mark-absent."""
 
@@ -221,11 +243,60 @@ class TestGetAttendance:
     """Tests for GET /api/v1/attendance/."""
 
     @pytest.mark.asyncio
+    async def test_get_entries_requires_semester_id(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """Test getting entries without semester_id returns 422."""
+        response = await client.get("/api/v1/attendance/", headers=auth_headers)
+
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_get_entries_semester_not_found(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """Test getting entries with non-existent semester returns 404."""
+        response = await client.get(
+            "/api/v1/attendance/?semester_id=99999", headers=auth_headers
+        )
+
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_get_entries_semester_no_dates(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """Test getting entries with semester without dates returns 400."""
+        sem_resp = await client.post(
+            "/api/v1/semesters",
+            json={
+                "number": 1,
+                "year_start": 2025,
+                "year_end": 2026,
+                "name": "No dates semester",
+            },
+            headers=auth_headers,
+        )
+        sem_id = sem_resp.json()["id"]
+
+        response = await client.get(
+            f"/api/v1/attendance/?semester_id={sem_id}", headers=auth_headers
+        )
+
+        assert response.status_code == 400
+        assert "dates not set" in response.json()["detail"]
+
+    @pytest.mark.asyncio
     async def test_get_entries_empty(
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
-        """Test getting entries when none exist."""
-        response = await client.get("/api/v1/attendance/", headers=auth_headers)
+        """Test getting entries when none exist in semester."""
+        sem_id = await _create_semester_with_dates(client, auth_headers)
+
+        response = await client.get(
+            f"/api/v1/attendance/?semester_id={sem_id}", headers=auth_headers
+        )
 
         assert response.status_code == 200
         assert response.json() == []
@@ -235,6 +306,8 @@ class TestGetAttendance:
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
         """Test getting entries with mixed attendance."""
+        sem_id = await _create_semester_with_dates(client, auth_headers)
+
         entry1_id = await _create_entry(client, auth_headers, _past_entry())
         entry2_id = await _create_entry(
             client, auth_headers, _past_entry("Программирование")
@@ -247,7 +320,9 @@ class TestGetAttendance:
             headers=auth_headers,
         )
 
-        response = await client.get("/api/v1/attendance/", headers=auth_headers)
+        response = await client.get(
+            f"/api/v1/attendance/?semester_id={sem_id}", headers=auth_headers
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -259,32 +334,39 @@ class TestGetAttendance:
         assert entry2_data["is_absent"] is False
 
     @pytest.mark.asyncio
-    async def test_get_entries_filter_by_date(
+    async def test_get_entries_pagination(
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
-        """Test filtering entries by date range."""
-        two_days_ago = str(date.today() - timedelta(days=2))
-        yesterday = str(date.today() - timedelta(days=1))
+        """Test pagination with limit and offset."""
+        sem_id = await _create_semester_with_dates(client, auth_headers)
 
-        await _create_entry(client, auth_headers, _past_entry(lesson_date=two_days_ago))
-        await _create_entry(
-            client, auth_headers, _past_entry("Физика", lesson_date=yesterday)
-        )
+        for i in range(5):
+            await _create_entry(
+                client,
+                auth_headers,
+                _past_entry(f"Subject {i}"),
+            )
 
         response = await client.get(
-            f"/api/v1/attendance/?date_from={yesterday}&date_to={yesterday}",
+            f"/api/v1/attendance/?semester_id={sem_id}&limit=2&offset=0",
             headers=auth_headers,
         )
-
         assert response.status_code == 200
         data = response.json()
-        assert len(data) == 1
-        assert data[0]["subject_name"] == "Физика"
+        assert len(data) == 2
+
+        response2 = await client.get(
+            f"/api/v1/attendance/?semester_id={sem_id}&limit=2&offset=2",
+            headers=auth_headers,
+        )
+        assert response2.status_code == 200
+        data2 = response2.json()
+        assert len(data2) == 2
 
     @pytest.mark.asyncio
     async def test_get_entries_no_auth(self, client: AsyncClient) -> None:
         """Test getting entries without authentication returns 401."""
-        response = await client.get("/api/v1/attendance/")
+        response = await client.get("/api/v1/attendance/?semester_id=1")
 
         assert response.status_code == 401
 
@@ -293,10 +375,14 @@ class TestGetAttendance:
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
         """Test that future entries are not returned."""
+        sem_id = await _create_semester_with_dates(client, auth_headers)
+
         await _create_entry(client, auth_headers, _past_entry())
         await _create_entry(client, auth_headers, _future_entry())
 
-        response = await client.get("/api/v1/attendance/", headers=auth_headers)
+        response = await client.get(
+            f"/api/v1/attendance/?semester_id={sem_id}", headers=auth_headers
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -308,31 +394,62 @@ class TestGetStats:
     """Tests for GET /api/v1/attendance/stats."""
 
     @pytest.mark.asyncio
+    async def test_stats_requires_semester_id(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """Test stats without semester_id returns 422."""
+        response = await client.get("/api/v1/attendance/stats", headers=auth_headers)
+
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_stats_semester_not_found(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """Test stats with non-existent semester returns 404."""
+        response = await client.get(
+            "/api/v1/attendance/stats?semester_id=99999", headers=auth_headers
+        )
+
+        assert response.status_code == 404
+
+    @pytest.mark.asyncio
     async def test_stats_empty(
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
-        """Test stats with no entries returns 100% attendance."""
-        response = await client.get("/api/v1/attendance/stats", headers=auth_headers)
+        """Test stats with no entries returns 0% attendance (no planned_classes)."""
+        sem_id = await _create_semester_with_dates(client, auth_headers)
+
+        response = await client.get(
+            f"/api/v1/attendance/stats?semester_id={sem_id}", headers=auth_headers
+        )
 
         assert response.status_code == 200
         data = response.json()
+        assert data["total_planned"] == 0
+        assert data["total_completed"] == 0
         assert data["total_classes"] == 0
         assert data["absences"] == 0
-        assert data["attendance_percent"] == 100.0
+        assert data["attendance_percent"] == 0.0
         assert data["by_subject"] == []
 
     @pytest.mark.asyncio
     async def test_stats_all_present(
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
-        """Test stats when all lessons attended."""
+        """Test stats when all lessons attended (no planned_classes set)."""
+        sem_id = await _create_semester_with_dates(client, auth_headers)
+
         await _create_entry(client, auth_headers, _past_entry())
         await _create_entry(client, auth_headers, _past_entry("Физика"))
 
-        response = await client.get("/api/v1/attendance/stats", headers=auth_headers)
+        response = await client.get(
+            f"/api/v1/attendance/stats?semester_id={sem_id}", headers=auth_headers
+        )
 
         assert response.status_code == 200
         data = response.json()
+        assert data["total_completed"] == 2
         assert data["total_classes"] == 2
         assert data["absences"] == 0
         assert data["attended"] == 2
@@ -343,6 +460,8 @@ class TestGetStats:
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
         """Test stats with some absences."""
+        sem_id = await _create_semester_with_dates(client, auth_headers)
+
         entry1_id = await _create_entry(client, auth_headers, _past_entry())
         await _create_entry(client, auth_headers, _past_entry("Физика"))
 
@@ -352,20 +471,63 @@ class TestGetStats:
             headers=auth_headers,
         )
 
-        response = await client.get("/api/v1/attendance/stats", headers=auth_headers)
+        response = await client.get(
+            f"/api/v1/attendance/stats?semester_id={sem_id}", headers=auth_headers
+        )
 
         assert response.status_code == 200
         data = response.json()
-        assert data["total_classes"] == 2
+        assert data["total_completed"] == 2
         assert data["absences"] == 1
         assert data["attended"] == 1
         assert data["attendance_percent"] == 50.0
+
+    @pytest.mark.asyncio
+    async def test_stats_with_planned_classes(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """Test stats with planned_classes set on subject."""
+        sem_id = await _create_semester_with_dates(client, auth_headers)
+
+        # Create subject with planned_classes
+        subj_resp = await client.post(
+            "/api/v1/subjects",
+            json={
+                "name": "Алгебра",
+                "semester_id": sem_id,
+                "planned_classes": 32,
+            },
+            headers=auth_headers,
+        )
+        subj_id = subj_resp.json()["id"]
+
+        # Create 2 past entries linked to subject
+        for _ in range(2):
+            await _create_entry(
+                client,
+                auth_headers,
+                _past_entry("Алгебра", subject_id=subj_id),
+            )
+
+        response = await client.get(
+            f"/api/v1/attendance/stats?semester_id={sem_id}", headers=auth_headers
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_planned"] == 32
+        assert data["total_completed"] == 2
+        assert data["attended"] == 2
+        # 2 / 32 * 100 = 6.25%
+        assert data["attendance_percent"] == 6.2
 
     @pytest.mark.asyncio
     async def test_stats_by_subject_breakdown(
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
         """Test per-subject stats breakdown."""
+        sem_id = await _create_semester_with_dates(client, auth_headers)
+
         entry_math = await _create_entry(client, auth_headers, _past_entry())
         await _create_entry(client, auth_headers, _past_entry("Физика"))
 
@@ -375,7 +537,9 @@ class TestGetStats:
             headers=auth_headers,
         )
 
-        response = await client.get("/api/v1/attendance/stats", headers=auth_headers)
+        response = await client.get(
+            f"/api/v1/attendance/stats?semester_id={sem_id}", headers=auth_headers
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -401,7 +565,7 @@ class TestGetStats:
     @pytest.mark.asyncio
     async def test_stats_no_auth(self, client: AsyncClient) -> None:
         """Test stats without authentication returns 401."""
-        response = await client.get("/api/v1/attendance/stats")
+        response = await client.get("/api/v1/attendance/stats?semester_id=1")
 
         assert response.status_code == 401
 
@@ -410,26 +574,26 @@ class TestGetSubjectStats:
     """Tests for GET /api/v1/attendance/stats/{subject_id}."""
 
     @pytest.mark.asyncio
+    async def test_subject_stats_requires_semester_id(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """Test subject stats without semester_id returns 422."""
+        response = await client.get(
+            "/api/v1/attendance/stats/1", headers=auth_headers
+        )
+
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
     async def test_subject_stats_success(
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
         """Test getting stats for a specific subject with linked subject_id."""
-        # Create semester and subject
-        sem_resp = await client.post(
-            "/api/v1/semesters",
-            json={
-                "number": 1,
-                "year_start": 2025,
-                "year_end": 2026,
-                "name": "1 семестр",
-            },
-            headers=auth_headers,
-        )
-        sem_id = sem_resp.json()["id"]
+        sem_id = await _create_semester_with_dates(client, auth_headers)
 
         subj_resp = await client.post(
             "/api/v1/subjects",
-            json={"name": "Алгебра", "semester_id": sem_id},
+            json={"name": "Алгебра", "semester_id": sem_id, "planned_classes": 16},
             headers=auth_headers,
         )
         subj_id = subj_resp.json()["id"]
@@ -449,12 +613,14 @@ class TestGetSubjectStats:
         )
 
         response = await client.get(
-            f"/api/v1/attendance/stats/{subj_id}", headers=auth_headers
+            f"/api/v1/attendance/stats/{subj_id}?semester_id={sem_id}",
+            headers=auth_headers,
         )
 
         assert response.status_code == 200
         data = response.json()
         assert data["subject_name"] == "Алгебра"
+        assert data["planned_classes"] == 16
         assert data["total_classes"] == 1
         assert data["absences"] == 1
         assert data["attendance_percent"] == 0.0
@@ -464,8 +630,10 @@ class TestGetSubjectStats:
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
         """Test stats for subject with no entries returns 404."""
+        sem_id = await _create_semester_with_dates(client, auth_headers)
+
         response = await client.get(
-            "/api/v1/attendance/stats/99999", headers=auth_headers
+            f"/api/v1/attendance/stats/99999?semester_id={sem_id}", headers=auth_headers
         )
 
         assert response.status_code == 404

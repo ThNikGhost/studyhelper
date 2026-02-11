@@ -42,6 +42,7 @@ async def create_subject(db: AsyncSession, subject_data: SubjectCreate) -> Subje
         short_name=subject_data.short_name,
         description=subject_data.description,
         semester_id=subject_data.semester_id,
+        planned_classes=subject_data.planned_classes,
     )
     db.add(subject)
     await db.commit()

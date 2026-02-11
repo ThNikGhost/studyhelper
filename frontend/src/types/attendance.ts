@@ -24,6 +24,7 @@ export interface AbsenceRecord {
 export interface SubjectAttendanceStats {
   subject_name: string
   subject_id: number | null
+  planned_classes: number
   total_classes: number
   absences: number
   attended: number
@@ -31,7 +32,9 @@ export interface SubjectAttendanceStats {
 }
 
 export interface AttendanceStats {
-  total_classes: number
+  total_planned: number
+  total_completed: number
+  total_classes: number // backwards compat
   absences: number
   attended: number
   attendance_percent: number

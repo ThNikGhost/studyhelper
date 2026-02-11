@@ -1,30 +1,56 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
-import { ArrowLeft, RefreshCw, Loader2, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { AttendanceStatsCard } from '@/components/attendance/AttendanceStatsCard'
 import { SubjectAttendanceList } from '@/components/attendance/SubjectAttendanceList'
 import { AttendanceTable } from '@/components/attendance/AttendanceTable'
 import attendanceService from '@/services/attendanceService'
+import subjectService from '@/services/subjectService'
+import type { Semester } from '@/types/subject'
+import type { AttendanceEntry, AttendanceStats } from '@/types/attendance'
 
 export function AttendancePage() {
   const isOnline = useNetworkStatus()
   const queryClient = useQueryClient()
 
+  const [selectedSemesterId, setSelectedSemesterId] = useState<number | undefined>(undefined)
   const [filterSubjectId, setFilterSubjectId] = useState<number | null>(null)
   const [togglingId, setTogglingId] = useState<number | null>(null)
+
+  // Fetch semesters
+  const { data: semesters = [], isLoading: semestersLoading } = useQuery<Semester[]>({
+    queryKey: ['semesters'],
+    queryFn: ({ signal }) => subjectService.getSemesters(signal),
+  })
+
+  // Fetch current semester
+  const { data: currentSemester } = useQuery<Semester | null>({
+    queryKey: ['semesters', 'current'],
+    queryFn: ({ signal }) => subjectService.getCurrentSemester(signal),
+  })
+
+  // Auto-select current semester
+  const effectiveSemesterId = selectedSemesterId ?? currentSemester?.id
+
+  // Check if selected semester has dates
+  const selectedSemester = semesters.find((s) => s.id === effectiveSemesterId)
+  const hasDates = !!(selectedSemester?.start_date && selectedSemester?.end_date)
 
   // Fetch stats
   const {
     data: stats,
     isLoading: statsLoading,
     error: statsError,
-  } = useQuery({
-    queryKey: ['attendance-stats'],
-    queryFn: ({ signal }) => attendanceService.getStats(signal),
+  } = useQuery<AttendanceStats>({
+    queryKey: ['attendance-stats', effectiveSemesterId],
+    queryFn: ({ signal }) => attendanceService.getStats(effectiveSemesterId!, signal),
+    enabled: !!effectiveSemesterId && hasDates,
   })
 
   // Fetch entries
@@ -33,10 +59,11 @@ export function AttendancePage() {
     isLoading: entriesLoading,
     error: entriesError,
     refetch,
-  } = useQuery({
-    queryKey: ['attendance-entries', filterSubjectId],
+  } = useQuery<AttendanceEntry[]>({
+    queryKey: ['attendance-entries', effectiveSemesterId, filterSubjectId],
     queryFn: ({ signal }) =>
-      attendanceService.getEntries(filterSubjectId, null, null, signal),
+      attendanceService.getEntries(effectiveSemesterId!, filterSubjectId, 100, 0, signal),
+    enabled: !!effectiveSemesterId && hasDates,
   })
 
   // Mark absent mutation
@@ -44,8 +71,8 @@ export function AttendancePage() {
     mutationFn: (entryId: number) => attendanceService.markAbsent(entryId),
     onSuccess: () => {
       toast.success('Пропуск отмечен')
-      queryClient.invalidateQueries({ queryKey: ['attendance-entries'] })
-      queryClient.invalidateQueries({ queryKey: ['attendance-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['attendance-entries', effectiveSemesterId] })
+      queryClient.invalidateQueries({ queryKey: ['attendance-stats', effectiveSemesterId] })
     },
     onError: () => {
       toast.error('Ошибка при отметке пропуска')
@@ -58,8 +85,8 @@ export function AttendancePage() {
     mutationFn: (entryId: number) => attendanceService.markPresent(entryId),
     onSuccess: () => {
       toast.success('Присутствие отмечено')
-      queryClient.invalidateQueries({ queryKey: ['attendance-entries'] })
-      queryClient.invalidateQueries({ queryKey: ['attendance-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['attendance-entries', effectiveSemesterId] })
+      queryClient.invalidateQueries({ queryKey: ['attendance-stats', effectiveSemesterId] })
     },
     onError: () => {
       toast.error('Ошибка при отметке присутствия')
@@ -76,7 +103,7 @@ export function AttendancePage() {
     }
   }
 
-  const isLoading = statsLoading || entriesLoading
+  const isLoading = semestersLoading || (hasDates && (statsLoading || entriesLoading))
   const error = statsError || entriesError
 
   return (
@@ -98,12 +125,59 @@ export function AttendancePage() {
           variant="outline"
           size="icon"
           onClick={() => refetch()}
-          disabled={!isOnline}
+          disabled={!isOnline || !hasDates}
           aria-label="Обновить"
         >
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Semester selector */}
+      <Card className="mb-6">
+        <CardContent className="py-3 px-4">
+          <Label htmlFor="semester-select" className="text-sm text-muted-foreground">
+            Семестр
+          </Label>
+          <select
+            id="semester-select"
+            className="w-full mt-1 px-3 py-2 bg-background border rounded-md text-sm"
+            value={effectiveSemesterId || ''}
+            onChange={(e) => {
+              setSelectedSemesterId(e.target.value ? Number(e.target.value) : undefined)
+              setFilterSubjectId(null)
+            }}
+          >
+            {semesters.map((semester) => (
+              <option key={semester.id} value={semester.id}>
+                Семестр {semester.number} {semester.is_current && '(текущий)'}
+              </option>
+            ))}
+          </select>
+        </CardContent>
+      </Card>
+
+      {/* No dates warning */}
+      {effectiveSemesterId && !hasDates && (
+        <Card className="mb-6 border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
+          <CardContent className="py-4 px-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-amber-800 dark:text-amber-200">
+                  Даты семестра не указаны
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                  Для отслеживания посещаемости укажите даты начала и окончания семестра в{' '}
+                  <Link to="/semesters" className="underline hover:no-underline">
+                    настройках семестров
+                  </Link>
+                  .
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Loading */}
       {isLoading ? (
@@ -114,7 +188,7 @@ export function AttendancePage() {
         <div className="text-center py-12 text-destructive">
           <p className="text-sm">Ошибка загрузки данных о посещаемости</p>
         </div>
-      ) : (
+      ) : hasDates ? (
         <div className="space-y-6">
           {/* Stats card */}
           {stats && <AttendanceStatsCard stats={stats} />}
@@ -143,15 +217,26 @@ export function AttendancePage() {
                 </Button>
               )}
             </h2>
-            <AttendanceTable
-              entries={entries}
-              onToggle={handleToggle}
-              isToggling={togglingId}
-              disabled={!isOnline}
-            />
+            {entries.length > 0 ? (
+              <AttendanceTable
+                entries={entries}
+                onToggle={handleToggle}
+                isToggling={togglingId}
+                disabled={!isOnline}
+              />
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  <p>Нет завершённых занятий в этом семестре</p>
+                  <p className="text-sm mt-1">
+                    Занятия появятся здесь после их окончания
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

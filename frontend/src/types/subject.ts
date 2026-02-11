@@ -37,6 +37,7 @@ export interface Subject {
   short_name: string | null
   description: string | null
   semester_id: number
+  planned_classes: number | null
   created_at: string
   updated_at: string
 }
@@ -46,6 +47,7 @@ export interface SubjectCreate {
   short_name?: string | null
   description?: string | null
   semester_id: number
+  planned_classes?: number | null
 }
 
 export interface SubjectUpdate {
@@ -53,4 +55,5 @@ export interface SubjectUpdate {
   short_name?: string | null
   description?: string | null
   semester_id?: number
+  planned_classes?: number | null
 }

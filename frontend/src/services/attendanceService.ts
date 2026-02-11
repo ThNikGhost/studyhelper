@@ -8,15 +8,18 @@ import type {
 
 export const attendanceService = {
   async getEntries(
+    semesterId: number,
     subjectId?: number | null,
-    dateFrom?: string | null,
-    dateTo?: string | null,
+    limit?: number,
+    offset?: number,
     signal?: AbortSignal,
   ): Promise<AttendanceEntry[]> {
-    const params: Record<string, string | number> = {}
+    const params: Record<string, string | number> = {
+      semester_id: semesterId,
+    }
     if (subjectId != null) params.subject_id = subjectId
-    if (dateFrom) params.date_from = dateFrom
-    if (dateTo) params.date_to = dateTo
+    if (limit != null) params.limit = limit
+    if (offset != null) params.offset = offset
 
     const response = await api.get<AttendanceEntry[]>('/attendance/', { params, signal })
     return response.data
@@ -35,18 +38,25 @@ export const attendanceService = {
     })
   },
 
-  async getStats(signal?: AbortSignal): Promise<AttendanceStats> {
-    const response = await api.get<AttendanceStats>('/attendance/stats', { signal })
+  async getStats(semesterId: number, signal?: AbortSignal): Promise<AttendanceStats> {
+    const response = await api.get<AttendanceStats>('/attendance/stats', {
+      params: { semester_id: semesterId },
+      signal,
+    })
     return response.data
   },
 
   async getSubjectStats(
     subjectId: number,
+    semesterId: number,
     signal?: AbortSignal,
   ): Promise<SubjectAttendanceStats> {
     const response = await api.get<SubjectAttendanceStats>(
       `/attendance/stats/${subjectId}`,
-      { signal },
+      {
+        params: { semester_id: semesterId },
+        signal,
+      },
     )
     return response.data
   },
