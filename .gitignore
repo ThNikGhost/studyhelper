@@ -158,4 +158,4 @@ nul
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-.pypirc
+.pypirc*.har

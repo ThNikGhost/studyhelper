@@ -3,35 +3,39 @@
 ## Статус
 **Нет активной задачи.**
 
-## Последняя сессия: Subgroup filter fix & improvements — 2026-02-11
+## Последняя сессия: LK Parser implementation — 2026-02-12
 
 ### Сделано
-1. Убрана кнопка выбора преподавателя физры из SchedulePage (теперь только в Settings)
-2. Исправлен парсер: извлекает подгруппу из поля `subgroupName` API (не `group_name`)
-3. Добавлено поле `subgroupName` в `_extract_lessons()` (omsu_parser.py)
-4. Исправлена страница настроек: всегда показывает обе подгруппы (1 и 2)
-5. Добавлен индикатор "!" на пустых ячейках расписания для пар другой подгруппы
+1. Модели: `LkCredentials`, `SessionGrade`, `SemesterDiscipline` (src/models/lk.py)
+2. Схемы Pydantic v2: credentials, status, grades, disciplines (src/schemas/lk.py)
+3. Crypto helper: Fernet encryption с PBKDF2HMAC (src/utils/crypto.py)
+4. LK Parser: HTTP клиент с OAuth2 авторизацией (src/parser/lk_parser.py)
+5. Сервис: credentials CRUD, verify, sync, upsert (src/services/lk.py)
+6. Роутер: `/api/v1/lk/*` endpoints (src/routers/lk.py)
+7. Alembic миграция: `2a3b4c5d6e7f_add_lk_tables`
+8. Тесты: 51 тест (crypto: 6, API: 29, parser: 16)
+
+### API Endpoints
+- `GET /api/v1/lk/status` — статус подключения ЛК
+- `POST /api/v1/lk/credentials` — сохранить credentials (encrypted)
+- `DELETE /api/v1/lk/credentials` — удалить credentials
+- `POST /api/v1/lk/verify` — проверить credentials без сохранения
+- `POST /api/v1/lk/sync` — синхронизировать оценки и дисциплины
+- `GET /api/v1/lk/grades` — получить оценки (filter: session)
+- `GET /api/v1/lk/grades/sessions` — список сессий
+- `GET /api/v1/lk/disciplines` — получить дисциплины (filter: semester)
+- `GET /api/v1/lk/disciplines/semesters` — список семестров
 
 ### Результат
-- **396 записей** с подгруппой (1 или 2)
-- **2692 записи** без подгруппы (общие пары)
-- Фильтрация по подгруппам работает корректно
-- Видны пары другой подгруппы (значок "!" с popover)
-
-### Коммиты
-- `d518fa5` — refactor(schedule): remove PE teacher select from SchedulePage
-- `f926f97` — fix(parser): extract subgroup from subgroupName field
-- `140e9a6` — fix(parser): pass subgroupName field to data mapper
-- `065a4d4` — fix(settings): always show both subgroup options
-- `368448a` — feat(schedule): show indicator for other subgroup's classes on empty slots
-
-### Деплой
-✅ Задеплоено и работает: https://studyhelper1.ru
+- **418 тестов backend** — все проходят
+- Линтер чистый (ruff check + format)
+- Готово для деплоя и frontend интеграции
 
 ## Следующие задачи (приоритет)
-1. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
-2. **05-ics-export** — экспорт расписания в .ics (P2)
-3. **02-push-notifications** — push-уведомления (P1)
+1. **Frontend: LK интеграция** — страница настроек ЛК, отображение оценок
+2. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
+3. **05-ics-export** — экспорт расписания в .ics (P2)
+4. **02-push-notifications** — push-уведомления (P1)
 
 ## Блокеры / Вопросы
 Нет блокеров.

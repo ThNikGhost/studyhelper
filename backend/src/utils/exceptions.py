@@ -35,3 +35,25 @@ class NotFoundException(HTTPException):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"{resource} not found",
         )
+
+
+class LkCredentialsNotFound(HTTPException):
+    """Exception when LK credentials are not saved for user."""
+
+    def __init__(self) -> None:
+        """Initialize exception."""
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="LK credentials not found. Please save credentials first.",
+        )
+
+
+class LkSyncError(HTTPException):
+    """Exception when LK sync fails."""
+
+    def __init__(self, detail: str = "Failed to sync from LK") -> None:
+        """Initialize exception."""
+        super().__init__(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=detail,
+        )

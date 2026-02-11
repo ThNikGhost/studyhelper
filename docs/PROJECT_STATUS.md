@@ -1,8 +1,8 @@
 # Статус проекта StudyHelper
 
 ## Последнее обновление
-- **Дата**: 2026-02-11
-- **Сессия**: Subgroup filter fix & improvements (parser fix, empty slot indicators)
+- **Дата**: 2026-02-12
+- **Сессия**: LK Parser implementation (личный кабинет ОмГУ)
 
 ## Общий прогресс
 **Фаза**: Production
@@ -32,7 +32,7 @@
 - [x] Инициализация проекта (pyproject.toml, uv)
 - [x] Конфигурация (pydantic-settings)
 - [x] База данных (SQLAlchemy 2.0 async)
-- [x] Alembic миграции (16 миграций применено)
+- [x] Alembic миграции (17 миграций применено)
 
 #### Модули:
 | Модуль | Модель | Схемы | Сервис | Роутер | Тесты |
@@ -50,6 +50,7 @@
 | Files | ✅ File | ✅ | ✅ | ✅ | ✅ 21 |
 | Attendance | ✅ Absence | ✅ (+total_planned/completed) | ✅ (semester filter) | ✅ | ✅ 29 |
 | Notes | ✅ LessonNote | ✅ | ✅ | ✅ | ✅ 26 |
+| LK | ✅ LkCredentials, SessionGrade, SemesterDiscipline | ✅ | ✅ | ✅ | ✅ 51 |
 
 ### Parser модуль (ЗАВЕРШЁН ✅)
 - [x] `src/parser/` — модуль парсинга
@@ -399,6 +400,17 @@
 - [x] Frontend: 359 тестов проходят
 - [x] TypeScript, ESLint, build — всё чисто
 
+### LK Parser (2026-02-12)
+Парсинг личного кабинета ОмГУ (https://eservice.omsu.ru/sinfo/):
+- [x] Backend: модели `LkCredentials`, `SessionGrade`, `SemesterDiscipline`
+- [x] Backend: Fernet encryption для credentials (`utils/crypto.py`)
+- [x] Backend: `LkParser` — HTTP клиент с OAuth2 авторизацией (`parser/lk_parser.py`)
+- [x] Backend: сервис `lk.py` — credentials CRUD, sync, upsert grades/disciplines
+- [x] Backend: роутер `/api/v1/lk` — status, credentials, verify, sync, grades, disciplines
+- [x] Backend: Alembic миграция `2a3b4c5d6e7f_add_lk_tables`
+- [x] Backend: 51 тест (crypto: 6, API: 29, parser: 16)
+- [x] 418 тестов backend — все проходят
+
 ---
 
 ## Что в работе
@@ -490,6 +502,7 @@ Nginx healthcheck использует `wget`, который может дол�
 - **SSL/TLS**: Let's Encrypt certbot (webroot mode), auto-renewal каждые 12ч, nginx 3 server-блока (HTTP redirect + HTTPS www redirect + HTTPS main), http2, HSTS, bootstrap скрипт `scripts/init-letsencrypt.sh` (self-signed → real cert)
 - **Settings**: settingsStore (Zustand) с localStorage persistence, subgroup фильтрация (filterBySubgroup), SettingsPage (/settings) с секциями (подгруппа, физра, ЛК ОмГУ заглушка)
 - **Subgroup filtering**: Parser извлекает subgroup из поля `subgroupName` API (e.g. "МБС-301-О-01/1" → 1), ScheduleGrid показывает "!" на пустых ячейках где есть пара для другой подгруппы, popover с деталями
+- **LK Parser**: OAuth2-based auth (CSRF + form-login + redirects), httpx cookie persistence, Fernet encryption (PBKDF2HMAC 1.2M iterations), SessionGrade/SemesterDiscipline upsert, verify без сохранения credentials
 
 ---
 
@@ -497,7 +510,7 @@ Nginx healthcheck использует `wget`, который может дол�
 
 | Метрика | Значение |
 |---------|----------|
-| Тестов backend | 352 |
+| Тестов backend | 418 |
 | Тестов frontend | 359 |
 | Покрытие тестами | ~80% |
 | API endpoints | ~65 |
