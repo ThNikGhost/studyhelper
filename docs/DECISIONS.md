@@ -851,3 +851,7 @@ notification_settings — настройки уведомлений
 | 2026-02-11 | psycopg вместо psycopg2 в Alembic | psycopg2 ушёл как транзитивная зависимость aiopg, psycopg v3 уже установлен |
 | 2026-02-11 | Redis authentication в production | --requirepass + REDIS_PASSWORD env var |
 | 2026-02-11 | Пагинация limit/offset на list endpoints | files и notes: limit=50 default, max 200 |
+| 2026-02-11 | Certbot webroot mode в Docker | Bootstrap скрипт решает chicken-and-egg (self-signed → real cert), certbot контейнер renew каждые 12ч |
+| 2026-02-11 | 3 nginx server-блока для SSL | HTTP (ACME + redirect), HTTPS www (redirect → apex), HTTPS main (приложение) — чистое разделение ответственности |
+| 2026-02-11 | Security headers дублируются в nested locations | nginx add_header в дочернем блоке сбрасывает все родительские add_header — HSTS/CSP явно повторяются |
+| 2026-02-11 | STAGING mode в init-letsencrypt.sh | STAGING=1 для тестов без расхода лимитов Let's Encrypt (5 дубликатов/неделю) |
