@@ -147,8 +147,10 @@ async def get_notes(
     date_to: date | None = None,
     subject_name: str | None = None,
     search: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
 ) -> list[LessonNote]:
-    """Get lesson notes with optional filters.
+    """Get lesson notes with optional filters and pagination.
 
     Args:
         db: Database session.
@@ -157,6 +159,8 @@ async def get_notes(
         date_to: Optional end date filter.
         subject_name: Optional subject name filter.
         search: Optional text search in content.
+        limit: Maximum number of results.
+        offset: Number of results to skip.
 
     Returns:
         List of matching LessonNote objects.
@@ -174,7 +178,10 @@ async def get_notes(
     if subject_name is not None:
         query = query.where(LessonNote.subject_name == subject_name)
     if search is not None:
-        query = query.where(LessonNote.content.ilike(f"%{search}%"))
+        escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        query = query.where(LessonNote.content.ilike(f"%{escaped}%", escape="\\"))
+
+    query = query.limit(limit).offset(offset)
 
     result = await db.execute(query)
     return list(result.scalars().all())

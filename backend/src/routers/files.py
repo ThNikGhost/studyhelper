@@ -2,8 +2,9 @@
 
 import logging
 from pathlib import Path
+from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -132,21 +133,27 @@ async def upload_study_file(
 async def list_files(
     subject_id: int | None = None,
     category: str | None = None,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[FileListResponse]:
-    """List files with optional filtering.
+    """List files with optional filtering and pagination.
 
     Args:
         subject_id: Filter by subject ID.
         category: Filter by category.
+        limit: Maximum number of results (default 50, max 200).
+        offset: Number of results to skip.
         db: Database session.
         current_user: Authenticated user.
 
     Returns:
         List of files.
     """
-    files = await get_files(db, subject_id=subject_id, category=category)
+    files = await get_files(
+        db, subject_id=subject_id, category=category, limit=limit, offset=offset
+    )
     return [
         FileListResponse(
             id=f.id,
@@ -201,11 +208,12 @@ async def download_file(
 
     # RFC 5987 encoded filename for Content-Disposition
     safe_filename = file_record.filename.encode("ascii", errors="ignore").decode()
+    encoded_filename = quote(file_record.filename)
     return StreamingResponse(
         iterfile(),
         media_type=file_record.mime_type,
         headers={
-            "Content-Disposition": f"attachment; filename=\"{safe_filename}\"; filename*=UTF-8''{file_record.filename}",
+            "Content-Disposition": f"attachment; filename=\"{safe_filename}\"; filename*=UTF-8''{encoded_filename}",
             "Content-Length": str(file_record.size),
         },
     )

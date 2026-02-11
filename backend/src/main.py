@@ -11,12 +11,10 @@ if sys.platform == "win32":
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -120,9 +118,39 @@ async def root() -> dict[str, str]:
 
 
 @app.get("/health")
-async def health() -> dict[str, str]:
-    """Health check endpoint."""
-    return {"status": "healthy"}
+async def health() -> dict[str, str | bool]:
+    """Health check endpoint with DB and Redis connectivity checks."""
+    from redis.asyncio import Redis
+    from sqlalchemy import text
+
+    from src.database import get_engine
+
+    checks: dict[str, bool] = {}
+
+    # Check database
+    try:
+        engine = get_engine()
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        checks["db"] = True
+    except Exception:
+        checks["db"] = False
+        logger.warning("Health check: database unreachable")
+
+    # Check Redis
+    try:
+        redis = Redis.from_url(settings.redis_url, decode_responses=True)
+        try:
+            await redis.ping()
+            checks["redis"] = True
+        finally:
+            await redis.aclose()
+    except Exception:
+        checks["redis"] = False
+        logger.warning("Health check: Redis unreachable")
+
+    healthy = all(checks.values())
+    return {"status": "healthy" if healthy else "unhealthy", **checks}
 
 
 # API v1 router
@@ -141,8 +169,3 @@ api_v1.include_router(attendance.router, prefix="/attendance", tags=["Attendance
 api_v1.include_router(notes.router, prefix="/notes", tags=["Notes"])
 
 app.include_router(api_v1)
-
-# Mount static files for uploads
-uploads_dir = Path(settings.upload_dir)
-uploads_dir.mkdir(parents=True, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
