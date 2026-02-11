@@ -284,6 +284,7 @@ class DataMapper:
                 - building: Building number
                 - week_type: Week type (0, 1, 2)
                 - group_name: Group name
+                - subgroupName: Subgroup name with slash notation (e.g. "МБС-301-О-01/1")
 
         Returns:
             ScheduleEntryCreate schema object.
@@ -322,7 +323,7 @@ class DataMapper:
             room=raw.get("room"),
             building=raw.get("building"),
             group_name=raw.get("group_name", "").strip() or None,
-            subgroup=cls.parse_subgroup_from_group_name(raw.get("group_name")),
+            subgroup=cls.parse_subgroup_from_group_name(raw.get("subgroupName")),
             notes=None,
         )
 

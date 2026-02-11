@@ -377,8 +377,8 @@ class TestDataMapperMapRawEntry:
 class TestDataMapperMapApiEntry:
     """Tests for DataMapper.map_api_entry."""
 
-    def test_map_api_entry_extracts_subgroup_from_group_name(self):
-        """map_api_entry should extract subgroup from group_name with slash."""
+    def test_map_api_entry_extracts_subgroup_from_subgroup_name(self):
+        """map_api_entry should extract subgroup from subgroupName with slash."""
         raw = {
             "subject_name": "Физика",
             "day_of_week": 1,
@@ -389,29 +389,31 @@ class TestDataMapperMapApiEntry:
             "room": "215",
             "building": "2",
             "week_type": 0,
-            "group_name": "МБС-301-О-01/1",
+            "group_name": "МБС-301-О-01",
+            "subgroupName": "МБС-301-О-01/1",
         }
         entry = DataMapper.map_api_entry(raw)
 
         assert entry.subgroup == 1
-        assert entry.group_name == "МБС-301-О-01/1"
+        assert entry.group_name == "МБС-301-О-01"
 
     def test_map_api_entry_subgroup_2(self):
-        """map_api_entry should extract subgroup 2."""
+        """map_api_entry should extract subgroup 2 from subgroupName."""
         raw = {
             "subject_name": "Математика",
             "day_of_week": 2,
             "start_time": "10:35",
             "end_time": "12:10",
             "lesson_type": "Пр",
-            "group_name": "МБС-301-О-01/2",
+            "group_name": "МБС-301-О-01",
+            "subgroupName": "МБС-301-О-01/2",
         }
         entry = DataMapper.map_api_entry(raw)
 
         assert entry.subgroup == 2
 
-    def test_map_api_entry_no_subgroup_when_no_slash(self):
-        """map_api_entry should return None subgroup when no slash in group_name."""
+    def test_map_api_entry_no_subgroup_when_no_subgroup_name(self):
+        """map_api_entry should return None subgroup when subgroupName is not present."""
         raw = {
             "subject_name": "Философия",
             "day_of_week": 3,
