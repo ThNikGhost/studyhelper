@@ -2,7 +2,7 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-11
-- **Сессия**: Attendance logic rewrite (semester filtering, planned_classes)
+- **Сессия**: Subgroup filter fix & improvements (parser fix, empty slot indicators)
 
 ## Общий прогресс
 **Фаза**: Production
@@ -45,7 +45,7 @@
 | University | ✅ Department, Building | ✅ | ✅ | ✅ | ✅ 28 |
 | Classmates | ✅ | ✅ | ✅ | ✅ | ✅ 20 |
 | Schedule | ✅ ScheduleEntry, ScheduleSnapshot | ✅ | ✅ | ✅ | ✅ 24+11 |
-| Parser | ✅ | ✅ | ✅ | CLI | ✅ 74 |
+| Parser | ✅ (+subgroup parsing) | ✅ | ✅ | CLI | ✅ 82 |
 | Uploads | — | ✅ | ✅ | ✅ | ✅ 11 |
 | Files | ✅ File | ✅ | ✅ | ✅ | ✅ 21 |
 | Attendance | ✅ Absence | ✅ (+total_planned/completed) | ✅ (semester filter) | ✅ | ✅ 29 |
@@ -382,6 +382,23 @@
 - [x] Frontend: Обновлены MSW handlers и тесты (357 тестов проходят)
 - [x] Деплой на сервер — миграция применена, все контейнеры healthy
 
+### Settings & Subgroup Filter (2026-02-11)
+Настройки пользователя и фильтрация расписания по подгруппам:
+- [x] Backend: `parse_subgroup_from_group_name()` в `data_mapper.py` — парсинг "МБС-301-О-01/1" → 1
+- [x] Backend: `map_api_entry()` заполняет subgroup из group_name
+- [x] Backend: 8 новых тестов парсера (82 всего)
+- [x] Frontend: `settingsStore.ts` — Zustand store (subgroup, peTeacher, localStorage persistence)
+- [x] Frontend: `subgroupFilter.ts` — filterBySubgroup, getAlternateEntryForSlot, filterWeekBySubgroup
+- [x] Frontend: `SettingsPage.tsx` — страница /settings (подгруппа radio, физра select, ЛК ОмГУ заглушка)
+- [x] Frontend: `ScheduleGrid.tsx` — индикатор "!" с Popover для альтернативных пар другой подгруппы
+- [x] Frontend: `SchedulePage.tsx` — интеграция фильтров (peTeacher + subgroup), передача allEntries
+- [x] Frontend: `DashboardPage.tsx` — интеграция фильтров
+- [x] Frontend: `PeTeacherSelect.tsx` — рефакторинг на settingsStore
+- [x] Frontend: `peTeacherFilter.ts` — убраны localStorage функции (теперь в settingsStore)
+- [x] Frontend: QuickActions — добавлен пункт "Настройки" (Settings icon, gray)
+- [x] Frontend: 359 тестов проходят
+- [x] TypeScript, ESLint, build — всё чисто
+
 ---
 
 ## Что в работе
@@ -471,6 +488,8 @@ Nginx healthcheck использует `wget`, который может дол�
 - **Production Docker**: multi-stage builds (uv для backend, node для frontend), nginx reverse proxy, rate limiting (nginx + slowapi), --proxy-headers для корректного client IP, memory limits ~1.3GB total, PostgreSQL tuning (shared_buffers=256MB), Redis LRU (128mb)
 - **Schedule auto-sync**: APScheduler 3.x AsyncIOScheduler в lifespan FastAPI, IntervalTrigger(hours=6, jitter=60), misfire_grace_time=3600, Redis distributed lock (non-blocking, TTL 600s, LockNotOwnedError handling), Redis auto-reconnect (ping healthcheck), initial sync в entrypoint.sh (если snapshot нет), configurable via SCHEDULE_SYNC_ENABLED/SCHEDULE_UPDATE_INTERVAL_HOURS
 - **SSL/TLS**: Let's Encrypt certbot (webroot mode), auto-renewal каждые 12ч, nginx 3 server-блока (HTTP redirect + HTTPS www redirect + HTTPS main), http2, HSTS, bootstrap скрипт `scripts/init-letsencrypt.sh` (self-signed → real cert)
+- **Settings**: settingsStore (Zustand) с localStorage persistence, subgroup фильтрация (filterBySubgroup), SettingsPage (/settings) с секциями (подгруппа, физра, ЛК ОмГУ заглушка)
+- **Subgroup filtering**: Parser извлекает subgroup из поля `subgroupName` API (e.g. "МБС-301-О-01/1" → 1), ScheduleGrid показывает "!" на пустых ячейках где есть пара для другой подгруппы, popover с деталями
 
 ---
 
@@ -479,7 +498,7 @@ Nginx healthcheck использует `wget`, который может дол�
 | Метрика | Значение |
 |---------|----------|
 | Тестов backend | 352 |
-| Тестов frontend | 357 |
+| Тестов frontend | 359 |
 | Покрытие тестами | ~80% |
 | API endpoints | ~65 |
 | Моделей | 15 |
@@ -488,4 +507,4 @@ Nginx healthcheck использует `wget`, который может дол�
 | Линтер frontend | ✅ ESLint проходит (shadcn/ui исключён из линтинга) |
 | Frontend тесты | ✅ Vitest проходит (348 тестов) |
 | Frontend build | ✅ TypeScript + Vite |
-| Frontend страниц | 12 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Notes, Timeline) |
+| Frontend страниц | 13 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Notes, Timeline, Settings) |
