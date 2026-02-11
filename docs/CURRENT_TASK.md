@@ -3,29 +3,27 @@
 ## Статус
 **Нет активной задачи.**
 
-## Последняя сессия: Settings UI cleanup — 2026-02-11
+## Последняя сессия: Subgroup filter fix — 2026-02-11
 
 ### Сделано
-1. Убрана кнопка выбора преподавателя физры из SchedulePage (теперь только в Settings)
-2. Коммит: `d518fa5` — refactor(schedule): remove PE teacher select from SchedulePage
+1. Исправлен парсер: теперь извлекает подгруппу из поля `subgroupName` API
+2. Добавлено поле `subgroupName` в `_extract_lessons()` (omsu_parser.py)
+3. Изменён `map_api_entry()` — использует `subgroupName` вместо `group_name`
+4. Обновлены тесты
+5. Пересинхронизировано расписание на сервере
 
-### Известная проблема: фильтрация по подгруппам
-API ОмГУ (`eservice.omsu.ru`) не возвращает информацию о подгруппе в ожидаемом формате:
-- Ожидалось: `group_name: "МБС-301-О-01/1"` (с суффиксом подгруппы)
-- Реально: `group_name: "МБС-301-О-01"` (без подгруппы)
+### Результат
+- **396 записей** с подгруппой (1 или 2)
+- **2692 записи** без подгруппы (общие пары)
+- Фильтрация по подгруппам теперь работает
 
-В результате все 3088 записей в БД имеют `subgroup=null`. Фильтрация по подгруппе не работает.
-
-**Альтернативный подход**: вместо автоматической фильтрации по подгруппе, дать пользователю возможность вручную скрывать/показывать конкретные предметы.
+### Коммиты
+- `d518fa5` — refactor(schedule): remove PE teacher select from SchedulePage
+- `f926f97` — fix(parser): extract subgroup from subgroupName field
+- `140e9a6` — fix(parser): pass subgroupName field to data mapper
 
 ### Деплой
-Требуется деплой:
-```bash
-cd /opt/repos/studyhelper
-git pull origin main
-docker compose -f docker-compose.prod.yml build nginx
-docker compose -f docker-compose.prod.yml up -d nginx
-```
+✅ Задеплоено и работает: https://studyhelper1.ru
 
 ## Следующие задачи (приоритет)
 1. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
@@ -33,4 +31,4 @@ docker compose -f docker-compose.prod.yml up -d nginx
 3. **02-push-notifications** — push-уведомления (P1)
 
 ## Блокеры / Вопросы
-- Фильтрация по подгруппам не работает из-за ограничений API ОмГУ
+Нет блокеров.
