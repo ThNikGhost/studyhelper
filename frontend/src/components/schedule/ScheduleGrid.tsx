@@ -2,7 +2,6 @@ import { StickyNote } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TIME_SLOTS, LESSON_TYPE_COLORS } from '@/lib/constants'
 import { formatLocation } from '@/lib/dateUtils'
-import { getAlternateEntryForSlot } from '@/lib/subgroupFilter'
 import {
   Popover,
   PopoverContent,
@@ -107,24 +106,61 @@ export function ScheduleGrid({
                 const isTodayCell = isToday(day.date)
 
                 // Find alternate entry (other subgroup) if subgroup filter is active
+                // Check both when we have an entry AND when we don't (empty slot)
                 const alternateEntry =
-                  entry && allEntries && userSubgroup !== undefined
-                    ? getAlternateEntryForSlot(
-                        allEntries,
-                        entry.start_time,
-                        entry.lesson_date ?? day.date,
-                        userSubgroup,
-                      )
+                  allEntries && userSubgroup !== null && userSubgroup !== undefined
+                    ? allEntries.find((e) => {
+                        // Same time slot
+                        if (e.start_time.slice(0, 5) !== slot.start) return false
+                        // Same date
+                        const entryDate = e.lesson_date ?? ''
+                        if (entryDate !== day.date) return false
+                        // Different subgroup (not null and not user's)
+                        if (e.subgroup === null) return false
+                        if (e.subgroup === userSubgroup) return false
+                        return true
+                      })
                     : undefined
 
                 return (
                   <div
                     key={`${day.date}-${slot.pair}`}
                     className={cn(
-                      'bg-background p-0.5 min-h-[60px]',
+                      'bg-background p-0.5 min-h-[60px] relative',
                       isTodayCell && 'bg-primary/5'
                     )}
                   >
+                    {/* Show "!" for other subgroup's class on empty slot */}
+                    {!entry && alternateEntry && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            className="absolute top-1 right-1 w-5 h-5 bg-amber-500
+                                       rounded-full text-white text-xs flex items-center
+                                       justify-center font-bold hover:bg-amber-600 z-10"
+                            aria-label="Пара для другой подгруппы"
+                          >
+                            !
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-52 p-3" align="end">
+                          <p className="font-medium text-sm mb-1">
+                            Подгруппа {alternateEntry.subgroup}
+                          </p>
+                          <p className="text-sm">{alternateEntry.subject_name}</p>
+                          {alternateEntry.teacher_name && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {alternateEntry.teacher_name}
+                            </p>
+                          )}
+                          {getEntryLocation(alternateEntry) && (
+                            <p className="text-xs text-muted-foreground">
+                              📍 {getEntryLocation(alternateEntry)}
+                            </p>
+                          )}
+                        </PopoverContent>
+                      </Popover>
+                    )}
                     {entry && (
                       <div
                         className={cn(
