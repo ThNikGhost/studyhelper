@@ -2,6 +2,12 @@ import { StickyNote } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TIME_SLOTS, LESSON_TYPE_COLORS } from '@/lib/constants'
 import { formatLocation } from '@/lib/dateUtils'
+import { getAlternateEntryForSlot } from '@/lib/subgroupFilter'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import type { WeekSchedule, ScheduleEntry } from '@/types/schedule'
 import { lessonTypeLabels } from '@/types/schedule'
 
@@ -10,6 +16,10 @@ interface ScheduleGridProps {
   currentEntryId?: number
   noteSubjectNames?: Set<string>
   onEntryClick?: (entry: ScheduleEntry) => void
+  /** All unfiltered entries for finding alternates. */
+  allEntries?: ScheduleEntry[]
+  /** User's subgroup for alternate detection. */
+  userSubgroup?: number | null
 }
 
 // Day names
@@ -44,7 +54,14 @@ function isToday(dateStr: string): boolean {
   return dateStr === today
 }
 
-export function ScheduleGrid({ weekSchedule, currentEntryId, noteSubjectNames, onEntryClick }: ScheduleGridProps) {
+export function ScheduleGrid({
+  weekSchedule,
+  currentEntryId,
+  noteSubjectNames,
+  onEntryClick,
+  allEntries,
+  userSubgroup,
+}: ScheduleGridProps) {
   return (
     <div className="overflow-x-auto">
       <div className="min-w-[700px]">
@@ -89,6 +106,17 @@ export function ScheduleGrid({ weekSchedule, currentEntryId, noteSubjectNames, o
                 const isActive = entry?.id === currentEntryId
                 const isTodayCell = isToday(day.date)
 
+                // Find alternate entry (other subgroup) if subgroup filter is active
+                const alternateEntry =
+                  entry && allEntries && userSubgroup !== undefined
+                    ? getAlternateEntryForSlot(
+                        allEntries,
+                        entry.start_time,
+                        entry.lesson_date ?? day.date,
+                        userSubgroup,
+                      )
+                    : undefined
+
                 return (
                   <div
                     key={`${day.date}-${slot.pair}`}
@@ -100,7 +128,7 @@ export function ScheduleGrid({ weekSchedule, currentEntryId, noteSubjectNames, o
                     {entry && (
                       <div
                         className={cn(
-                          'h-full p-1.5 rounded border text-xs',
+                          'relative h-full p-1.5 rounded border text-xs',
                           LESSON_TYPE_COLORS[entry.lesson_type],
                           isActive && 'ring-2 ring-primary',
                           onEntryClick && 'cursor-pointer hover:opacity-80'
@@ -119,6 +147,39 @@ export function ScheduleGrid({ weekSchedule, currentEntryId, noteSubjectNames, o
                             : undefined
                         }
                       >
+                        {/* Alternate entry indicator */}
+                        {alternateEntry && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button
+                                className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500
+                                           rounded-full text-white text-xs flex items-center
+                                           justify-center font-bold hover:bg-amber-600 z-10"
+                                aria-label="Есть пара для другой подгруппы"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                !
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-52 p-3" align="end">
+                              <p className="font-medium text-sm mb-1">
+                                Подгруппа {alternateEntry.subgroup}
+                              </p>
+                              <p className="text-sm">{alternateEntry.subject_name}</p>
+                              {alternateEntry.teacher_name && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {alternateEntry.teacher_name}
+                                </p>
+                              )}
+                              {getEntryLocation(alternateEntry) && (
+                                <p className="text-xs text-muted-foreground">
+                                  📍 {getEntryLocation(alternateEntry)}
+                                </p>
+                              )}
+                            </PopoverContent>
+                          </Popover>
+                        )}
+
                         {/* Subject name */}
                         <div className="flex items-start gap-0.5">
                           <div className="font-semibold line-clamp-2 leading-tight mb-0.5 flex-1">

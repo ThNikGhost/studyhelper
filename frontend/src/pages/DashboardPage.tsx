@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useAuthStore } from '@/stores/authStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { Button } from '@/components/ui/button'
 import { LogOut } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -8,6 +9,7 @@ import { workService } from '@/services/workService'
 import subjectService from '@/services/subjectService'
 import { calculateSemesterProgress } from '@/lib/progressUtils'
 import { filterDaySchedule } from '@/lib/peTeacherFilter'
+import { filterDayBySubgroup } from '@/lib/subgroupFilter'
 import { TodayScheduleWidget } from '@/components/dashboard/TodayScheduleWidget'
 import { DeadlinesWidget } from '@/components/dashboard/DeadlinesWidget'
 import { SemesterProgressWidget } from '@/components/dashboard/SemesterProgressWidget'
@@ -19,6 +21,7 @@ import type { Semester } from '@/types/subject'
 
 export default function DashboardPage() {
   const { user, logout } = useAuthStore()
+  const { peTeacher, subgroup } = useSettingsStore()
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
 
   const handleLogout = async () => {
@@ -97,10 +100,12 @@ export default function DashboardPage() {
     staleTime: 60000,
   })
 
-  const filteredTodaySchedule = useMemo(
-    () => (todaySchedule ? filterDaySchedule(todaySchedule) : undefined),
-    [todaySchedule],
-  )
+  const filteredTodaySchedule = useMemo(() => {
+    if (!todaySchedule) return undefined
+    let filtered = filterDaySchedule(todaySchedule, peTeacher)
+    filtered = filterDayBySubgroup(filtered, subgroup)
+    return filtered
+  }, [todaySchedule, peTeacher, subgroup])
 
   const semesterProgress = useMemo(
     () => calculateSemesterProgress(allWorks, subjects),

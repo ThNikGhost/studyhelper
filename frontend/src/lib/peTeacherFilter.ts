@@ -8,8 +8,6 @@
 
 import type { ScheduleEntry, DaySchedule, WeekSchedule } from '@/types/schedule'
 
-const PE_STORAGE_KEY = 'pe_preferred_teacher'
-
 const PE_KEYWORDS = ['физическая культура', 'физическ']
 
 /** Check if a schedule entry is a PE lesson. */
@@ -18,54 +16,33 @@ export function isPeEntry(entry: ScheduleEntry): boolean {
   return PE_KEYWORDS.some((kw) => name.includes(kw))
 }
 
-/** Get saved preferred PE teacher name from localStorage. */
-export function getPePreferredTeacher(): string | null {
-  try {
-    return localStorage.getItem(PE_STORAGE_KEY)
-  } catch {
-    return null
-  }
-}
-
-/** Save preferred PE teacher name to localStorage. */
-export function setPePreferredTeacher(teacher: string | null): void {
-  try {
-    if (teacher) {
-      localStorage.setItem(PE_STORAGE_KEY, teacher)
-    } else {
-      localStorage.removeItem(PE_STORAGE_KEY)
-    }
-  } catch {
-    // localStorage may be unavailable
-  }
-}
-
-/** Filter schedule entries: keep only the preferred PE teacher, pass through all other entries.
+/**
+ * Filter schedule entries: keep only the preferred PE teacher, pass through all other entries.
  *
  * @param entries - Schedule entries to filter.
- * @param preferredTeacher - Preferred teacher name. Falls back to localStorage if omitted.
+ * @param preferredTeacher - Preferred teacher name (from settingsStore).
  */
 export function filterPeEntries(
   entries: ScheduleEntry[],
-  preferredTeacher?: string | null,
+  preferredTeacher: string | null,
 ): ScheduleEntry[] {
-  const preferred = preferredTeacher ?? getPePreferredTeacher()
-  if (!preferred) return entries
+  if (!preferredTeacher) return entries
 
   return entries.filter((entry) => {
     if (!isPeEntry(entry)) return true
-    return entry.teacher_name === preferred
+    return entry.teacher_name === preferredTeacher
   })
 }
 
-/** Filter a DaySchedule, applying PE teacher filter to its entries.
+/**
+ * Filter a DaySchedule, applying PE teacher filter to its entries.
  *
  * @param day - Day schedule to filter.
- * @param preferredTeacher - Preferred teacher name. Falls back to localStorage if omitted.
+ * @param preferredTeacher - Preferred teacher name (from settingsStore).
  */
 export function filterDaySchedule(
   day: DaySchedule,
-  preferredTeacher?: string | null,
+  preferredTeacher: string | null,
 ): DaySchedule {
   return {
     ...day,
@@ -73,14 +50,15 @@ export function filterDaySchedule(
   }
 }
 
-/** Filter a WeekSchedule, applying PE teacher filter to all days.
+/**
+ * Filter a WeekSchedule, applying PE teacher filter to all days.
  *
  * @param week - Week schedule to filter.
- * @param preferredTeacher - Preferred teacher name. Falls back to localStorage if omitted.
+ * @param preferredTeacher - Preferred teacher name (from settingsStore).
  */
 export function filterWeekSchedule(
   week: WeekSchedule,
-  preferredTeacher?: string | null,
+  preferredTeacher: string | null,
 ): WeekSchedule {
   return {
     ...week,

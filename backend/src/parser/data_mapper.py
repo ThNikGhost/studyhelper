@@ -245,6 +245,29 @@ class DataMapper:
 
         return None
 
+    @staticmethod
+    def parse_subgroup_from_group_name(group_name: str | None) -> int | None:
+        """Extract subgroup number from group name with slash notation.
+
+        Args:
+            group_name: Group name like "МБС-301-О-01/1" or "МБС-301-О-01".
+
+        Returns:
+            Subgroup number (1, 2, etc.) or None if no subgroup specified.
+
+        Examples:
+            "МБС-301-О-01/1" → 1
+            "МБС-301-О-01/2" → 2
+            "МБС-301-О-01" → None
+            "" → None
+            None → None
+        """
+        if not group_name:
+            return None
+
+        match = re.search(r"/(\d+)$", group_name)
+        return int(match.group(1)) if match else None
+
     @classmethod
     def map_api_entry(cls, raw: dict[str, Any]) -> ScheduleEntryCreate:
         """Map API response entry to ScheduleEntryCreate schema.
@@ -299,7 +322,7 @@ class DataMapper:
             room=raw.get("room"),
             building=raw.get("building"),
             group_name=raw.get("group_name", "").strip() or None,
-            subgroup=None,
+            subgroup=cls.parse_subgroup_from_group_name(raw.get("group_name")),
             notes=None,
         )
 

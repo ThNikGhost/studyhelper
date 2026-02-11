@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { Dumbbell, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  getPePreferredTeacher,
-  setPePreferredTeacher,
-} from '@/lib/peTeacherFilter'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 interface PeTeacherSelectProps {
   /** List of available PE teacher names. */
@@ -14,21 +11,19 @@ interface PeTeacherSelectProps {
 }
 
 export function PeTeacherSelect({ teachers, onChange }: PeTeacherSelectProps) {
-  const [selected, setSelected] = useState<string | null>(getPePreferredTeacher)
+  const { peTeacher, setPeTeacher } = useSettingsStore()
   const [isOpen, setIsOpen] = useState(false)
 
   if (teachers.length <= 1) return null
 
   const handleSelect = (teacher: string) => {
-    setSelected(teacher)
-    setPePreferredTeacher(teacher)
+    setPeTeacher(teacher)
     setIsOpen(false)
     onChange(teacher)
   }
 
   const handleClear = () => {
-    setSelected(null)
-    setPePreferredTeacher(null)
+    setPeTeacher(null)
     setIsOpen(false)
     onChange(null)
   }
@@ -40,10 +35,10 @@ export function PeTeacherSelect({ teachers, onChange }: PeTeacherSelectProps) {
         size="sm"
         className="gap-1.5 text-xs"
         onClick={() => setIsOpen(!isOpen)}
-        title={selected ? `Физра: ${selected}` : 'Выбрать преподавателя физры'}
+        title={peTeacher ? `Физра: ${peTeacher}` : 'Выбрать преподавателя физры'}
       >
         <Dumbbell className="h-3.5 w-3.5" />
-        {selected ? selected.split(' ').slice(0, 2).join(' ') : 'Физра'}
+        {peTeacher ? peTeacher.split(' ').slice(0, 2).join(' ') : 'Физра'}
       </Button>
 
       {isOpen && (
@@ -63,7 +58,7 @@ export function PeTeacherSelect({ teachers, onChange }: PeTeacherSelectProps) {
                   onClick={() => handleSelect(teacher)}
                   className="flex items-center gap-2 w-full rounded px-2 py-1.5 text-sm hover:bg-accent text-left"
                 >
-                  {selected === teacher ? (
+                  {peTeacher === teacher ? (
                     <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />
                   ) : (
                     <span className="w-3.5 flex-shrink-0" />
@@ -72,7 +67,7 @@ export function PeTeacherSelect({ teachers, onChange }: PeTeacherSelectProps) {
                 </button>
               ))}
             </div>
-            {selected && (
+            {peTeacher && (
               <div className="p-1 border-t">
                 <button
                   onClick={handleClear}

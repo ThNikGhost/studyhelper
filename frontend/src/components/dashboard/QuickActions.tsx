@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   StickyNote,
   BarChart3,
+  Settings,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -81,6 +82,13 @@ const menuItems = [
     icon: GraduationCap,
     href: '/semesters',
     color: 'text-cyan-500',
+  },
+  {
+    title: 'Настройки',
+    description: 'Подгруппа, физра, ЛК',
+    icon: Settings,
+    href: '/settings',
+    color: 'text-gray-500',
   },
 ] as const
 

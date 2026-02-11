@@ -11,7 +11,9 @@ import { ScheduleGrid } from '@/components/schedule/ScheduleGrid'
 import { PeTeacherSelect } from '@/components/schedule/PeTeacherSelect'
 import { LessonDetailModal } from '@/components/schedule/LessonDetailModal'
 import { formatDateLocal, getToday, formatTimeUntil } from '@/lib/dateUtils'
-import { filterWeekSchedule, getPeTeachersFromWeek, getPePreferredTeacher } from '@/lib/peTeacherFilter'
+import { filterWeekSchedule, getPeTeachersFromWeek } from '@/lib/peTeacherFilter'
+import { filterWeekBySubgroup } from '@/lib/subgroupFilter'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { toast } from 'sonner'
 import scheduleService from '@/services/scheduleService'
 import { noteService } from '@/services/noteService'
@@ -29,7 +31,7 @@ export function SchedulePage() {
   const [targetDate, setTargetDate] = useState<string | undefined>(undefined)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
-  const [peTeacher, setPeTeacher] = useState<string | null>(getPePreferredTeacher)
+  const { subgroup, peTeacher, setPeTeacher } = useSettingsStore()
   const today = getToday()
   const queryClient = useQueryClient()
 
@@ -69,14 +71,23 @@ export function SchedulePage() {
     [weekSchedule],
   )
 
+  // All entries before filtering (for alternate entry detection)
+  const allEntries = useMemo(() => {
+    if (!weekSchedule) return []
+    return weekSchedule.days.flatMap((d) => d.entries)
+  }, [weekSchedule])
+
+  // Apply filters: PE teacher first, then subgroup
   const filteredWeekSchedule = useMemo(() => {
     if (!weekSchedule) return undefined
-    return filterWeekSchedule(weekSchedule, peTeacher)
-  }, [weekSchedule, peTeacher])
+    let filtered = filterWeekSchedule(weekSchedule, peTeacher)
+    filtered = filterWeekBySubgroup(filtered, subgroup)
+    return filtered
+  }, [weekSchedule, peTeacher, subgroup])
 
   const handlePeTeacherChange = useCallback((teacher: string | null) => {
     setPeTeacher(teacher)
-  }, [])
+  }, [setPeTeacher])
 
   // Mutation for refreshing schedule from OmGU
   const refreshMutation = useMutation({
@@ -307,6 +318,8 @@ export function SchedulePage() {
               currentEntryId={currentLesson?.current?.id}
               noteSubjectNames={noteSubjectNames}
               onEntryClick={setSelectedEntry}
+              allEntries={allEntries}
+              userSubgroup={subgroup}
             />
           )}
 
