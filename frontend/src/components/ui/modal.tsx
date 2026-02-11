@@ -9,19 +9,21 @@ interface ModalProps {
 
 export function Modal({ open, onClose, title, children }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
 
   useEffect(() => {
     if (!open) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose()
+        onCloseRef.current()
       }
     }
 
     document.addEventListener('keydown', handleKeyDown)
 
-    // Focus the dialog when opened
+    // Focus the dialog only when it first opens
     dialogRef.current?.focus()
 
     // Prevent body scroll when modal is open
@@ -31,7 +33,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = ''
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 

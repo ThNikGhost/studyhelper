@@ -7,6 +7,7 @@ import { scheduleService } from '@/services/scheduleService'
 import { workService } from '@/services/workService'
 import subjectService from '@/services/subjectService'
 import { calculateSemesterProgress } from '@/lib/progressUtils'
+import { filterDaySchedule } from '@/lib/peTeacherFilter'
 import { TodayScheduleWidget } from '@/components/dashboard/TodayScheduleWidget'
 import { DeadlinesWidget } from '@/components/dashboard/DeadlinesWidget'
 import { SemesterProgressWidget } from '@/components/dashboard/SemesterProgressWidget'
@@ -96,6 +97,11 @@ export default function DashboardPage() {
     staleTime: 60000,
   })
 
+  const filteredTodaySchedule = useMemo(
+    () => (todaySchedule ? filterDaySchedule(todaySchedule) : undefined),
+    [todaySchedule],
+  )
+
   const semesterProgress = useMemo(
     () => calculateSemesterProgress(allWorks, subjects),
     [allWorks, subjects],
@@ -132,7 +138,7 @@ export default function DashboardPage() {
         {/* Widgets */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <TodayScheduleWidget
-            todaySchedule={todaySchedule}
+            todaySchedule={filteredTodaySchedule}
             currentLesson={currentLesson}
             isLoading={todayLoading || currentLoading}
             isError={todayError}

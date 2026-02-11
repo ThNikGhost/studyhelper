@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { ChevronLeft, ChevronRight, RefreshCw, ArrowLeft, Loader2, CalendarDays } from 'lucide-react'
@@ -8,8 +8,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScheduleGrid } from '@/components/schedule/ScheduleGrid'
+import { PeTeacherSelect } from '@/components/schedule/PeTeacherSelect'
 import { LessonDetailModal } from '@/components/schedule/LessonDetailModal'
 import { formatDateLocal, getToday } from '@/lib/dateUtils'
+import { filterWeekSchedule, getPeTeachersFromWeek, getPePreferredTeacher } from '@/lib/peTeacherFilter'
 import { toast } from 'sonner'
 import scheduleService from '@/services/scheduleService'
 import { noteService } from '@/services/noteService'
@@ -27,6 +29,7 @@ export function SchedulePage() {
   const [targetDate, setTargetDate] = useState<string | undefined>(undefined)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
+  const [peTeacher, setPeTeacher] = useState<string | null>(getPePreferredTeacher)
   const today = getToday()
   const queryClient = useQueryClient()
 
@@ -68,6 +71,23 @@ export function SchedulePage() {
         .map((n) => n.schedule_entry_id as number),
     )
   }, [weekNotes])
+
+  // PE teacher filter
+  const peTeachers = useMemo(
+    () => (weekSchedule ? getPeTeachersFromWeek(weekSchedule) : []),
+    [weekSchedule],
+  )
+
+  const filteredWeekSchedule = useMemo(() => {
+    if (!weekSchedule) return undefined
+    // peTeacher in deps ensures re-filter when user changes preference
+    void peTeacher
+    return filterWeekSchedule(weekSchedule)
+  }, [weekSchedule, peTeacher])
+
+  const handlePeTeacherChange = useCallback((teacher: string | null) => {
+    setPeTeacher(teacher)
+  }, [])
 
   // Mutation for refreshing schedule from OmGU
   const refreshMutation = useMutation({
@@ -171,6 +191,9 @@ export function SchedulePage() {
             </Button>
           </Link>
           <h1 className="text-2xl font-bold flex-1">Расписание</h1>
+          {peTeachers.length > 1 && (
+            <PeTeacherSelect teachers={peTeachers} onChange={handlePeTeacherChange} />
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -290,9 +313,9 @@ export function SchedulePage() {
 
         {/* Schedule grid */}
         <div className="flex-1 overflow-auto">
-          {weekSchedule && (
+          {filteredWeekSchedule && (
             <ScheduleGrid
-              weekSchedule={weekSchedule}
+              weekSchedule={filteredWeekSchedule}
               currentEntryId={currentLesson?.current?.id}
               noteEntryIds={noteEntryIds}
               onEntryClick={setSelectedEntry}
@@ -300,7 +323,7 @@ export function SchedulePage() {
           )}
 
           {/* Empty state */}
-          {weekSchedule?.days.every((d) => d.entries.length === 0) && (
+          {filteredWeekSchedule?.days.every((d) => d.entries.length === 0) && (
             <Card className="mt-2">
               <CardContent className="py-6 text-center text-muted-foreground">
                 <p>На этой неделе нет занятий</p>
