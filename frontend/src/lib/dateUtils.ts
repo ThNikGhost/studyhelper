@@ -94,21 +94,35 @@ export function formatTimeUntil(minutes: number): string {
 
 /**
  * Format schedule entry location as "building-room".
- * Filters out room names containing "зал" (e.g., "Спортивный зал").
+ * Cleans up data format from API (e.g., "(6" → "6", "113) Спортивный зал" → "113").
  *
- * @param building - Building number/name (e.g., "6")
- * @param room - Room number/name (e.g., "113" or "Спортивный зал")
- * @returns Formatted location string or null if no location data
+ * @param building - Building number/name (e.g., "(6" or "6")
+ * @param room - Room number/name (e.g., "113) Спортивный зал" or "113")
+ * @returns Formatted location string like "6-113" or null if no location data
  */
 export function formatLocation(
   building: string | null | undefined,
   room: string | null | undefined
 ): string | null {
-  // Filter out room names containing "зал"
-  const filteredRoom = room && !/зал/i.test(room) ? room : null
+  // Clean building: remove parentheses "(6" or "6)" → "6"
+  const cleanBuilding = building?.replace(/[()]/g, '').trim() || null
 
-  if (building && filteredRoom) {
-    return `${building}-${filteredRoom}`
+  // Clean room: extract room number if contains "зал"
+  // e.g., "113) Спортивный зал" → "113", "Спортивный зал" → null
+  let cleanRoom: string | null = null
+  if (room) {
+    if (/зал/i.test(room)) {
+      // Extract number before ")" or space
+      const match = room.match(/^(\d+)/)
+      cleanRoom = match ? match[1] : null
+    } else {
+      // No "зал" — use room as-is, just clean parentheses
+      cleanRoom = room.replace(/[()]/g, '').trim() || null
+    }
   }
-  return filteredRoom || building || null
+
+  if (cleanBuilding && cleanRoom) {
+    return `${cleanBuilding}-${cleanRoom}`
+  }
+  return cleanRoom || cleanBuilding || null
 }

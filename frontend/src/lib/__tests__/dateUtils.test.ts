@@ -177,9 +177,15 @@ describe('formatLocation', () => {
     expect(formatLocation('7', '140')).toBe('7-140')
   })
 
+  it('cleans parentheses from building', () => {
+    expect(formatLocation('(6', '113')).toBe('6-113')
+    expect(formatLocation('6)', '113')).toBe('6-113')
+    expect(formatLocation('(6)', '113')).toBe('6-113')
+  })
+
   it('returns only building when room is null', () => {
     expect(formatLocation('6', null)).toBe('6')
-    expect(formatLocation('7', undefined)).toBe('7')
+    expect(formatLocation('(7', undefined)).toBe('7')
   })
 
   it('returns only room when building is null', () => {
@@ -192,18 +198,21 @@ describe('formatLocation', () => {
     expect(formatLocation(undefined, undefined)).toBeNull()
   })
 
-  it('filters out room containing "зал" (case insensitive)', () => {
-    expect(formatLocation('6', 'Спортивный зал')).toBe('6')
-    expect(formatLocation('6', 'Тренажерный зал')).toBe('6')
-    expect(formatLocation('6', 'ЗАЛ')).toBe('6')
-    expect(formatLocation('6', 'зал')).toBe('6')
+  it('extracts room number from "зал" strings', () => {
+    expect(formatLocation('(6', '113) Спортивный зал')).toBe('6-113')
+    expect(formatLocation('6', '115) Тренажерный зал')).toBe('6-115')
   })
 
-  it('returns only building when room is "зал" and building exists', () => {
+  it('returns only building when "зал" has no room number', () => {
     expect(formatLocation('6', 'Спортивный зал')).toBe('6')
+    expect(formatLocation('(6', 'Тренажерный зал')).toBe('6')
   })
 
-  it('returns null when room is "зал" and no building', () => {
+  it('returns null when room is "зал" without number and no building', () => {
     expect(formatLocation(null, 'Спортивный зал')).toBeNull()
+  })
+
+  it('handles real API format "(6" + "113) Спортивный зал"', () => {
+    expect(formatLocation('(6', '113) Спортивный зал')).toBe('6-113')
   })
 })
