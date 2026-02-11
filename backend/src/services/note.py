@@ -19,11 +19,12 @@ async def create_note(
     db: AsyncSession,
     user_id: int,
     data: LessonNoteCreate,
-) -> LessonNote:
-    """Create a new lesson note.
+) -> tuple[LessonNote, bool]:
+    """Create or update a lesson note (upsert by subject_name).
 
     If schedule_entry_id is provided, auto-fills subject_name and lesson_date
-    from the entry. Also checks for duplicate (user+entry).
+    from the entry. If a note for the same (user_id, subject_name) already
+    exists, updates its content (and optionally schedule_entry_id/lesson_date).
 
     Args:
         db: Database session.
@@ -31,16 +32,17 @@ async def create_note(
         data: Note creation data.
 
     Returns:
-        Created LessonNote.
+        Tuple of (LessonNote, created) where created is True if new.
 
     Raises:
-        ValueError: If entry not found or duplicate note exists.
+        ValueError: If schedule entry not found.
     """
     subject_name = data.subject_name
     lesson_date = data.lesson_date
+    schedule_entry_id = data.schedule_entry_id
 
-    if data.schedule_entry_id is not None:
-        entry = await db.get(ScheduleEntry, data.schedule_entry_id)
+    if schedule_entry_id is not None:
+        entry = await db.get(ScheduleEntry, schedule_entry_id)
         if entry is None:
             raise ValueError("Schedule entry not found")
 
@@ -48,21 +50,33 @@ async def create_note(
         subject_name = entry.subject_name
         lesson_date = entry.lesson_date
 
-        # Check for duplicate
-        existing = await db.execute(
-            select(LessonNote).where(
-                and_(
-                    LessonNote.user_id == user_id,
-                    LessonNote.schedule_entry_id == data.schedule_entry_id,
-                )
+    # Check for existing note by (user_id, subject_name)
+    existing = await db.execute(
+        select(LessonNote).where(
+            and_(
+                LessonNote.user_id == user_id,
+                LessonNote.subject_name == subject_name,
             )
         )
-        if existing.scalar_one_or_none() is not None:
-            raise ValueError("Note already exists for this entry")
+    )
+    note = existing.scalar_one_or_none()
 
+    if note is not None:
+        # Update existing note
+        note.content = data.content
+        if schedule_entry_id is not None:
+            note.schedule_entry_id = schedule_entry_id
+        if lesson_date is not None:
+            note.lesson_date = lesson_date
+        await db.flush()
+        await db.commit()
+        await db.refresh(note)
+        return note, False
+
+    # Create new note
     note = LessonNote(
         user_id=user_id,
-        schedule_entry_id=data.schedule_entry_id,
+        schedule_entry_id=schedule_entry_id,
         subject_name=subject_name,
         lesson_date=lesson_date,
         content=data.content,
@@ -71,7 +85,7 @@ async def create_note(
     await db.flush()
     await db.commit()
     await db.refresh(note)
-    return note
+    return note, True
 
 
 async def update_note(
@@ -164,6 +178,32 @@ async def get_notes(
 
     result = await db.execute(query)
     return list(result.scalars().all())
+
+
+async def get_note_for_subject(
+    db: AsyncSession,
+    user_id: int,
+    subject_name: str,
+) -> LessonNote | None:
+    """Get a user's note for a specific subject.
+
+    Args:
+        db: Database session.
+        user_id: Current user ID.
+        subject_name: Subject name.
+
+    Returns:
+        LessonNote or None if not found.
+    """
+    result = await db.execute(
+        select(LessonNote).where(
+            and_(
+                LessonNote.user_id == user_id,
+                LessonNote.subject_name == subject_name,
+            )
+        )
+    )
+    return result.scalar_one_or_none()
 
 
 async def get_note_for_entry(

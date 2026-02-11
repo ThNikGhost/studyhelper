@@ -144,16 +144,16 @@ describe('LessonDetailModal', () => {
   it('shows NoteEditor with existing note loaded from API', async () => {
     renderModal({ entry: fullEntry, open: true })
 
-    // NoteEditor loads note via useQuery, wait for it
+    // NoteEditor loads note via subject query, wait for it
     await waitFor(() => {
       const textarea = screen.getByPlaceholderText('Добавить заметку к занятию...')
       expect(textarea).toHaveValue('Запомнить формулу F=ma и второй закон Ньютона')
     })
   })
 
-  it('shows empty NoteEditor when no note exists for entry', async () => {
+  it('shows empty NoteEditor when no note exists for subject', async () => {
     server.use(
-      http.get('/api/v1/notes/entry/:entryId', () => {
+      http.get('/api/v1/notes/subject/:subjectName', () => {
         return HttpResponse.json({ detail: 'Not found' }, { status: 404 })
       }),
     )

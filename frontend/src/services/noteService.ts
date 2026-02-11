@@ -36,6 +36,30 @@ export const noteService = {
     }
   },
 
+  async getNoteForSubject(
+    subjectName: string,
+    signal?: AbortSignal,
+  ): Promise<LessonNote | null> {
+    try {
+      const response = await api.get<LessonNote>(
+        `/notes/subject/${encodeURIComponent(subjectName)}`,
+        { signal },
+      )
+      return response.data
+    } catch (err: unknown) {
+      // 404 means no note exists yet — return null
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        (err as { response?: { status?: number } }).response?.status === 404
+      ) {
+        return null
+      }
+      throw err
+    }
+  },
+
   async createNote(data: LessonNoteCreate): Promise<LessonNote> {
     const response = await api.post<LessonNote>('/notes/', data)
     return response.data

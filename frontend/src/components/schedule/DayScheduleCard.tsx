@@ -6,7 +6,7 @@ interface DayScheduleCardProps {
   day: DaySchedule
   currentEntryId?: number
   isToday?: boolean
-  noteEntryIds?: Set<number>
+  noteSubjectNames?: Set<string>
   onEntryClick?: (entry: ScheduleEntry) => void
 }
 
@@ -22,7 +22,7 @@ export function DayScheduleCard({
   day,
   currentEntryId,
   isToday = false,
-  noteEntryIds,
+  noteSubjectNames,
   onEntryClick,
 }: DayScheduleCardProps) {
   const hasEntries = day.entries.length > 0
@@ -62,7 +62,7 @@ export function DayScheduleCard({
               key={entry.id}
               entry={entry}
               isActive={entry.id === currentEntryId}
-              hasNote={noteEntryIds?.has(entry.id)}
+              hasNote={noteSubjectNames?.has(entry.subject_name)}
               onClick={onEntryClick}
             />
           ))}

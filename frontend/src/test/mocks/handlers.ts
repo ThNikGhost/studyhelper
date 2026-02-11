@@ -689,6 +689,15 @@ export const handlers = [
     return HttpResponse.json(testLessonNotes)
   }),
 
+  http.get('/api/v1/notes/subject/:subjectName', ({ params }) => {
+    const subjectName = decodeURIComponent(params.subjectName as string)
+    const note = testLessonNotes.find((n) => n.subject_name === subjectName)
+    if (!note) {
+      return HttpResponse.json({ detail: 'Not found' }, { status: 404 })
+    }
+    return HttpResponse.json(note)
+  }),
+
   http.get('/api/v1/notes/entry/:entryId', ({ params }) => {
     const entryId = Number(params.entryId)
     const note = testLessonNotes.find((n) => n.schedule_entry_id === entryId)

@@ -38,14 +38,14 @@ async def _create_note(
     content: str = "Тестовая заметка",
     lesson_date: str | None = None,
 ) -> dict:
-    """Helper to create a note via API."""
+    """Helper to create or upsert a note via API."""
     body: dict = {"subject_name": subject_name, "content": content}
     if entry_id is not None:
         body["schedule_entry_id"] = entry_id
     if lesson_date is not None:
         body["lesson_date"] = lesson_date
     resp = await client.post("/api/v1/notes/", json=body, headers=headers)
-    assert resp.status_code == 201
+    assert resp.status_code in (200, 201)
     return resp.json()
 
 
@@ -96,23 +96,52 @@ class TestCreateNote:
         assert data["subject_name"] == "Физика"
 
     @pytest.mark.asyncio
-    async def test_create_note_duplicate_409(
+    async def test_upsert_updates_existing_note(
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
-        """Test 409 when creating duplicate note for same entry."""
-        entry_id = await _create_entry(client, auth_headers, _past_entry())
-        await _create_note(client, auth_headers, entry_id=entry_id)
+        """Test upsert: second POST with same subject updates content (200)."""
+        await _create_note(client, auth_headers, content="Первый вариант")
 
         response = await client.post(
             "/api/v1/notes/",
             json={
-                "schedule_entry_id": entry_id,
-                "subject_name": "X",
-                "content": "Дубль",
+                "subject_name": "Математический анализ",
+                "content": "Обновлённый текст",
             },
             headers=auth_headers,
         )
-        assert response.status_code == 409
+        assert response.status_code == 200
+        data = response.json()
+        assert data["content"] == "Обновлённый текст"
+        assert data["subject_name"] == "Математический анализ"
+
+    @pytest.mark.asyncio
+    async def test_upsert_via_entry_updates_existing(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """Test upsert via entry: updates existing note for same subject."""
+        entry_id = await _create_entry(client, auth_headers, _past_entry())
+        await _create_note(client, auth_headers, entry_id=entry_id, content="Первая")
+
+        # Create second entry for same subject
+        entry_id_2 = await _create_entry(
+            client,
+            auth_headers,
+            _past_entry(start_time="11:00:00", end_time="12:30:00"),
+        )
+        response = await client.post(
+            "/api/v1/notes/",
+            json={
+                "schedule_entry_id": entry_id_2,
+                "subject_name": "X",
+                "content": "Обновлённая",
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["content"] == "Обновлённая"
+        assert data["schedule_entry_id"] == entry_id_2
 
     @pytest.mark.asyncio
     async def test_create_note_entry_not_found_404(
@@ -277,6 +306,62 @@ class TestGetNoteForEntry:
         """Test 401 without authentication."""
         response = await client.get("/api/v1/notes/entry/1")
         assert response.status_code == 401
+
+
+class TestGetNoteForSubject:
+    """Tests for GET /api/v1/notes/subject/{subject_name}."""
+
+    @pytest.mark.asyncio
+    async def test_get_note_for_subject_found(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """Test getting a note by subject name."""
+        await _create_note(
+            client, auth_headers, subject_name="Физика", content="Заметка по физике"
+        )
+
+        response = await client.get(
+            "/api/v1/notes/subject/Физика", headers=auth_headers
+        )
+        assert response.status_code == 200
+        assert response.json()["content"] == "Заметка по физике"
+        assert response.json()["subject_name"] == "Физика"
+
+    @pytest.mark.asyncio
+    async def test_get_note_for_subject_not_found(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """Test 404 when no note for subject."""
+        response = await client.get(
+            "/api/v1/notes/subject/Несуществующий", headers=auth_headers
+        )
+        assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_get_note_for_subject_no_auth(self, client: AsyncClient) -> None:
+        """Test 401 without authentication."""
+        response = await client.get("/api/v1/notes/subject/Физика")
+        assert response.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_get_note_for_subject_url_encoded(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """Test getting a note with URL-encoded Cyrillic subject name."""
+        await _create_note(
+            client,
+            auth_headers,
+            subject_name="Математический анализ",
+            content="Матан",
+        )
+
+        # URL with encoded Cyrillic
+        response = await client.get(
+            "/api/v1/notes/subject/%D0%9C%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9%20%D0%B0%D0%BD%D0%B0%D0%BB%D0%B8%D0%B7",
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["content"] == "Матан"
 
 
 class TestUpdateNote:

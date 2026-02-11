@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
@@ -17,35 +17,37 @@ router = APIRouter()
 @router.post(
     "/",
     response_model=LessonNoteResponse,
-    status_code=status.HTTP_201_CREATED,
 )
 async def create_note(
     data: LessonNoteCreate,
+    response: Response,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LessonNoteResponse:
-    """Create a new lesson note.
+    """Create or update a lesson note (upsert by subject_name).
+
+    Returns 201 for new notes, 200 for updated existing notes.
 
     Args:
         data: Note creation data.
+        response: FastAPI response object for setting status code.
         db: Database session.
         current_user: Authenticated user.
 
     Returns:
-        Created note.
+        Created or updated note.
     """
     try:
-        note = await note_service.create_note(db, current_user.id, data)
+        note, created = await note_service.create_note(db, current_user.id, data)
     except ValueError as e:
         msg = str(e)
         if "not found" in msg:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=msg
             ) from e
-        if "already exists" in msg:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=msg) from e
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg) from e
 
+    response.status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
     return LessonNoteResponse.model_validate(note)
 
 
@@ -75,6 +77,31 @@ async def get_notes(
         db, current_user.id, date_from, date_to, subject_name, search
     )
     return [LessonNoteResponse.model_validate(n) for n in notes]
+
+
+@router.get("/subject/{subject_name}", response_model=LessonNoteResponse)
+async def get_note_for_subject(
+    subject_name: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> LessonNoteResponse:
+    """Get note for a specific subject.
+
+    Args:
+        subject_name: Subject name (URL-encoded).
+        db: Database session.
+        current_user: Authenticated user.
+
+    Returns:
+        Note for the subject.
+    """
+    note = await note_service.get_note_for_subject(db, current_user.id, subject_name)
+    if note is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Note not found for this subject",
+        )
+    return LessonNoteResponse.model_validate(note)
 
 
 @router.get("/entry/{schedule_entry_id}", response_model=LessonNoteResponse)

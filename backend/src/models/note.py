@@ -14,10 +14,11 @@ if TYPE_CHECKING:
 
 
 class LessonNote(Base, TimestampMixin):
-    """User note for a schedule entry or standalone lesson.
+    """User note for a subject.
 
-    Each user can have at most one note per schedule entry.
-    Notes can also exist without a schedule entry (standalone).
+    Each user can have at most one note per subject (by subject_name).
+    The schedule_entry_id and lesson_date are informational,
+    tracking the last entry where the note was edited.
     """
 
     __tablename__ = "lesson_notes"
@@ -42,11 +43,8 @@ class LessonNote(Base, TimestampMixin):
     schedule_entry: Mapped["ScheduleEntry | None"] = relationship("ScheduleEntry")
 
     __table_args__ = (
-        UniqueConstraint(
-            "user_id", "schedule_entry_id", name="uq_lesson_note_user_entry"
-        ),
+        UniqueConstraint("user_id", "subject_name", name="uq_lesson_note_user_subject"),
         Index("ix_lesson_notes_user_date", "user_id", "lesson_date"),
-        Index("ix_lesson_notes_user_subject", "user_id", "subject_name"),
     )
 
     def __repr__(self) -> str:

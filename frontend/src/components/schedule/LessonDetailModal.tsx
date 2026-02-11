@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Clock, MapPin, User, Users, BookOpen, ExternalLink, Loader2 } from 'lucide-react'
 import { Modal } from '@/components/ui/modal'
@@ -27,7 +27,7 @@ export function LessonDetailModal({ entry, open, onClose }: LessonDetailModalPro
 
   return (
     <Modal open={open} onClose={onClose} title={entry.subject_name}>
-      <LessonDetailContent key={entry.id} entry={entry} onClose={onClose} />
+      <LessonDetailContent key={entry.subject_name} entry={entry} onClose={onClose} />
     </Modal>
   )
 }
@@ -39,6 +39,7 @@ interface LessonDetailContentProps {
 
 function LessonDetailContent({ entry, onClose }: LessonDetailContentProps) {
   const isOnline = useNetworkStatus()
+  const queryClient = useQueryClient()
 
   // Fetch works for the subject
   const { data: works, isLoading: worksLoading } = useQuery({
@@ -48,11 +49,16 @@ function LessonDetailContent({ entry, onClose }: LessonDetailContentProps) {
     enabled: entry.subject_id != null,
   })
 
-  // Fetch existing note for this entry
+  // Fetch existing note for this subject
   const { data: existingNote, isLoading: noteLoading } = useQuery({
-    queryKey: ['note-for-entry', entry.id],
-    queryFn: ({ signal }) => noteService.getNoteForEntry(entry.id, signal),
+    queryKey: ['note-for-subject', entry.subject_name],
+    queryFn: ({ signal }) => noteService.getNoteForSubject(entry.subject_name, signal),
   })
+
+  const handleNoteSaved = () => {
+    queryClient.invalidateQueries({ queryKey: ['note-for-subject', entry.subject_name] })
+    queryClient.invalidateQueries({ queryKey: ['notes'] })
+  }
 
   const location = entry.building && entry.room
     ? `${entry.building}-${entry.room}`
@@ -190,6 +196,7 @@ function LessonDetailContent({ entry, onClose }: LessonDetailContentProps) {
           subjectName={entry.subject_name}
           lessonDate={entry.lesson_date}
           disabled={!isOnline}
+          onSaved={handleNoteSaved}
         />
       )}
     </>

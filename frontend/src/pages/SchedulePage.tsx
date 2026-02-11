@@ -51,26 +51,17 @@ export function SchedulePage() {
     refetchInterval: 60000, // 1 minute
   })
 
-  // Fetch notes for the current week to show note icons
-  const { data: weekNotes } = useQuery({
-    queryKey: ['notes', 'week', weekSchedule?.week_start, weekSchedule?.week_end],
-    queryFn: ({ signal }) =>
-      noteService.getNotes(
-        { date_from: weekSchedule!.week_start, date_to: weekSchedule!.week_end },
-        signal,
-      ),
-    enabled: !!weekSchedule,
+  // Fetch all notes to show note icons (notes are per-subject, not per-entry)
+  const { data: allNotes } = useQuery({
+    queryKey: ['notes'],
+    queryFn: ({ signal }) => noteService.getNotes(undefined, signal),
   })
 
-  // Set of entry IDs that have notes
-  const noteEntryIds = useMemo(() => {
-    if (!weekNotes) return new Set<number>()
-    return new Set(
-      weekNotes
-        .filter((n) => n.schedule_entry_id != null)
-        .map((n) => n.schedule_entry_id as number),
-    )
-  }, [weekNotes])
+  // Set of subject names that have notes
+  const noteSubjectNames = useMemo(() => {
+    if (!allNotes) return new Set<string>()
+    return new Set(allNotes.map((n) => n.subject_name))
+  }, [allNotes])
 
   // PE teacher filter
   const peTeachers = useMemo(
@@ -316,7 +307,7 @@ export function SchedulePage() {
             <ScheduleGrid
               weekSchedule={filteredWeekSchedule}
               currentEntryId={currentLesson?.current?.id}
-              noteEntryIds={noteEntryIds}
+              noteSubjectNames={noteSubjectNames}
               onEntryClick={setSelectedEntry}
             />
           )}
