@@ -15,7 +15,7 @@ config = context.config
 
 # Convert async URL to sync URL for Alembic migrations
 sync_database_url = settings.database_url.replace(
-    "postgresql+asyncpg://", "postgresql+psycopg2://"
+    "postgresql+asyncpg://", "postgresql+psycopg://"
 )
 config.set_main_option("sqlalchemy.url", sync_database_url)
 
