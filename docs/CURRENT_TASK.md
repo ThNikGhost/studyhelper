@@ -1,19 +1,24 @@
 # Текущая задача
 
 ## Статус
-**Завершена.** SSL (HTTPS) настроен и задеплоен.
+**Нет активной задачи.**
 
-## Последняя сессия: SSL (HTTPS) — 2026-02-11
+## Последняя сессия: UI improvements — 2026-02-11
 
 ### Сделано
-- [x] nginx/nginx.conf — 3 server-блока (HTTP redirect, HTTPS www redirect, HTTPS main)
-- [x] nginx/nginx.conf — SSL, http2, HSTS, security headers в nested locations
-- [x] nginx/Dockerfile — EXPOSE 443, HTTPS healthcheck
-- [x] docker-compose.prod.yml — порт 443, certbot сервис, certbot volumes
-- [x] .env.production.example — DOMAIN, CERTBOT_EMAIL, HTTPS_PORT, REDIS_PASSWORD
-- [x] scripts/init-letsencrypt.sh — bootstrap скрипт (self-signed → real cert)
-- [x] Деплой: сертификат получен (expires 2026-05-12), 5 контейнеров работают
-- [x] Верификация: HTTPS 200, HTTP 301, www 301, HSTS, CSP, health OK
+1. **ClassmatesPage** — добавлены: название группы (МБС-301-О-01), счётчик общий и по подгруппам
+2. **SemestersPage** — показывается только номер семестра вместо полного названия
+3. **DashboardPage** — убрана фраза "Что будем делать сегодня?"
+4. **formatLocation** — утилита для парсинга формата API:
+   - `"(6"` → `"6"` (убирает скобки)
+   - `"113) Спортивный зал"` → `"113"` (извлекает номер)
+   - Результат: `"6-113"`
+5. **nginx** — location `/uploads/avatars/` для публичных аватарок
+
+### Коммиты
+- `d796e02` — fix(ui): improve classmates page and dashboard display
+- `f3a408e` — fix(ui): filter out gym room names from location display
+- `24aae5a` — fix(ui): extract room number from gym location strings
 
 ## Следующие задачи (приоритет)
 1. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
@@ -25,7 +30,7 @@
 cd /opt/repos/studyhelper
 git pull origin main
 docker compose -f docker-compose.prod.yml build nginx
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d nginx
 ```
 
 ## Блокеры / Вопросы
