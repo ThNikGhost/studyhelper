@@ -25,6 +25,7 @@ COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO /dev/null http://localhost:80/ || exit 1
+    CMD wget --no-check-certificate -qO /dev/null https://localhost/ || wget -qO /dev/null http://localhost/ || exit 1
 
 EXPOSE 80
+EXPOSE 443
