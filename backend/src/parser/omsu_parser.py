@@ -253,6 +253,7 @@ class OmsuScheduleParser:
                     "building": building,
                     "lesson_date": lesson_date,
                     "group_name": lesson.get("group", ""),
+                    "subgroupName": lesson.get("subgroupName", ""),
                 }
 
                 lessons.append(normalized)
