@@ -119,6 +119,7 @@ services:
     volumes:
       - certbot_certs:/etc/letsencrypt:ro
       - certbot_webroot:/var/www/certbot:ro
+      - uploads_data:/app/uploads:ro
     networks:
       - internal
     deploy:

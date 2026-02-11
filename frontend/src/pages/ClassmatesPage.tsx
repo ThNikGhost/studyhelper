@@ -336,7 +336,11 @@ export function ClassmatesPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold flex-1">Одногруппники</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Одногруппники</h1>
+          <span className="flex-1 text-center text-sm text-muted-foreground font-medium">
+            МБС-301-О-01
+          </span>
+          <span className="text-sm text-muted-foreground">{classmates.length}</span>
           <Button size="icon" onClick={openAddModal} disabled={!isOnline}>
             <Plus className="h-5 w-5" />
           </Button>
@@ -345,7 +349,10 @@ export function ClassmatesPage() {
         {/* Grouped classmates */}
         {groupedClassmates.map((group) => (
           <div key={group.subgroup} className="mb-6">
-            <h2 className="text-lg font-semibold mb-3 text-muted-foreground">{group.label}</h2>
+            <h2 className="text-lg font-semibold mb-3 text-muted-foreground">
+              {group.label}
+              <span className="ml-2 text-sm font-normal">({group.classmates.length})</span>
+            </h2>
             <div className="grid grid-cols-4 gap-3">
               {group.classmates.map((classmate) => (
                 <button

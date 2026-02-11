@@ -87,7 +87,9 @@ function LessonRow({ entry, state, timeUntil, onClick }: LessonRowProps) {
             {(entry.room || entry.building) && (
               <span className="inline-flex items-center gap-0.5">
                 <MapPin className="h-3 w-3" />
-                {[entry.room, entry.building].filter(Boolean).join(', ')}
+                {entry.building && entry.room
+                  ? `${entry.building}-${entry.room}`
+                  : entry.room || entry.building}
               </span>
             )}
             {entry.teacher_name && (

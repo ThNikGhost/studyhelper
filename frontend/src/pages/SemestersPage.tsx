@@ -239,7 +239,7 @@ export function SemestersPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-blue-500 shrink-0" />
-                      <h3 className="font-medium">{semester.name}</h3>
+                      <h3 className="font-medium">Семестр {semester.number}</h3>
                       {semester.is_current && (
                         <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
                           текущий
