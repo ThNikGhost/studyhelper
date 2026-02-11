@@ -28,7 +28,10 @@ class User(Base, TimestampMixin):
         "WorkStatus", back_populates="user", cascade="all, delete-orphan"
     )
     lk_credentials: Mapped["LkCredentials | None"] = relationship(
-        "LkCredentials", back_populates="user", uselist=False, cascade="all, delete-orphan"
+        "LkCredentials",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:

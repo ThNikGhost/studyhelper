@@ -578,9 +578,7 @@ class TestGetSubjectStats:
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
         """Test subject stats without semester_id returns 422."""
-        response = await client.get(
-            "/api/v1/attendance/stats/1", headers=auth_headers
-        )
+        response = await client.get("/api/v1/attendance/stats/1", headers=auth_headers)
 
         assert response.status_code == 422
 
