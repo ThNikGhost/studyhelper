@@ -57,16 +57,20 @@ async def get_notes(
     date_to: date | None = Query(None, description="End date filter"),
     subject_name: str | None = Query(None, description="Filter by subject name"),
     search: str | None = Query(None, description="Search in content"),
+    limit: int = Query(50, ge=1, le=200, description="Max results"),
+    offset: int = Query(0, ge=0, description="Skip results"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[LessonNoteResponse]:
-    """Get lesson notes with optional filters.
+    """Get lesson notes with optional filters and pagination.
 
     Args:
         date_from: Optional start date.
         date_to: Optional end date.
         subject_name: Optional subject name filter.
         search: Optional text search.
+        limit: Maximum number of results (default 50, max 200).
+        offset: Number of results to skip.
         db: Database session.
         current_user: Authenticated user.
 
@@ -74,7 +78,14 @@ async def get_notes(
         List of matching notes.
     """
     notes = await note_service.get_notes(
-        db, current_user.id, date_from, date_to, subject_name, search
+        db,
+        current_user.id,
+        date_from,
+        date_to,
+        subject_name,
+        search,
+        limit=limit,
+        offset=offset,
     )
     return [LessonNoteResponse.model_validate(n) for n in notes]
 

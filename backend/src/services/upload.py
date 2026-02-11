@@ -15,8 +15,9 @@ _IMAGE_SIGNATURES: dict[str, tuple[bytes, ...]] = {
     ".webp": (b"RIFF",),
 }
 
-# Magic bytes for study file format validation
+# Magic bytes for study file format validation (includes image formats)
 _FILE_SIGNATURES: dict[str, tuple[bytes, ...]] = {
+    **_IMAGE_SIGNATURES,
     ".pdf": (b"%PDF",),
     ".doc": (b"\xd0\xcf\x11\xe0",),  # OLE2 Compound Document
     ".xls": (b"\xd0\xcf\x11\xe0",),
@@ -24,11 +25,7 @@ _FILE_SIGNATURES: dict[str, tuple[bytes, ...]] = {
     ".docx": (b"PK\x03\x04",),  # ZIP-based OOXML
     ".xlsx": (b"PK\x03\x04",),
     ".pptx": (b"PK\x03\x04",),
-    ".jpg": (b"\xff\xd8\xff",),
-    ".jpeg": (b"\xff\xd8\xff",),
-    ".png": (b"\x89PNG",),
     ".gif": (b"GIF8",),
-    ".webp": (b"RIFF",),
 }
 
 CHUNK_SIZE = 8192

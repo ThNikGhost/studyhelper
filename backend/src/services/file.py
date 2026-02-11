@@ -114,13 +114,17 @@ async def get_files(
     db: AsyncSession,
     subject_id: int | None = None,
     category: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
 ) -> list[File]:
-    """Get list of files with optional filtering.
+    """Get list of files with optional filtering and pagination.
 
     Args:
         db: Database session.
         subject_id: Filter by subject ID.
         category: Filter by category.
+        limit: Maximum number of results.
+        offset: Number of results to skip.
 
     Returns:
         List of File records with subject relationship loaded.
@@ -133,6 +137,8 @@ async def get_files(
         query = query.where(File.subject_id == subject_id)
     if category is not None:
         query = query.where(File.category == category)
+
+    query = query.limit(limit).offset(offset)
 
     result = await db.execute(query)
     return list(result.scalars().all())

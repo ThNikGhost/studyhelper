@@ -71,9 +71,7 @@ export function SchedulePage() {
 
   const filteredWeekSchedule = useMemo(() => {
     if (!weekSchedule) return undefined
-    // peTeacher in deps ensures re-filter when user changes preference
-    void peTeacher
-    return filterWeekSchedule(weekSchedule)
+    return filterWeekSchedule(weekSchedule, peTeacher)
   }, [weekSchedule, peTeacher])
 
   const handlePeTeacherChange = useCallback((teacher: string | null) => {

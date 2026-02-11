@@ -40,9 +40,16 @@ export function setPePreferredTeacher(teacher: string | null): void {
   }
 }
 
-/** Filter schedule entries: keep only the preferred PE teacher, pass through all other entries. */
-export function filterPeEntries(entries: ScheduleEntry[]): ScheduleEntry[] {
-  const preferred = getPePreferredTeacher()
+/** Filter schedule entries: keep only the preferred PE teacher, pass through all other entries.
+ *
+ * @param entries - Schedule entries to filter.
+ * @param preferredTeacher - Preferred teacher name. Falls back to localStorage if omitted.
+ */
+export function filterPeEntries(
+  entries: ScheduleEntry[],
+  preferredTeacher?: string | null,
+): ScheduleEntry[] {
+  const preferred = preferredTeacher ?? getPePreferredTeacher()
   if (!preferred) return entries
 
   return entries.filter((entry) => {
@@ -51,19 +58,33 @@ export function filterPeEntries(entries: ScheduleEntry[]): ScheduleEntry[] {
   })
 }
 
-/** Filter a DaySchedule, applying PE teacher filter to its entries. */
-export function filterDaySchedule(day: DaySchedule): DaySchedule {
+/** Filter a DaySchedule, applying PE teacher filter to its entries.
+ *
+ * @param day - Day schedule to filter.
+ * @param preferredTeacher - Preferred teacher name. Falls back to localStorage if omitted.
+ */
+export function filterDaySchedule(
+  day: DaySchedule,
+  preferredTeacher?: string | null,
+): DaySchedule {
   return {
     ...day,
-    entries: filterPeEntries(day.entries),
+    entries: filterPeEntries(day.entries, preferredTeacher),
   }
 }
 
-/** Filter a WeekSchedule, applying PE teacher filter to all days. */
-export function filterWeekSchedule(week: WeekSchedule): WeekSchedule {
+/** Filter a WeekSchedule, applying PE teacher filter to all days.
+ *
+ * @param week - Week schedule to filter.
+ * @param preferredTeacher - Preferred teacher name. Falls back to localStorage if omitted.
+ */
+export function filterWeekSchedule(
+  week: WeekSchedule,
+  preferredTeacher?: string | null,
+): WeekSchedule {
   return {
     ...week,
-    days: week.days.map(filterDaySchedule),
+    days: week.days.map((d) => filterDaySchedule(d, preferredTeacher)),
   }
 }
 

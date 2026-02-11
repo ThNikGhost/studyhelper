@@ -3,7 +3,7 @@
 from datetime import UTC, datetime, timedelta
 
 import bcrypt
-from jose import JWTError, jwt
+import jwt
 
 from src.config import settings
 
@@ -53,5 +53,5 @@ def decode_token(token: str) -> dict | None:
             token, settings.secret_key, algorithms=[settings.algorithm]
         )
         return payload
-    except JWTError:
+    except jwt.PyJWTError:
         return None
