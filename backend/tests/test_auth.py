@@ -28,29 +28,6 @@ class TestRegister:
         assert response.status_code in (400, 409)
         assert "email" in response.json()["detail"].lower()
 
-    async def test_register_max_users_limit(
-        self, client: AsyncClient, test_user_data: dict, test_user_data_2: dict
-    ):
-        """Test that only 2 users can be registered (pair mode)."""
-        # Register first user
-        response1 = await client.post("/api/v1/auth/register", json=test_user_data)
-        assert response1.status_code == 201
-
-        # Register second user
-        response2 = await client.post("/api/v1/auth/register", json=test_user_data_2)
-        assert response2.status_code == 201
-
-        # Third user should fail
-        third_user = {
-            "email": "third@example.com",
-            "password": "password123",
-            "name": "Third User",
-        }
-        response3 = await client.post("/api/v1/auth/register", json=third_user)
-        assert response3.status_code == 403
-        detail = response3.json()["detail"].lower()
-        assert "maximum" in detail or "limit" in detail
-
     async def test_register_invalid_email(self, client: AsyncClient):
         """Test registration with invalid email fails."""
         response = await client.post(

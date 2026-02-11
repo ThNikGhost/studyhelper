@@ -118,9 +118,6 @@ export default function RegisterPage() {
                 required
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              * Максимум 2 пользователя могут зарегистрироваться
-            </p>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isLoading}>

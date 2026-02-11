@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class User(Base, TimestampMixin):
-    """User model - maximum 2 users allowed in the system."""
+    """User model."""
 
     __tablename__ = "users"
 

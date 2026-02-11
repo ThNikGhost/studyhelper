@@ -54,7 +54,6 @@ async def list_items(
 
 ## Authentication
 - JWT tokens: access (15min) + refresh (7 days)
-- Max 2 users (pair mode)
 - `get_current_user` dependency for protected routes
 - Passwords: bcrypt via passlib
 

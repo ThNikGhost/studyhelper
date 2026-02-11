@@ -10,12 +10,10 @@ from src.schemas.user import UserCreate
 from src.services.user import (
     create_user,
     get_user_by_email,
-    get_users_count,
 )
 from src.utils.exceptions import (
     CredentialsException,
     UserExistsException,
-    UserLimitException,
 )
 from src.utils.security import (
     create_access_token,
@@ -26,16 +24,9 @@ from src.utils.security import (
 
 logger = logging.getLogger(__name__)
 
-MAX_USERS = 2
-
 
 async def register_user(db: AsyncSession, user_data: UserCreate) -> User:
-    """Register a new user with limit check."""
-    # Check if user limit reached
-    users_count = await get_users_count(db)
-    if users_count >= MAX_USERS:
-        raise UserLimitException()
-
+    """Register a new user."""
     # Check if email already exists
     existing_user = await get_user_by_email(db, user_data.email)
     if existing_user:

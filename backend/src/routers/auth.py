@@ -29,7 +29,7 @@ async def register(
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    """Register a new user. Maximum 2 users allowed."""
+    """Register a new user."""
     return await register_user(db, user_data)
 
 

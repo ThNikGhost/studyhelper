@@ -15,17 +15,6 @@ class CredentialsException(HTTPException):
         )
 
 
-class UserLimitException(HTTPException):
-    """Exception when user registration limit is reached."""
-
-    def __init__(self) -> None:
-        """Initialize exception."""
-        super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Maximum number of users (2) reached. Registration is closed.",
-        )
-
-
 class UserExistsException(HTTPException):
     """Exception when user with email already exists."""
 
