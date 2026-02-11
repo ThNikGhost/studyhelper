@@ -91,3 +91,24 @@ export function formatTimeUntil(minutes: number): string {
   }
   return `${hours} ч ${remainingMinutes} мин`
 }
+
+/**
+ * Format schedule entry location as "building-room".
+ * Filters out room names containing "зал" (e.g., "Спортивный зал").
+ *
+ * @param building - Building number/name (e.g., "6")
+ * @param room - Room number/name (e.g., "113" or "Спортивный зал")
+ * @returns Formatted location string or null if no location data
+ */
+export function formatLocation(
+  building: string | null | undefined,
+  room: string | null | undefined
+): string | null {
+  // Filter out room names containing "зал"
+  const filteredRoom = room && !/зал/i.test(room) ? room : null
+
+  if (building && filteredRoom) {
+    return `${building}-${filteredRoom}`
+  }
+  return filteredRoom || building || null
+}

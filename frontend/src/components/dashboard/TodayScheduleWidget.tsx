@@ -14,7 +14,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { formatTime, formatTimeUntil } from '@/lib/dateUtils'
+import { formatTime, formatTimeUntil, formatLocation } from '@/lib/dateUtils'
 import { lessonTypeLabels } from '@/types/schedule'
 import type { ScheduleEntry, DaySchedule, CurrentLesson } from '@/types/schedule'
 
@@ -84,12 +84,10 @@ function LessonRow({ entry, state, timeUntil, onClick }: LessonRowProps) {
           </div>
           <div className="font-medium mt-0.5 truncate">{entry.subject_name}</div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-            {(entry.room || entry.building) && (
+            {formatLocation(entry.building, entry.room) && (
               <span className="inline-flex items-center gap-0.5">
                 <MapPin className="h-3 w-3" />
-                {entry.building && entry.room
-                  ? `${entry.building}-${entry.room}`
-                  : entry.room || entry.building}
+                {formatLocation(entry.building, entry.room)}
               </span>
             )}
             {entry.teacher_name && (

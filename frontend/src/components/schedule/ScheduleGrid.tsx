@@ -1,6 +1,7 @@
 import { StickyNote } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TIME_SLOTS, LESSON_TYPE_COLORS } from '@/lib/constants'
+import { formatLocation } from '@/lib/dateUtils'
 import type { WeekSchedule, ScheduleEntry } from '@/types/schedule'
 import { lessonTypeLabels } from '@/types/schedule'
 
@@ -20,12 +21,9 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })
 }
 
-// Format location as "building-room"
-function formatLocation(entry: ScheduleEntry): string | null {
-  if (entry.building && entry.room) {
-    return `${entry.building}-${entry.room}`
-  }
-  return entry.room || entry.building || null
+// Wrapper to use shared formatLocation with entry
+function getEntryLocation(entry: ScheduleEntry): string | null {
+  return formatLocation(entry.building, entry.room)
 }
 
 // Get entry for specific day and time slot
@@ -137,9 +135,9 @@ export function ScheduleGrid({ weekSchedule, currentEntryId, noteSubjectNames, o
                         </div>
 
                         {/* Location */}
-                        {formatLocation(entry) && (
+                        {getEntryLocation(entry) && (
                           <div className="text-[10px] text-black">
-                            📍 {formatLocation(entry)}
+                            📍 {getEntryLocation(entry)}
                           </div>
                         )}
 

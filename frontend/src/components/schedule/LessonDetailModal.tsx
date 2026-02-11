@@ -6,7 +6,7 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { workService } from '@/services/workService'
 import { noteService } from '@/services/noteService'
 import { NoteEditor } from '@/components/notes/NoteEditor'
-import { formatTime } from '@/lib/dateUtils'
+import { formatTime, formatLocation } from '@/lib/dateUtils'
 import { cn } from '@/lib/utils'
 import { lessonTypeLabels } from '@/types/schedule'
 import type { ScheduleEntry } from '@/types/schedule'
@@ -60,9 +60,7 @@ function LessonDetailContent({ entry, onClose }: LessonDetailContentProps) {
     queryClient.invalidateQueries({ queryKey: ['notes'] })
   }
 
-  const location = entry.building && entry.room
-    ? `${entry.building}-${entry.room}`
-    : entry.room || entry.building || null
+  const location = formatLocation(entry.building, entry.room)
 
   return (
     <>

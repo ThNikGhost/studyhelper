@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import type { ScheduleEntry } from '@/types/schedule'
 import { LessonType, lessonTypeLabels } from '@/types/schedule'
 import { cn } from '@/lib/utils'
+import { formatLocation } from '@/lib/dateUtils'
 
 interface LessonCardProps {
   entry: ScheduleEntry
@@ -30,11 +31,7 @@ function formatTime(time: string): string {
 export function LessonCard({ entry, isActive = false, hasNote = false, onClick }: LessonCardProps) {
   const startTime = formatTime(entry.start_time)
   const endTime = formatTime(entry.end_time)
-
-  // Format location as "building-room" (e.g., "7-140")
-  const location = entry.building && entry.room
-    ? `${entry.building}-${entry.room}`
-    : entry.room || entry.building || null
+  const location = formatLocation(entry.building, entry.room)
 
   const handleClick = () => {
     onClick?.(entry)

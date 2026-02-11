@@ -6,6 +6,7 @@ import {
   getToday,
   formatTime,
   formatTimeUntil,
+  formatLocation,
 } from '../dateUtils'
 
 describe('formatDeadline', () => {
@@ -167,5 +168,42 @@ describe('formatTimeUntil', () => {
   it('returns hours and minutes', () => {
     expect(formatTimeUntil(90)).toBe('1 ч 30 мин')
     expect(formatTimeUntil(61)).toBe('1 ч 1 мин')
+  })
+})
+
+describe('formatLocation', () => {
+  it('returns "building-room" when both are present', () => {
+    expect(formatLocation('6', '113')).toBe('6-113')
+    expect(formatLocation('7', '140')).toBe('7-140')
+  })
+
+  it('returns only building when room is null', () => {
+    expect(formatLocation('6', null)).toBe('6')
+    expect(formatLocation('7', undefined)).toBe('7')
+  })
+
+  it('returns only room when building is null', () => {
+    expect(formatLocation(null, '113')).toBe('113')
+    expect(formatLocation(undefined, '140')).toBe('140')
+  })
+
+  it('returns null when both are null', () => {
+    expect(formatLocation(null, null)).toBeNull()
+    expect(formatLocation(undefined, undefined)).toBeNull()
+  })
+
+  it('filters out room containing "зал" (case insensitive)', () => {
+    expect(formatLocation('6', 'Спортивный зал')).toBe('6')
+    expect(formatLocation('6', 'Тренажерный зал')).toBe('6')
+    expect(formatLocation('6', 'ЗАЛ')).toBe('6')
+    expect(formatLocation('6', 'зал')).toBe('6')
+  })
+
+  it('returns only building when room is "зал" and building exists', () => {
+    expect(formatLocation('6', 'Спортивный зал')).toBe('6')
+  })
+
+  it('returns null when room is "зал" and no building', () => {
+    expect(formatLocation(null, 'Спортивный зал')).toBeNull()
   })
 })
