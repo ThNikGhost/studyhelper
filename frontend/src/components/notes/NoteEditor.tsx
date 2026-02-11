@@ -57,23 +57,33 @@ export function NoteEditor({
 
       setStatus('saving')
       try {
+        const signal = abortRef.current.signal
         let saved: LessonNote
         if (noteIdRef.current) {
           // Update existing note
-          saved = await noteService.updateNote(noteIdRef.current, { content: text })
+          saved = await noteService.updateNote(
+            noteIdRef.current,
+            { content: text },
+            signal,
+          )
         } else {
           // Create new note
-          saved = await noteService.createNote({
-            schedule_entry_id: scheduleEntryId,
-            subject_name: subjectName,
-            lesson_date: lessonDate,
-            content: text,
-          })
+          saved = await noteService.createNote(
+            {
+              schedule_entry_id: scheduleEntryId,
+              subject_name: subjectName,
+              lesson_date: lessonDate,
+              content: text,
+            },
+            signal,
+          )
           noteIdRef.current = saved.id
         }
         setStatus('saved')
         onSaved?.(saved)
-      } catch {
+      } catch (err) {
+        // Don't show error for aborted requests
+        if (err instanceof Error && err.name === 'CanceledError') return
         setStatus('error')
       }
     },

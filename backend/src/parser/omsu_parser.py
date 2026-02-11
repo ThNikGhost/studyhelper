@@ -90,7 +90,7 @@ class OmsuScheduleParser:
             timeout: HTTP request timeout in seconds.
             headless: Ignored, kept for backwards compatibility.
         """
-        self.group_id = group_id or getattr(settings, "schedule_group_id", 5028)
+        self.group_id = group_id or settings.schedule_group_id
         self.url = url or self.API_URL_TEMPLATE.format(group_id=self.group_id)
         self.timeout = timeout
         self._client: httpx.AsyncClient | None = None

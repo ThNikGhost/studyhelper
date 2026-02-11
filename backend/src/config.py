@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     allowed_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     # Schedule parser
+    schedule_group_id: int = 5028
     schedule_url: str = "https://eservice.omsu.ru/schedule/#/schedule/group/5028"
     schedule_update_interval_hours: int = 6
     schedule_sync_enabled: bool = True

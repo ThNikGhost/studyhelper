@@ -60,13 +60,20 @@ export const noteService = {
     }
   },
 
-  async createNote(data: LessonNoteCreate): Promise<LessonNote> {
-    const response = await api.post<LessonNote>('/notes/', data)
+  async createNote(
+    data: LessonNoteCreate,
+    signal?: AbortSignal,
+  ): Promise<LessonNote> {
+    const response = await api.post<LessonNote>('/notes/', data, { signal })
     return response.data
   },
 
-  async updateNote(noteId: number, data: LessonNoteUpdate): Promise<LessonNote> {
-    const response = await api.put<LessonNote>(`/notes/${noteId}`, data)
+  async updateNote(
+    noteId: number,
+    data: LessonNoteUpdate,
+    signal?: AbortSignal,
+  ): Promise<LessonNote> {
+    const response = await api.put<LessonNote>(`/notes/${noteId}`, data, { signal })
     return response.data
   },
 
