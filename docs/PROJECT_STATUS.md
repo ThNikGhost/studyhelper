@@ -2,7 +2,7 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-12
-- **Сессия**: LK Parser implementation (личный кабинет ОмГУ)
+- **Сессия**: LK Integration — Frontend (зачётка, настройки ЛК, импорт)
 
 ## Общий прогресс
 **Фаза**: Production
@@ -32,14 +32,14 @@
 - [x] Инициализация проекта (pyproject.toml, uv)
 - [x] Конфигурация (pydantic-settings)
 - [x] База данных (SQLAlchemy 2.0 async)
-- [x] Alembic миграции (17 миграций применено)
+- [x] Alembic миграции (18 миграций применено)
 
 #### Модули:
 | Модуль | Модель | Схемы | Сервис | Роутер | Тесты |
 |--------|--------|-------|--------|--------|-------|
 | Auth | ✅ User | ✅ | ✅ | ✅ | ✅ 16 |
 | Semesters | ✅ (+start_date, end_date) | ✅ (+Timeline) | ✅ (+timeline) | ✅ (+timeline) | ✅ 26 |
-| Subjects | ✅ (+planned_classes) | ✅ | ✅ | ✅ | ✅ 18 |
+| Subjects | ✅ (+planned_classes, +total_hours) | ✅ | ✅ | ✅ | ✅ 18 |
 | Works | ✅ Work, WorkStatus, WorkStatusHistory | ✅ | ✅ | ✅ | ✅ 23 |
 | Teachers | ✅ | ✅ | ✅ | ✅ | ✅ 20 |
 | University | ✅ Department, Building | ✅ | ✅ | ✅ | ✅ 28 |
@@ -50,7 +50,7 @@
 | Files | ✅ File | ✅ | ✅ | ✅ | ✅ 21 |
 | Attendance | ✅ Absence | ✅ (+total_planned/completed) | ✅ (semester filter) | ✅ | ✅ 29 |
 | Notes | ✅ LessonNote | ✅ | ✅ | ✅ | ✅ 26 |
-| LK | ✅ LkCredentials, SessionGrade, SemesterDiscipline | ✅ | ✅ | ✅ | ✅ 51 |
+| LK | ✅ LkCredentials, SessionGrade, SemesterDiscipline | ✅ (+LkImportResult) | ✅ (+import_to_app) | ✅ (+/import) | ✅ 51 |
 
 ### Parser модуль (ЗАВЕРШЁН ✅)
 - [x] `src/parser/` — модуль парсинга
@@ -70,14 +70,16 @@
 - [x] ErrorBoundary компонент
 - [x] Страницы: LoginPage, RegisterPage, DashboardPage
 - [x] SchedulePage ✅ (кастомный календарь, локальное время)
-- [x] SubjectsPage ✅
+- [x] SubjectsPage ✅ (+total_hours display)
 - [x] WorksPage ✅
-- [x] SemestersPage ✅ (CRUD для семестров)
+- [x] SemestersPage ✅ (CRUD для семестров, +Import from LK)
 - [x] ClassmatesPage ✅ (CRUD, контакты, санитизация Telegram)
+- [x] GradesPage ✅ (NEW: зачётка с оценками по сессиям)
+- [x] SettingsPage ✅ (подгруппа, физра, ЛК credentials)
 
 ### Frontend тесты (ЗАВЕРШЁН ✅)
 - [x] Тестовая инфраструктура: Vitest + @testing-library/react + MSW
-- [x] Тесты утилит: dateUtils (22), errorUtils (13), constants (6)
+- [x] Тесты утилит: dateUtils (31), errorUtils (13), constants (6)
 - [x] Тесты store: authStore (11)
 - [x] Тесты компонентов: ProtectedRoute (3), ErrorBoundary (3), Modal (6)
 - [x] Тесты страниц: LoginPage (6), DashboardPage (10)
@@ -411,6 +413,30 @@
 - [x] Backend: 51 тест (crypto: 6, API: 29, parser: 16)
 - [x] 418 тестов backend — все проходят
 
+### LK Integration — Frontend (ЗАВЕРШЕНА ✅) — 2026-02-12
+Полная интеграция ЛК в приложение по плану `delightful-inventing-peach.md`:
+- [x] Backend: `total_hours` поле в модели Subject (часы из учебного плана ЛК)
+- [x] Backend: Alembic миграция `488c2925b15c_add_total_hours_to_subjects`
+- [x] Backend: `POST /api/v1/lk/import` — импорт семестров и предметов из ЛК в приложение
+- [x] Backend: `import_to_app()` в lk.py — создание/обновление Semester и Subject из SemesterDiscipline
+- [x] Backend: `LkImportResult` схема (semesters_created/updated, subjects_created/updated)
+- [x] Frontend: `lkService.ts` — полноценный сервис (getStatus, saveCredentials, verify, sync, importToApp, getGrades, getSessions)
+- [x] Frontend: `types/lk.ts` — LkStatus, LkCredentials, SessionGrade, SemesterDiscipline, LkImportResult
+- [x] Frontend: `SettingsPage.tsx` — рабочая секция ЛК (verify/save/sync credentials, status display, disconnect)
+- [x] Frontend: `SemestersPage.tsx` — кнопка "Импорт из ЛК" с confirm modal
+- [x] Frontend: `SubjectsPage.tsx` — отображение и редактирование total_hours
+- [x] Frontend: `SubjectProgressCard.tsx` — показывает total_hours в заголовке
+- [x] Frontend: `GradesPage.tsx` — новая страница /grades (зачётка)
+  - Статистика: всего оценок, средний балл, % отличных
+  - Группировка по сессиям (SessionGroup)
+  - Цветные badges по результату (отлично=green, хорошо=blue, удовл=yellow, неуд=red, зачтено=emerald)
+  - Фильтр по сессиям
+  - Кнопка синхронизации
+- [x] Frontend: `QuickActions.tsx` — пункт "Зачётка" (Award icon, violet)
+- [x] Frontend: `dateUtils.ts` — `formatDistanceToNow()` для относительного времени
+- [x] Frontend: Маршрут /grades в App.tsx
+- [x] Деплой на сервер — 18 миграций применено, все контейнеры healthy
+
 ---
 
 ## Что в работе
@@ -430,7 +456,7 @@
 - HTTP → HTTPS redirect, www → apex redirect
 - HSTS, CSP, X-Frame-Options, X-Content-Type-Options
 - 5 контейнеров: db, redis, backend, nginx, certbot
-- 16 миграций применены
+- 18 миграций применены
 - Redis с аутентификацией (REDIS_PASSWORD)
 
 ---
@@ -500,9 +526,10 @@ Nginx healthcheck использует `wget`, который может дол�
 - **Production Docker**: multi-stage builds (uv для backend, node для frontend), nginx reverse proxy, rate limiting (nginx + slowapi), --proxy-headers для корректного client IP, memory limits ~1.3GB total, PostgreSQL tuning (shared_buffers=256MB), Redis LRU (128mb)
 - **Schedule auto-sync**: APScheduler 3.x AsyncIOScheduler в lifespan FastAPI, IntervalTrigger(hours=6, jitter=60), misfire_grace_time=3600, Redis distributed lock (non-blocking, TTL 600s, LockNotOwnedError handling), Redis auto-reconnect (ping healthcheck), initial sync в entrypoint.sh (если snapshot нет), configurable via SCHEDULE_SYNC_ENABLED/SCHEDULE_UPDATE_INTERVAL_HOURS
 - **SSL/TLS**: Let's Encrypt certbot (webroot mode), auto-renewal каждые 12ч, nginx 3 server-блока (HTTP redirect + HTTPS www redirect + HTTPS main), http2, HSTS, bootstrap скрипт `scripts/init-letsencrypt.sh` (self-signed → real cert)
-- **Settings**: settingsStore (Zustand) с localStorage persistence, subgroup фильтрация (filterBySubgroup), SettingsPage (/settings) с секциями (подгруппа, физра, ЛК ОмГУ заглушка)
+- **Settings**: settingsStore (Zustand) с localStorage persistence, subgroup фильтрация (filterBySubgroup), SettingsPage (/settings) с секциями (подгруппа, физра, ЛК)
 - **Subgroup filtering**: Parser извлекает subgroup из поля `subgroupName` API (e.g. "МБС-301-О-01/1" → 1), ScheduleGrid показывает "!" на пустых ячейках где есть пара для другой подгруппы, popover с деталями
 - **LK Parser**: OAuth2-based auth (CSRF + form-login + redirects), httpx cookie persistence, Fernet encryption (PBKDF2HMAC 1.2M iterations), SessionGrade/SemesterDiscipline upsert, verify без сохранения credentials
+- **LK Integration**: import_to_app() создаёт Semester/Subject из SemesterDiscipline, total_hours из ЛК, GradesPage со статистикой и группировкой по сессиям
 
 ---
 
@@ -513,11 +540,11 @@ Nginx healthcheck использует `wget`, который может дол�
 | Тестов backend | 418 |
 | Тестов frontend | 359 |
 | Покрытие тестами | ~80% |
-| API endpoints | ~65 |
-| Моделей | 15 |
-| Миграций | 15 |
+| API endpoints | ~70 |
+| Моделей | 16 |
+| Миграций | 18 |
 | Линтер backend | ✅ Ruff проходит |
 | Линтер frontend | ✅ ESLint проходит (shadcn/ui исключён из линтинга) |
-| Frontend тесты | ✅ Vitest проходит (348 тестов) |
+| Frontend тесты | ✅ Vitest проходит (359 тестов) |
 | Frontend build | ✅ TypeScript + Vite |
-| Frontend страниц | 13 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Notes, Timeline, Settings) |
+| Frontend страниц | 14 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Notes, Timeline, Settings, Grades) |
