@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { ChevronLeft, ChevronRight, RefreshCw, ArrowLeft, Loader2, CalendarDays } from 'lucide-react'
@@ -8,10 +8,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScheduleGrid } from '@/components/schedule/ScheduleGrid'
-import { PeTeacherSelect } from '@/components/schedule/PeTeacherSelect'
 import { LessonDetailModal } from '@/components/schedule/LessonDetailModal'
 import { formatDateLocal, getToday, formatTimeUntil } from '@/lib/dateUtils'
-import { filterWeekSchedule, getPeTeachersFromWeek } from '@/lib/peTeacherFilter'
+import { filterWeekSchedule } from '@/lib/peTeacherFilter'
 import { filterWeekBySubgroup } from '@/lib/subgroupFilter'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { toast } from 'sonner'
@@ -31,7 +30,7 @@ export function SchedulePage() {
   const [targetDate, setTargetDate] = useState<string | undefined>(undefined)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
-  const { subgroup, peTeacher, setPeTeacher } = useSettingsStore()
+  const { subgroup, peTeacher } = useSettingsStore()
   const today = getToday()
   const queryClient = useQueryClient()
 
@@ -65,12 +64,6 @@ export function SchedulePage() {
     return new Set(allNotes.map((n) => n.subject_name))
   }, [allNotes])
 
-  // PE teacher filter
-  const peTeachers = useMemo(
-    () => (weekSchedule ? getPeTeachersFromWeek(weekSchedule) : []),
-    [weekSchedule],
-  )
-
   // All entries before filtering (for alternate entry detection)
   const allEntries = useMemo(() => {
     if (!weekSchedule) return []
@@ -84,10 +77,6 @@ export function SchedulePage() {
     filtered = filterWeekBySubgroup(filtered, subgroup)
     return filtered
   }, [weekSchedule, peTeacher, subgroup])
-
-  const handlePeTeacherChange = useCallback((teacher: string | null) => {
-    setPeTeacher(teacher)
-  }, [setPeTeacher])
 
   // Mutation for refreshing schedule from OmGU
   const refreshMutation = useMutation({
@@ -191,9 +180,6 @@ export function SchedulePage() {
             </Button>
           </Link>
           <h1 className="text-2xl font-bold flex-1">Расписание</h1>
-          {peTeachers.length > 1 && (
-            <PeTeacherSelect teachers={peTeachers} onChange={handlePeTeacherChange} />
-          )}
           <Button
             variant="ghost"
             size="icon"
