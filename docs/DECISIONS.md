@@ -738,6 +738,47 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 22. Notes per-subject решения (2026-02-11)
+
+### UNIQUE constraint по subject_name вместо schedule_entry_id
+
+**Решение:** Изменить UNIQUE constraint с `(user_id, schedule_entry_id)` на `(user_id, subject_name)`.
+
+**Обоснование:**
+- Заметка к "Математический анализ" должна быть видна при клике на любую пару этого предмета, не только на конкретный entry
+- Один пользователь = одна заметка на предмет (upsert-семантика)
+- `schedule_entry_id` и `lesson_date` остаются как информационные поля (последнее место редактирования)
+
+### Upsert вместо 409 Conflict
+
+**Решение:** POST `/api/v1/notes/` работает как upsert: 201 (new) или 200 (updated).
+
+**Обоснование:**
+- 409 Conflict заставлял клиент делать GET → проверка → POST/PUT — лишние запросы
+- Upsert атомарен: одна операция вместо трёх
+- Фронтенд autosave не различает "создать" и "обновить" — upsert упрощает логику
+
+### Query по subject_name вместо entry_id в LessonDetailModal
+
+**Решение:** `useQuery(['note-for-subject', entry.subject_name])` вместо `['note-for-entry', entry.id]`.
+
+**Обоснование:**
+- Заметка привязана к предмету, не к конкретной паре
+- `key={entry.subject_name}` на LessonDetailContent — React пересоздаёт компонент при смене предмета
+- Cache invalidation: `queryClient.invalidateQueries(['note-for-subject', ...])` + `['notes']`
+
+### .env симлинк на сервере
+
+**Решение:** Создать `.env → .env.production` симлинк в `/opt/repos/studyhelper`.
+
+**Обоснование:**
+- Docker Compose автоматически читает `.env` (не `.env.production`)
+- При `docker compose up -d` без `.env` переменные `POSTGRES_USER` и др. пусты
+- `pg_isready -U ""` падает → db unhealthy → backend не стартует
+- Симлинк решает проблему без дублирования файла
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -800,3 +841,7 @@ notification_settings — настройки уведомлений
 | 2026-02-10 | .gitattributes *.sh eol=lf | entrypoint.sh с CRLF не запустится в Docker |
 | 2026-02-11 | test-runner agent вместо fix Vitest | OOM + hang на Windows, агент парсит вывод и убивает процесс |
 | 2026-02-11 | formatTimeUntil принимает минуты | Backend отдаёт time_until_next в минутах |
+| 2026-02-11 | UNIQUE по subject_name вместо entry_id | Заметка видна для любой пары предмета |
+| 2026-02-11 | Upsert вместо 409 Conflict | Атомарная операция, проще autosave |
+| 2026-02-11 | Query по subject_name в модале | Заметка per-subject, не per-entry |
+| 2026-02-11 | .env симлинк на сервере | Docker Compose читает только .env |

@@ -2,7 +2,7 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-11
-- **Сессия**: Bugfixes (modal focus, PE filter, formatTimeUntil) + test-runner agent
+- **Сессия**: Notes per-subject refactor + cache invalidation fix + deploy
 
 ## Общий прогресс
 **Фаза**: Production
@@ -32,7 +32,7 @@
 - [x] Инициализация проекта (pyproject.toml, uv)
 - [x] Конфигурация (pydantic-settings)
 - [x] База данных (SQLAlchemy 2.0 async)
-- [x] Alembic миграции (13 миграций применено)
+- [x] Alembic миграции (14 миграций применено)
 
 #### Модули:
 | Модуль | Модель | Схемы | Сервис | Роутер | Тесты |
@@ -49,7 +49,7 @@
 | Uploads | — | ✅ | ✅ | ✅ | ✅ 11 |
 | Files | ✅ File | ✅ | ✅ | ✅ | ✅ 21 |
 | Attendance | ✅ Absence | ✅ | ✅ | ✅ | ✅ 22 |
-| Notes | ✅ LessonNote | ✅ | ✅ | ✅ | ✅ 21 |
+| Notes | ✅ LessonNote | ✅ | ✅ | ✅ | ✅ 26 |
 
 ### Parser модуль (ЗАВЕРШЁН ✅)
 - [x] `src/parser/` — модуль парсинга
@@ -173,22 +173,22 @@
 
 ### 10-lesson-notes (ЗАВЕРШЕНА ✅)
 - [x] Backend: модель LessonNote (user_id FK, schedule_entry_id FK nullable, subject_name, lesson_date, content Text)
-- [x] Backend: UniqueConstraint(user_id, schedule_entry_id), indexes (user_id+lesson_date, user_id+subject_name)
+- [x] Backend: UniqueConstraint(user_id, subject_name), indexes (user_id+lesson_date)
 - [x] Backend: схемы (LessonNoteCreate, LessonNoteUpdate, LessonNoteResponse)
-- [x] Backend: сервис (create_note, update_note, delete_note, get_notes с фильтрами, get_note_for_entry)
-- [x] Backend: роутер (POST / 201, GET /, GET /entry/{id}, PUT /{id}, DELETE /{id} 204)
-- [x] Backend: Alembic миграция add_lesson_notes_table
-- [x] Backend: 21 тест (create: 6, get_notes: 5, get_note_for_entry: 3, update: 4, delete: 3)
+- [x] Backend: сервис (create_note upsert, update_note, delete_note, get_notes с фильтрами, get_note_for_entry, get_note_for_subject)
+- [x] Backend: роутер (POST / 201|200 upsert, GET /, GET /subject/{name}, GET /entry/{id}, PUT /{id}, DELETE /{id} 204)
+- [x] Backend: Alembic миграции: add_lesson_notes_table + change_note_unique_to_subject (14 миграций)
+- [x] Backend: 26 тестов (create: 7, upsert: 2, get_notes: 5, get_note_for_entry: 3, get_note_for_subject: 4, update: 4, delete: 3)
 - [x] Frontend: типы (LessonNote, LessonNoteCreate, LessonNoteUpdate)
-- [x] Frontend: сервис (noteService: getNotes, getNoteForEntry, createNote, updateNote, deleteNote)
+- [x] Frontend: сервис (noteService: getNotes, getNoteForEntry, getNoteForSubject, createNote, updateNote, deleteNote)
 - [x] Frontend: NoteEditor (autosave debounce 500ms, status indicator, char counter 2000, disabled)
 - [x] Frontend: NoteCard (subject/date, content preview 150 chars, expand/collapse, delete)
 - [x] Frontend: NotesPage (search debounce 300ms, subject filter, NoteCard list, delete confirm modal)
-- [x] Frontend: LessonDetailModal — рефакторинг: textarea+save заменён на NoteEditor с autosave
+- [x] Frontend: LessonDetailModal — query по subject_name, cache invalidation через onSaved callback
 - [x] Frontend: LessonCard — иконка StickyNote (amber-500) при наличии заметки (hasNote prop)
-- [x] Frontend: ScheduleGrid, DayScheduleCard, SchedulePage — noteEntryIds Set из API
+- [x] Frontend: ScheduleGrid, DayScheduleCard, SchedulePage — noteSubjectNames Set из API
 - [x] Frontend: маршрут /notes в App.tsx, пункт "Заметки" (StickyNote, text-yellow-500) в QuickActions
-- [x] Frontend: MSW handlers + testLessonNotes data
+- [x] Frontend: MSW handlers (+ GET /notes/subject/:subjectName) + testLessonNotes data
 - [x] Frontend: 23 новых теста (NoteEditor: 10, NoteCard: 5, NotesPage: 8) + обновлены LessonDetailModal тесты (17)
 - [x] TypeScript, ESLint, build — всё чисто
 
@@ -283,6 +283,19 @@
 - [x] DX: `.claude/agents/test-runner.md` — агент для запуска тестов (Vitest на Windows зависает, агент запускает в фоне, парсит вывод, убивает процесс)
 - [x] Деплой на сервер — nginx пересобран, все контейнеры здоровы
 
+### Notes per-subject refactor (2026-02-11)
+- [x] Backend: UNIQUE constraint изменён с (user_id, schedule_entry_id) на (user_id, subject_name)
+- [x] Backend: Alembic миграция e8f9a0b1c2d3 с дедупликацией данных (DISTINCT ON)
+- [x] Backend: create_note() → upsert (возвращает 201 new / 200 updated)
+- [x] Backend: GET /api/v1/notes/subject/{subject_name} — новый endpoint
+- [x] Backend: 26 тестов notes (5 новых: upsert + subject endpoint)
+- [x] Frontend: noteService.getNoteForSubject() вместо getNoteForEntry()
+- [x] Frontend: LessonDetailModal — query по subject_name, cache invalidation через queryClient
+- [x] Frontend: SchedulePage/ScheduleGrid/DayScheduleCard — noteSubjectNames Set вместо noteEntryIds
+- [x] Frontend: MSW handler для GET /notes/subject/:subjectName
+- [x] Fix: `.env` симлинк на сервере (docker compose не видел переменные при recreate)
+- [x] Деплой на сервер — миграция применена, все контейнеры healthy, CI зелёный
+
 ---
 
 ## Что в работе
@@ -309,8 +322,9 @@
 ### Деплой
 ✅ **Приложение задеплоено и работает**: http://89.110.93.63
 - Все контейнеры здоровы (db, redis, backend, nginx)
-- 13 миграций применены
+- 14 миграций применены
 - Первый пользователь создан: admin@example.com
+- `.env` → `.env.production` симлинк (docker compose использует `.env` автоматически)
 
 ---
 
@@ -373,7 +387,7 @@ Nginx healthcheck использует `wget`, который может дол�
 - **Clickable schedule**: LessonDetailModal с работами и заметками, onClick/onEntryClick на LessonCard/ScheduleGrid/TodayScheduleWidget
 - **Progress bars**: ProgressBar (a11y, size variants), SubjectProgressCard, SemesterProgressWidget (top-3 lowest), calculateSemesterProgress в progressUtils
 - **File upload**: File модель (immutable), FileDropzone (HTML5 DnD), FileList, magic bytes validation, StreamingResponse для download, path traversal protection
-- **Lesson notes**: LessonNote модель (one per entry per user), NoteEditor (autosave debounce 500ms), NoteCard, NotesPage, LessonDetailModal интеграция через useQuery
+- **Lesson notes**: LessonNote модель (one per subject per user), upsert POST (201/200), GET /subject/{name}, NoteEditor (autosave debounce 500ms), NoteCard, NotesPage, LessonDetailModal query по subject_name с cache invalidation
 - **Semester timeline**: start_date/end_date на Semester (nullable), TimelineBar (CSS positioning via left%), TimelineMarker (Popover tooltips), getPositionPercent/getMonthLabels/getSemesterProgress утилиты, TimelinePage с фильтрами, SemesterTimelineWidget на Dashboard
 - **Dark theme**: ThemeMode (light/dark/system), FOUC prevention (inline script), cycling toggle (Sun/Moon/Monitor), localStorage persistence, .dark CSS class, theme-color meta update, dark: variants для hardcoded цветов
 - **Production Docker**: multi-stage builds (uv для backend, node для frontend), nginx reverse proxy, rate limiting (nginx + slowapi), --proxy-headers для корректного client IP, memory limits ~1.3GB total, PostgreSQL tuning (shared_buffers=256MB), Redis LRU (128mb)
@@ -385,14 +399,14 @@ Nginx healthcheck использует `wget`, который может дол�
 
 | Метрика | Значение |
 |---------|----------|
-| Тестов backend | 348 |
-| Тестов frontend | 351 |
+| Тестов backend | 353 |
+| Тестов frontend | 348 |
 | Покрытие тестами | ~80% |
 | API endpoints | ~65 |
 | Моделей | 15 |
-| Миграций | 13 |
+| Миграций | 14 |
 | Линтер backend | ✅ Ruff проходит |
 | Линтер frontend | ✅ ESLint проходит (shadcn/ui исключён из линтинга) |
-| Frontend тесты | ✅ Vitest проходит (351 тестов) |
+| Frontend тесты | ✅ Vitest проходит (348 тестов) |
 | Frontend build | ✅ TypeScript + Vite |
 | Frontend страниц | 12 (Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Notes, Timeline) |

@@ -1,19 +1,22 @@
 # Текущая задача
 
 ## Статус
-**Завершена.** Bugfixes (modal focus, PE filter, formatTimeUntil) + test-runner agent.
+**Завершена.** Notes per-subject refactor + cache invalidation fix + deploy.
 
-## Последняя сессия: Bugfixes + DX — 2026-02-11
+## Последняя сессия: Notes per-subject — 2026-02-11
 
 ### Сделано
-- [x] Fix: Modal `useEffect` — фокус крался при ре-рендере. Исправлено: `onCloseRef` + зависимость только `[open]`
-- [x] Feat: PE teacher filter (`lib/peTeacherFilter.ts`) — `isPeEntry`, `filterPeEntries`, localStorage, `PeTeacherSelect`
-- [x] Fix: `formatTimeUntil` принимал секунды, backend отдаёт минуты — обновлены тесты, моки, SchedulePage
-- [x] Fix: SchedulePage вручную делил `time_until_next / 60` — заменено на `formatTimeUntil()`
-- [x] DX: `.claude/agents/test-runner.md` — агент для запуска тестов (Vitest на Windows зависает)
-- [x] Деплой на сервер — nginx пересобран
-- [x] 348 frontend тестов проходят (3 OOM при cleanup)
-- [x] TypeScript, ESLint, build — чисто
+- [x] Backend: UNIQUE constraint (user_id, subject_name) вместо (user_id, schedule_entry_id)
+- [x] Backend: Alembic миграция e8f9a0b1c2d3 с дедупликацией (DISTINCT ON)
+- [x] Backend: create_note() → upsert (201 new / 200 updated)
+- [x] Backend: GET /api/v1/notes/subject/{subject_name}
+- [x] Backend: 353 тестов проходят (26 для notes)
+- [x] Frontend: getNoteForSubject(), LessonDetailModal query по subject_name
+- [x] Frontend: cache invalidation через queryClient.invalidateQueries
+- [x] Frontend: noteSubjectNames Set вместо noteEntryIds
+- [x] Frontend: 348 тестов проходят (CI зелёный)
+- [x] Fix: `.env` симлинк на сервере (.env → .env.production)
+- [x] Деплой на сервер — миграция применена, все контейнеры healthy
 
 ## Следующие задачи (приоритет)
 1. **SSL (HTTPS)** — настроить Let's Encrypt (P0, требует доменное имя)
@@ -22,10 +25,13 @@
 4. **02-push-notifications** — push-уведомления (P1)
 
 ## Деплой на сервер
-Фронтенд-only изменения — пересобрать nginx:
+Backend + frontend изменения:
 ```bash
-docker compose -f docker-compose.prod.yml build nginx
-docker compose -f docker-compose.prod.yml up -d nginx
+cd /opt/repos/studyhelper
+git pull origin main
+docker compose -f docker-compose.prod.yml build backend nginx
+docker compose -f docker-compose.prod.yml up -d backend  # Миграция через entrypoint.sh
+docker compose -f docker-compose.prod.yml up -d nginx     # Новый фронтенд
 ```
 
 ## Блокеры / Вопросы
