@@ -2,7 +2,7 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-11
-- **Сессия**: UI improvements (classmates page, location format, dashboard)
+- **Сессия**: Attendance logic rewrite (semester filtering, planned_classes)
 
 ## Общий прогресс
 **Фаза**: Production
@@ -32,14 +32,14 @@
 - [x] Инициализация проекта (pyproject.toml, uv)
 - [x] Конфигурация (pydantic-settings)
 - [x] База данных (SQLAlchemy 2.0 async)
-- [x] Alembic миграции (14 миграций применено)
+- [x] Alembic миграции (16 миграций применено)
 
 #### Модули:
 | Модуль | Модель | Схемы | Сервис | Роутер | Тесты |
 |--------|--------|-------|--------|--------|-------|
 | Auth | ✅ User | ✅ | ✅ | ✅ | ✅ 16 |
 | Semesters | ✅ (+start_date, end_date) | ✅ (+Timeline) | ✅ (+timeline) | ✅ (+timeline) | ✅ 26 |
-| Subjects | ✅ | ✅ | ✅ | ✅ | ✅ 18 |
+| Subjects | ✅ (+planned_classes) | ✅ | ✅ | ✅ | ✅ 18 |
 | Works | ✅ Work, WorkStatus, WorkStatusHistory | ✅ | ✅ | ✅ | ✅ 23 |
 | Teachers | ✅ | ✅ | ✅ | ✅ | ✅ 20 |
 | University | ✅ Department, Building | ✅ | ✅ | ✅ | ✅ 28 |
@@ -48,7 +48,7 @@
 | Parser | ✅ | ✅ | ✅ | CLI | ✅ 74 |
 | Uploads | — | ✅ | ✅ | ✅ | ✅ 11 |
 | Files | ✅ File | ✅ | ✅ | ✅ | ✅ 21 |
-| Attendance | ✅ Absence | ✅ | ✅ | ✅ | ✅ 22 |
+| Attendance | ✅ Absence | ✅ (+total_planned/completed) | ✅ (semester filter) | ✅ | ✅ 29 |
 | Notes | ✅ LessonNote | ✅ | ✅ | ✅ | ✅ 26 |
 
 ### Parser модуль (ЗАВЕРШЁН ✅)
@@ -365,6 +365,23 @@
 - [x] 31 тест dateUtils (было 22, добавлено 9 для formatLocation)
 - [x] Деплой на сервер — 3 коммита, nginx пересобран
 
+### Attendance Logic Rewrite (2026-02-11)
+Полная переработка логики посещаемости по плану `flickering-snuggling-moler.md`:
+- [x] Backend: `planned_classes` добавлен в модель Subject (для учёта запланированных пар)
+- [x] Backend: Alembic миграция `1f580bc1b2b5_add_planned_classes_to_subjects`
+- [x] Backend: Attendance сервис переписан с фильтрацией по семестру (start_date/end_date)
+- [x] Backend: Только завершённые пары (lesson_date < today OR end_time <= now)
+- [x] Backend: Новые поля в AttendanceStats: `total_planned`, `total_completed`
+- [x] Backend: Все attendance endpoints требуют `semester_id` параметр
+- [x] Backend: 29 тестов посещаемости (было 22)
+- [x] Frontend: AttendancePage с выбором семестра (dropdown как в SubjectsPage)
+- [x] Frontend: Предупреждение если у семестра не заданы даты
+- [x] Frontend: AttendanceStatsCard показывает "X из Y" (attended / total_planned)
+- [x] Frontend: SubjectsPage с полем planned_classes в форме создания/редактирования
+- [x] Frontend: Обновлены типы Subject и AttendanceStats
+- [x] Frontend: Обновлены MSW handlers и тесты (357 тестов проходят)
+- [x] Деплой на сервер — миграция применена, все контейнеры healthy
+
 ---
 
 ## Что в работе
@@ -384,7 +401,7 @@
 - HTTP → HTTPS redirect, www → apex redirect
 - HSTS, CSP, X-Frame-Options, X-Content-Type-Options
 - 5 контейнеров: db, redis, backend, nginx, certbot
-- 15 миграций применены
+- 16 миграций применены
 - Redis с аутентификацией (REDIS_PASSWORD)
 
 ---

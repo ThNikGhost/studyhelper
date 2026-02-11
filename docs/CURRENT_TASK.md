@@ -3,22 +3,33 @@
 ## Статус
 **Нет активной задачи.**
 
-## Последняя сессия: UI improvements — 2026-02-11
+## Последняя сессия: Attendance Logic Rewrite — 2026-02-11
 
 ### Сделано
-1. **ClassmatesPage** — добавлены: название группы (МБС-301-О-01), счётчик общий и по подгруппам
-2. **SemestersPage** — показывается только номер семестра вместо полного названия
-3. **DashboardPage** — убрана фраза "Что будем делать сегодня?"
-4. **formatLocation** — утилита для парсинга формата API:
-   - `"(6"` → `"6"` (убирает скобки)
-   - `"113) Спортивный зал"` → `"113"` (извлекает номер)
-   - Результат: `"6-113"`
-5. **nginx** — location `/uploads/avatars/` для публичных аватарок
+Полная переработка логики посещаемости:
 
-### Коммиты
-- `d796e02` — fix(ui): improve classmates page and dashboard display
-- `f3a408e` — fix(ui): filter out gym room names from location display
-- `24aae5a` — fix(ui): extract room number from gym location strings
+1. **Backend**:
+   - `planned_classes` в модели Subject для учёта запланированных пар
+   - Attendance сервис фильтрует по семестру (start_date/end_date)
+   - Только завершённые пары показываются (lesson_date < today OR end_time <= now)
+   - Новые поля: `total_planned`, `total_completed` в AttendanceStats
+   - Все endpoints требуют `semester_id`
+   - 29 тестов (было 22)
+
+2. **Frontend**:
+   - AttendancePage с dropdown выбора семестра
+   - Предупреждение если у семестра нет дат
+   - AttendanceStatsCard: "X из Y" формат (attended / total_planned)
+   - SubjectsPage: поле planned_classes в форме
+   - 357 тестов проходят
+
+### Коммит
+- `754f3e4` — feat(attendance): rewrite attendance logic with semester filtering
+
+### Деплой
+- Миграция `1f580bc1b2b5` применена
+- Все 5 контейнеров healthy
+- https://studyhelper1.ru работает
 
 ## Следующие задачи (приоритет)
 1. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
@@ -29,8 +40,8 @@
 ```bash
 cd /opt/repos/studyhelper
 git pull origin main
-docker compose -f docker-compose.prod.yml build nginx
-docker compose -f docker-compose.prod.yml up -d nginx
+docker compose -f docker-compose.prod.yml build backend nginx
+docker compose -f docker-compose.prod.yml up -d backend nginx
 ```
 
 ## Блокеры / Вопросы
