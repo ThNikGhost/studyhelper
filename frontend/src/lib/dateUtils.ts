@@ -72,21 +72,20 @@ export function formatTime(timeStr: string): string {
 }
 
 /**
- * Format seconds into a human-readable Russian string.
+ * Format minutes into a human-readable Russian string.
  *
- * @param seconds - Number of seconds to format.
+ * @param minutes - Number of minutes to format.
  * @returns Formatted string like "менее минуты", "15 мин", "1 ч 30 мин".
  */
-export function formatTimeUntil(seconds: number): string {
-  if (seconds < 60) {
+export function formatTimeUntil(minutes: number): string {
+  if (minutes < 1) {
     return 'менее минуты'
   }
-  const minutes = Math.floor(seconds / 60)
   if (minutes < 60) {
-    return `${minutes} мин`
+    return `${Math.floor(minutes)} мин`
   }
   const hours = Math.floor(minutes / 60)
-  const remainingMinutes = minutes % 60
+  const remainingMinutes = Math.floor(minutes % 60)
   if (remainingMinutes === 0) {
     return `${hours} ч`
   }

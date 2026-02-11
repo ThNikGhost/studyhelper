@@ -148,25 +148,24 @@ describe('formatTime', () => {
 })
 
 describe('formatTimeUntil', () => {
-  it('returns "менее минуты" for less than 60 seconds', () => {
+  it('returns "менее минуты" for less than 1 minute', () => {
     expect(formatTimeUntil(0)).toBe('менее минуты')
-    expect(formatTimeUntil(30)).toBe('менее минуты')
-    expect(formatTimeUntil(59)).toBe('менее минуты')
+    expect(formatTimeUntil(0.5)).toBe('менее минуты')
   })
 
   it('returns minutes for less than 60 minutes', () => {
-    expect(formatTimeUntil(60)).toBe('1 мин')
-    expect(formatTimeUntil(300)).toBe('5 мин')
-    expect(formatTimeUntil(3540)).toBe('59 мин')
+    expect(formatTimeUntil(1)).toBe('1 мин')
+    expect(formatTimeUntil(5)).toBe('5 мин')
+    expect(formatTimeUntil(59)).toBe('59 мин')
   })
 
   it('returns hours only when minutes are zero', () => {
-    expect(formatTimeUntil(3600)).toBe('1 ч')
-    expect(formatTimeUntil(7200)).toBe('2 ч')
+    expect(formatTimeUntil(60)).toBe('1 ч')
+    expect(formatTimeUntil(120)).toBe('2 ч')
   })
 
   it('returns hours and minutes', () => {
-    expect(formatTimeUntil(5400)).toBe('1 ч 30 мин')
-    expect(formatTimeUntil(3660)).toBe('1 ч 1 мин')
+    expect(formatTimeUntil(90)).toBe('1 ч 30 мин')
+    expect(formatTimeUntil(61)).toBe('1 ч 1 мин')
   })
 })

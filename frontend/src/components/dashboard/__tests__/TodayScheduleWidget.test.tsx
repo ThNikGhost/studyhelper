@@ -82,7 +82,7 @@ describe('TodayScheduleWidget', () => {
     const currentLessonWithCurrent: CurrentLesson = {
       current: testScheduleEntries[1], // Матанализ
       next: testScheduleEntries[2],
-      time_until_next: 3600,
+      time_until_next: 60,
     }
     renderWidget({
       todaySchedule: testTodaySchedule,

@@ -116,7 +116,7 @@ export const testCurrentLesson: CurrentLesson = {
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
   },
-  time_until_next: 3600,
+  time_until_next: 60,
 }
 
 export const testSubjects: Subject[] = [

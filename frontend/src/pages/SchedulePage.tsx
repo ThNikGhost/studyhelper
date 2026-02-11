@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScheduleGrid } from '@/components/schedule/ScheduleGrid'
 import { PeTeacherSelect } from '@/components/schedule/PeTeacherSelect'
 import { LessonDetailModal } from '@/components/schedule/LessonDetailModal'
-import { formatDateLocal, getToday } from '@/lib/dateUtils'
+import { formatDateLocal, getToday, formatTimeUntil } from '@/lib/dateUtils'
 import { filterWeekSchedule, getPeTeachersFromWeek, getPePreferredTeacher } from '@/lib/peTeacherFilter'
 import { toast } from 'sonner'
 import scheduleService from '@/services/scheduleService'
@@ -301,8 +301,7 @@ export function SchedulePage() {
                   <div className="text-right">
                     <div className="text-xs text-muted-foreground">Через:</div>
                     <div className="font-medium">
-                      {Math.floor(currentLesson.time_until_next / 60)}ч{' '}
-                      {currentLesson.time_until_next % 60}мин
+                      {formatTimeUntil(currentLesson.time_until_next)}
                     </div>
                   </div>
                 )}

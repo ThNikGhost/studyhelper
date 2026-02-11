@@ -1,25 +1,20 @@
 # Текущая задача
 
 ## Статус
-**Завершена.** Code review scheduler + все исправления применены.
+**Завершена.** Bugfix: modal focus + PE teacher filter.
 
-## Последняя сессия: Scheduler Code Review Fixes — 2026-02-10
+## Последняя сессия: Modal Focus Fix + PE Teacher Filter — 2026-02-11
 
 ### Сделано
-- [x] Code review всех незакоммиченных изменений (schedule auto-sync)
-- [x] P1: Добавлен `jitter=60` в IntervalTrigger (разнос запусков между workers)
-- [x] P1: Redis auto-reconnect в `_get_redis()` (ping healthcheck + recreate)
-- [x] P2: `LockNotOwnedError` вместо bare `Exception` при release lock
-- [x] P2: `misfire_grace_time=3600` на scheduler job
-- [x] P2: `contextlib.suppress(Exception)` вместо try/except/pass (ruff SIM105)
-- [x] P3: `.gitignore` — добавлены `nul`, `backend/test_output.txt`
-- [x] P3: `.gitattributes` — `*.sh text eol=lf` для Docker совместимости
-- [x] 4 новых теста: lock expired, redis create/reuse/reconnect
-- [x] 348 тестов backend — все проходят
-- [x] Ruff lint + format — чисто
-
-### Не закоммичено
-Все изменения (schedule auto-sync + code review fixes) требуют коммита и пуша.
+- [x] Fix: Modal `useEffect` зависел от `[open, onClose]` → фокус крался при каждом ре-рендере. Исправлено: `onCloseRef` + зависимость только `[open]`
+- [x] Feat: PE teacher filter utility (`lib/peTeacherFilter.ts`) — `isPeEntry`, `filterPeEntries`, `filterDaySchedule`, `filterWeekSchedule`, localStorage persistence
+- [x] Feat: `PeTeacherSelect` dropdown component — выбор преподавателя физры
+- [x] Интеграция в `SchedulePage` (фильтрация weekSchedule, кнопка в header)
+- [x] Интеграция в `DashboardPage` (фильтрация todaySchedule для TodayScheduleWidget)
+- [x] TypeScript, ESLint — чисто
+- [x] 348 frontend тестов — все проходят (3 пропущены из-за Vitest OOM на Windows)
+- [x] Build — чисто
+- [x] Коммит `edbe5c3` запушен
 
 ## Следующие задачи (приоритет)
 1. **SSL (HTTPS)** — настроить Let's Encrypt (P0, требует доменное имя)
@@ -28,10 +23,10 @@
 4. **02-push-notifications** — push-уведомления (P1)
 
 ## Деплой на сервер
-После коммита — пересобрать и перезапустить контейнеры:
+Фронтенд-only изменения — пересобрать nginx:
 ```bash
-docker compose -f docker-compose.prod.yml build backend
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml build nginx
+docker compose -f docker-compose.prod.yml up -d nginx
 ```
 
 ## Блокеры / Вопросы
