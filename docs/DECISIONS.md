@@ -845,3 +845,9 @@ notification_settings — настройки уведомлений
 | 2026-02-11 | Upsert вместо 409 Conflict | Атомарная операция, проще autosave |
 | 2026-02-11 | Query по subject_name в модале | Заметка per-subject, не per-entry |
 | 2026-02-11 | .env симлинк на сервере | Docker Compose читает только .env |
+| 2026-02-11 | CASCADE → SET NULL для absences FK | Посещаемость сохраняется при ресинке расписания (subject_name+lesson_date для идентификации) |
+| 2026-02-11 | Убран StaticFiles mount /uploads | Файлы только через auth endpoint GET /api/v1/files/{id}/download |
+| 2026-02-11 | python-jose → PyJWT | python-jose deprecated (последний релиз 2021), PyJWT активно поддерживается |
+| 2026-02-11 | psycopg вместо psycopg2 в Alembic | psycopg2 ушёл как транзитивная зависимость aiopg, psycopg v3 уже установлен |
+| 2026-02-11 | Redis authentication в production | --requirepass + REDIS_PASSWORD env var |
+| 2026-02-11 | Пагинация limit/offset на list endpoints | files и notes: limit=50 default, max 200 |

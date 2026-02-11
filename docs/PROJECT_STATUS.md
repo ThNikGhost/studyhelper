@@ -2,7 +2,7 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-11
-- **Сессия**: Notes per-subject refactor + cache invalidation fix + deploy
+- **Сессия**: Code Review implementation (13 fixes) + deploy
 
 ## Общий прогресс
 **Фаза**: Production
@@ -296,6 +296,35 @@
 - [x] Fix: `.env` симлинк на сервере (docker compose не видел переменные при recreate)
 - [x] Деплой на сервер — миграция применена, все контейнеры healthy, CI зелёный
 
+### Code Review Implementation (ЗАВЕРШЕНА ✅) — 2026-02-11
+13 исправлений из code review плана (P0-P2), все задеплоены на сервер.
+
+#### P0 — Critical
+- [x] P0-1: CASCADE DELETE → SET NULL на absences FK + добавлены subject_name/lesson_date для идентификации без entry
+- [x] P0-1: lesson_notes FK тоже CASCADE → SET NULL
+- [x] P0-1: Alembic миграция f1a2b3c4d5e6 с backfill из schedule_entries
+- [x] P0-2: Убран StaticFiles mount `/uploads` (файлы только через auth endpoint)
+- [x] P0-2: Убран `/uploads/` location из nginx.conf
+- [x] P0-3: Content-Disposition header injection fix (urllib.parse.quote)
+- [x] P0-4: LIKE wildcard injection fix (escape `%`, `_`, `\`)
+
+#### P1 — High
+- [x] P1-1: AbortSignal передаётся в noteService.createNote/updateNote
+- [x] P1-2: schedule_group_id добавлен в Settings (убран getattr fallback)
+- [x] P1-3: Redis authentication в docker-compose.prod.yml (--requirepass)
+- [x] P1-4: Health endpoint проверяет DB (SELECT 1) и Redis (ping)
+
+#### P2 — Medium
+- [x] P2-1: DRY magic bytes ({**_IMAGE_SIGNATURES, ...})
+- [x] P2-2: Удалён неиспользуемый aiopg
+- [x] P2-3: python-jose → PyJWT (python-jose deprecated с 2021)
+- [x] P2-4: void peTeacher → явный параметр в filterWeekSchedule
+- [x] P2-5: Пагинация limit/offset на files и notes endpoints
+
+#### Hotfix при деплое
+- [x] alembic/env.py: psycopg2 → psycopg (psycopg2 ушёл с aiopg)
+- [x] REDIS_PASSWORD добавлен в .env на сервере
+
 ---
 
 ## Что в работе
@@ -322,7 +351,8 @@
 ### Деплой
 ✅ **Приложение задеплоено и работает**: http://89.110.93.63
 - Все контейнеры здоровы (db, redis, backend, nginx)
-- 14 миграций применены
+- 15 миграций применены (включая f1a2b3c4d5e6 attendance SET NULL)
+- Redis с аутентификацией (REDIS_PASSWORD)
 - Первый пользователь создан: admin@example.com
 - `.env` → `.env.production` симлинк (docker compose использует `.env` автоматически)
 
@@ -379,7 +409,7 @@ Nginx healthcheck использует `wget`, который может дол�
 - **API расписания**: `https://eservice.omsu.ru/schedule/backend/schedule/group/{group_id}`
 - **Frontend**: Vite + React 19 + TypeScript + Tailwind v4 + Zustand + React Query
 - **Календарь**: react-day-picker v9 + @radix-ui/react-popover
-- **Security**: rate limiting (slowapi), security headers, magic bytes validation, streaming uploads, path traversal protection
+- **Security**: rate limiting (slowapi), security headers, magic bytes validation, streaming uploads, path traversal protection, LIKE wildcard escape, Content-Disposition URL-encoding, no public StaticFiles mount, Redis auth
 - **Frontend infrastructure**: ErrorBoundary, shared Modal (accessible), sonner toasts, AbortController signals, token refresh mutex
 - **Frontend тесты**: Vitest + @testing-library/react + MSW для моков API
 - **PWA**: vite-plugin-pwa (generateSW), registerType: prompt, NetworkFirst для API, offline.html fallback
@@ -404,7 +434,7 @@ Nginx healthcheck использует `wget`, который может дол�
 | Покрытие тестами | ~80% |
 | API endpoints | ~65 |
 | Моделей | 15 |
-| Миграций | 14 |
+| Миграций | 15 |
 | Линтер backend | ✅ Ruff проходит |
 | Линтер frontend | ✅ ESLint проходит (shadcn/ui исключён из линтинга) |
 | Frontend тесты | ✅ Vitest проходит (348 тестов) |
