@@ -53,7 +53,12 @@ async def mark_absent(
     if existing.scalar_one_or_none() is not None:
         raise ValueError("Already marked as absent")
 
-    absence = Absence(user_id=user_id, schedule_entry_id=schedule_entry_id)
+    absence = Absence(
+        user_id=user_id,
+        schedule_entry_id=schedule_entry_id,
+        subject_name=entry.subject_name,
+        lesson_date=entry.lesson_date,
+    )
     db.add(absence)
     await db.flush()
     await db.commit()

@@ -31,7 +31,7 @@ class LessonNote(Base, TimestampMixin):
     )
     schedule_entry_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("schedule_entries.id", ondelete="CASCADE"),
+        ForeignKey("schedule_entries.id", ondelete="SET NULL"),
         nullable=True,
     )
     subject_name: Mapped[str] = mapped_column(String(200), nullable=False)

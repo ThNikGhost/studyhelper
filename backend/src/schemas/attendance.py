@@ -1,6 +1,6 @@
 """Pydantic schemas for attendance (absences)."""
 
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -18,7 +18,9 @@ class AbsenceResponse(BaseModel):
 
     id: int
     user_id: int
-    schedule_entry_id: int
+    schedule_entry_id: int | None
+    subject_name: str
+    lesson_date: date | None = None
     created_at: datetime
 
 
