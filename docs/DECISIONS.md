@@ -707,6 +707,37 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 21. Vitest Windows workaround (2026-02-11)
+
+### Claude Code test-runner agent вместо fix Vitest
+
+**Решение:** Создать Claude Code агент `.claude/agents/test-runner.md` для запуска тестов с автоматическим kill зависшего процесса.
+
+**Обоснование:**
+- Vitest 4.0.18 имеет memory leak (GitHub issue #9560) — OOM при cleanup на Windows
+- jsdom/MSW удерживают сокеты — процесс не завершается после тестов
+- `--forceExit` не существует в Vitest (в отличие от Jest)
+- Downgrade до 4.0.4 убирает OOM, но процесс всё равно зависает
+- Агент запускает `vitest run` в фоне, парсит stdout на строку ` Test Files `, затем убивает процесс через TaskStop
+- Прагматичный workaround — тесты проходят корректно, проблема только в cleanup
+
+**Альтернативы рассмотренные:**
+- `poolOptions.forks.singleFork: true` — deprecated в Vitest 4
+- `forks.execArgv: ['--max-old-space-size=8192']` — не помогло
+- Downgrade Vitest — зависание остаётся
+- Custom Node.js script с taskkill — слишком хрупко
+
+### formatTimeUntil: минуты вместо секунд
+
+**Решение:** `formatTimeUntil()` принимает минуты, не секунды.
+
+**Обоснование:**
+- Backend `GET /schedule/today` возвращает `time_until_next` в минутах (`int(diff.total_seconds() // 60)`)
+- Функция изначально была написана для секунд, что давало некорректное отображение
+- Дополнительно SchedulePage вручную делил `time_until_next / 60` — двойная ошибка, показывало часы вместо минут
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -767,3 +798,5 @@ notification_settings — настройки уведомлений
 | 2026-02-10 | misfire_grace_time=3600 | Пропущенный job выполнится в течение часа |
 | 2026-02-10 | Redis ping healthcheck | Мёртвый клиент пересоздаётся автоматически |
 | 2026-02-10 | .gitattributes *.sh eol=lf | entrypoint.sh с CRLF не запустится в Docker |
+| 2026-02-11 | test-runner agent вместо fix Vitest | OOM + hang на Windows, агент парсит вывод и убивает процесс |
+| 2026-02-11 | formatTimeUntil принимает минуты | Backend отдаёт time_until_next в минутах |

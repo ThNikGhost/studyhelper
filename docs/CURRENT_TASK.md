@@ -1,20 +1,19 @@
 # Текущая задача
 
 ## Статус
-**Завершена.** Bugfix: modal focus + PE teacher filter.
+**Завершена.** Bugfixes (modal focus, PE filter, formatTimeUntil) + test-runner agent.
 
-## Последняя сессия: Modal Focus Fix + PE Teacher Filter — 2026-02-11
+## Последняя сессия: Bugfixes + DX — 2026-02-11
 
 ### Сделано
-- [x] Fix: Modal `useEffect` зависел от `[open, onClose]` → фокус крался при каждом ре-рендере. Исправлено: `onCloseRef` + зависимость только `[open]`
-- [x] Feat: PE teacher filter utility (`lib/peTeacherFilter.ts`) — `isPeEntry`, `filterPeEntries`, `filterDaySchedule`, `filterWeekSchedule`, localStorage persistence
-- [x] Feat: `PeTeacherSelect` dropdown component — выбор преподавателя физры
-- [x] Интеграция в `SchedulePage` (фильтрация weekSchedule, кнопка в header)
-- [x] Интеграция в `DashboardPage` (фильтрация todaySchedule для TodayScheduleWidget)
-- [x] TypeScript, ESLint — чисто
-- [x] 348 frontend тестов — все проходят (3 пропущены из-за Vitest OOM на Windows)
-- [x] Build — чисто
-- [x] Коммит `edbe5c3` запушен
+- [x] Fix: Modal `useEffect` — фокус крался при ре-рендере. Исправлено: `onCloseRef` + зависимость только `[open]`
+- [x] Feat: PE teacher filter (`lib/peTeacherFilter.ts`) — `isPeEntry`, `filterPeEntries`, localStorage, `PeTeacherSelect`
+- [x] Fix: `formatTimeUntil` принимал секунды, backend отдаёт минуты — обновлены тесты, моки, SchedulePage
+- [x] Fix: SchedulePage вручную делил `time_until_next / 60` — заменено на `formatTimeUntil()`
+- [x] DX: `.claude/agents/test-runner.md` — агент для запуска тестов (Vitest на Windows зависает)
+- [x] Деплой на сервер — nginx пересобран
+- [x] 348 frontend тестов проходят (3 OOM при cleanup)
+- [x] TypeScript, ESLint, build — чисто
 
 ## Следующие задачи (приоритет)
 1. **SSL (HTTPS)** — настроить Let's Encrypt (P0, требует доменное имя)
