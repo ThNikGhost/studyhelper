@@ -2,11 +2,11 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-11
-- **Сессия**: Remove user limit (open registration)
+- **Сессия**: SSL (HTTPS) setup + deploy
 
 ## Общий прогресс
 **Фаза**: Production
-**Прогресс**: MVP 100% завершён. Все post-MVP фичи реализованы. Production Docker config создан и задеплоен на сервер 89.110.93.63. Приложение работает и доступно.
+**Прогресс**: MVP 100% завершён. Все post-MVP фичи реализованы. Production задеплоен с SSL на https://studyhelper1.ru. Certbot auto-renewal настроен.
 
 ---
 
@@ -334,36 +334,38 @@
 - [x] Удалён комментарий про 2 пользователей из RegisterPage
 - [x] Обновлена документация (CLAUDE.md, project_status.md, fastapi.md)
 
+### SSL (HTTPS) (ЗАВЕРШЕНА ✅) — 2026-02-11
+- [x] `nginx/nginx.conf` — 3 server-блока: HTTP (ACME challenge + 301 redirect), HTTPS www (301 redirect), HTTPS main (приложение)
+- [x] `nginx/nginx.conf` — SSL directives, `http2 on`, HSTS (`max-age=31536000; includeSubDomains`)
+- [x] `nginx/nginx.conf` — security headers продублированы в nested locations (nginx add_header inheritance fix)
+- [x] `nginx/Dockerfile` — `EXPOSE 443`, healthcheck с HTTPS fallback
+- [x] `docker-compose.prod.yml` — порт 443, certbot сервис (auto-renewal каждые 12ч), volumes `certbot_certs`/`certbot_webroot`
+- [x] `.env.production.example` — `DOMAIN`, `CERTBOT_EMAIL`, `HTTPS_PORT`, `REDIS_PASSWORD`
+- [x] `scripts/init-letsencrypt.sh` — bootstrap скрипт (DNS check → TLS params → self-signed → nginx start → real cert → reload)
+- [x] Let's Encrypt сертификат получен (expires 2026-05-12)
+- [x] Деплой на сервер — 5 контейнеров (db, redis, backend, nginx, certbot), все работают
+
 ---
 
 ## Что в работе
 
-SSL (HTTPS) — настройка Let's Encrypt (параллельный агент).
+Нет активных задач.
 
 ### Следующие задачи (приоритет):
-1. ~~**01-PWA** — manifest, service worker, оффлайн (P0)~~ ✅
-2. ~~**04-dashboard-widget** — виджеты Dashboard (P1)~~ ✅
-3. ~~**06-clickable-schedule** — кликабельные элементы расписания (P1)~~ ✅
-4. ~~**07-progress-bars** — прогресс-бары по предметам (P2)~~ ✅
-5. ~~**03-file-upload-ui** — UI загрузки файлов (P1)~~ ✅
-6. ~~**08-attendance** — посещаемость (P2)~~ ✅
-7. ~~**10-lesson-notes** — заметки к парам (P2)~~ ✅
-8. ~~**11-semester-timeline** — timeline семестра (P3)~~ ✅
-9. ~~**09-dark-theme** — тёмная тема (P2)~~ ✅
-10. ~~**Production deployment**~~ ✅
-11. ~~**Автосинхронизация расписания** — APScheduler + Redis lock каждые 6 часов (P0)~~ ✅
-12. **SSL (HTTPS)** — Let's Encrypt (P0, требует доменное имя)
-13. **Бэкапы PostgreSQL** — cron + pg_dump (P0)
-14. **05-ics-export** — экспорт в .ics (P2)
-15. **02-push-notifications** — push-уведомления (P1, зависит от PWA ✅)
+1. ~~**SSL (HTTPS)** — Let's Encrypt (P0)~~ ✅
+2. **Бэкапы PostgreSQL** — cron + pg_dump (P0)
+3. **05-ics-export** — экспорт в .ics (P2)
+4. **02-push-notifications** — push-уведомления (P1, зависит от PWA ✅)
 
 ### Деплой
-✅ **Приложение задеплоено и работает**: http://89.110.93.63
-- Все контейнеры здоровы (db, redis, backend, nginx)
-- 15 миграций применены (включая f1a2b3c4d5e6 attendance SET NULL)
+✅ **Приложение задеплоено и работает**: https://studyhelper1.ru
+- Домен: `studyhelper1.ru` (DNS A → 89.110.93.63)
+- SSL: Let's Encrypt, auto-renewal certbot (каждые 12ч)
+- HTTP → HTTPS redirect, www → apex redirect
+- HSTS, CSP, X-Frame-Options, X-Content-Type-Options
+- 5 контейнеров: db, redis, backend, nginx, certbot
+- 15 миграций применены
 - Redis с аутентификацией (REDIS_PASSWORD)
-- Первый пользователь создан: admin@example.com
-- `.env` → `.env.production` симлинк (docker compose использует `.env` автоматически)
 
 ---
 
@@ -431,6 +433,7 @@ Nginx healthcheck использует `wget`, который может дол�
 - **Dark theme**: ThemeMode (light/dark/system), FOUC prevention (inline script), cycling toggle (Sun/Moon/Monitor), localStorage persistence, .dark CSS class, theme-color meta update, dark: variants для hardcoded цветов
 - **Production Docker**: multi-stage builds (uv для backend, node для frontend), nginx reverse proxy, rate limiting (nginx + slowapi), --proxy-headers для корректного client IP, memory limits ~1.3GB total, PostgreSQL tuning (shared_buffers=256MB), Redis LRU (128mb)
 - **Schedule auto-sync**: APScheduler 3.x AsyncIOScheduler в lifespan FastAPI, IntervalTrigger(hours=6, jitter=60), misfire_grace_time=3600, Redis distributed lock (non-blocking, TTL 600s, LockNotOwnedError handling), Redis auto-reconnect (ping healthcheck), initial sync в entrypoint.sh (если snapshot нет), configurable via SCHEDULE_SYNC_ENABLED/SCHEDULE_UPDATE_INTERVAL_HOURS
+- **SSL/TLS**: Let's Encrypt certbot (webroot mode), auto-renewal каждые 12ч, nginx 3 server-блока (HTTP redirect + HTTPS www redirect + HTTPS main), http2, HSTS, bootstrap скрипт `scripts/init-letsencrypt.sh` (self-signed → real cert)
 
 ---
 

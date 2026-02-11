@@ -1,31 +1,30 @@
 # Текущая задача
 
 ## Статус
-**Завершена.** Снятие ограничения на 2 пользователей.
+**Завершена.** SSL (HTTPS) настроен и задеплоен.
 
-## Последняя сессия: Remove user limit — 2026-02-11
+## Последняя сессия: SSL (HTTPS) — 2026-02-11
 
 ### Сделано
-- [x] Удалена константа MAX_USERS=2 и проверка лимита в register_user()
-- [x] Удалён класс UserLimitException
-- [x] Удалён тест test_register_max_users_limit
-- [x] Обновлены docstrings (убраны упоминания "2 users")
-- [x] Удалён комментарий про 2 пользователей из RegisterPage
-- [x] Обновлена документация (CLAUDE.md, project_status.md, fastapi.md)
-- [x] Backend тесты: 15 passed (auth)
-- [x] Frontend build: успешно
+- [x] nginx/nginx.conf — 3 server-блока (HTTP redirect, HTTPS www redirect, HTTPS main)
+- [x] nginx/nginx.conf — SSL, http2, HSTS, security headers в nested locations
+- [x] nginx/Dockerfile — EXPOSE 443, HTTPS healthcheck
+- [x] docker-compose.prod.yml — порт 443, certbot сервис, certbot volumes
+- [x] .env.production.example — DOMAIN, CERTBOT_EMAIL, HTTPS_PORT, REDIS_PASSWORD
+- [x] scripts/init-letsencrypt.sh — bootstrap скрипт (self-signed → real cert)
+- [x] Деплой: сертификат получен (expires 2026-05-12), 5 контейнеров работают
+- [x] Верификация: HTTPS 200, HTTP 301, www 301, HSTS, CSP, health OK
 
 ## Следующие задачи (приоритет)
-1. **SSL (HTTPS)** — настроить Let's Encrypt (P0) — в работе параллельно
-2. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
-3. **05-ics-export** — экспорт расписания в .ics (P2)
-4. **02-push-notifications** — push-уведомления (P1)
+1. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
+2. **05-ics-export** — экспорт расписания в .ics (P2)
+3. **02-push-notifications** — push-уведомления (P1)
 
 ## Деплой на сервер
 ```bash
 cd /opt/repos/studyhelper
 git pull origin main
-docker compose -f docker-compose.prod.yml build backend nginx
+docker compose -f docker-compose.prod.yml build nginx
 docker compose -f docker-compose.prod.yml up -d
 ```
 
