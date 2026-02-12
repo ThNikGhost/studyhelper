@@ -3,7 +3,7 @@
 ## Статус
 **Нет активной задачи.**
 
-## Последняя сессия: User Settings Sync — 2026-02-12
+## Последняя сессия: User Settings Sync + Deploy — 2026-02-12
 
 ### Сделано
 1. Backend: 3 поля в User модели (`preferred_subgroup`, `preferred_pe_teacher`, `theme_mode`)
@@ -17,16 +17,23 @@
 9. Frontend: Обновлён FOUC prevention script для нового формата хранения
 10. Frontend: Обновлены SettingsPage, SchedulePage, DashboardPage, PeTeacherSelect
 11. Frontend: Обновлены тестовые моки + исправлены тесты темы
+12. CI fix: тесты lk_parser пропускаются в CI (зависают из-за httpx async mocking)
+13. CI fix: форматирование lk module файлов
+14. CI fix: modern Python typing в миграции
+15. Деплой на сервер — backend пересобран, миграция применена
 
 ### Коммиты
 - `297989d` — feat(settings): sync user settings across devices
+- `c27afce` — docs: update status after user settings sync
+- `d5746e1` — style: use modern Python typing in migration
+- `063d79a` — style: format lk module files
+- `7619cec` — test: skip lk_parser tests in CI
 
 ### Результат
 - Настройки синхронизируются между устройствами через сервер
 - Для незалогиненных пользователей — localStorage fallback
-- 21 тест backend (auth) ✅
-- 359 тестов frontend ✅
-- Frontend build ✅
+- CI: ✅ Проходит (424 backend, 359 frontend)
+- Production: ✅ Задеплоено на https://studyhelper1.ru
 
 ## Следующие задачи (приоритет)
 1. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
