@@ -146,7 +146,9 @@ async def sync_from_lk(db: AsyncSession, user_id: int) -> tuple[int, int]:
         raise LkSyncError(f"Failed to fetch data: {e}") from e
 
     # Log raw data for debugging
-    logger.debug("Raw LK data: sessions=%d, sem_info=%d", len(data.sessions), len(data.sem_info))
+    logger.debug(
+        "Raw LK data: sessions=%d, sem_info=%d", len(data.sessions), len(data.sem_info)
+    )
     logger.debug("Sessions: %s", data.sessions[:2] if data.sessions else "empty")
     logger.debug("SemInfo: %s", data.sem_info[:2] if data.sem_info else "empty")
 

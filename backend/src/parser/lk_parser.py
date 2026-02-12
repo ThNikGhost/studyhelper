@@ -277,8 +277,11 @@ class LkParser:
                 raise LkDataError(f"Invalid JSON response: {e}") from e
 
             logger.info("Student data fetched successfully")
-            logger.debug("Response type: %s, keys: %s", type(data).__name__,
-                        list(data.keys()) if isinstance(data, dict) else f"list[{len(data)}]")
+            logger.debug(
+                "Response type: %s, keys: %s",
+                type(data).__name__,
+                list(data.keys()) if isinstance(data, dict) else f"list[{len(data)}]",
+            )
 
             # API returns a list with one student object
             if isinstance(data, list):
@@ -287,7 +290,12 @@ class LkParser:
                     return LkStudentData()
                 # Take first student from the list
                 student = data[0]
-                logger.debug("Extracted student data, keys: %s", list(student.keys()) if isinstance(student, dict) else type(student).__name__)
+                logger.debug(
+                    "Extracted student data, keys: %s",
+                    list(student.keys())
+                    if isinstance(student, dict)
+                    else type(student).__name__,
+                )
             else:
                 student = data
 

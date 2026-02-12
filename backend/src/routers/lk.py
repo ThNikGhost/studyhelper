@@ -94,11 +94,18 @@ async def sync_from_lk(
         502: If LK sync fails.
     """
     import logging
+
     logger = logging.getLogger(__name__)
     try:
         logger.info("Starting LK sync for user %d", current_user.id)
-        grades_count, disciplines_count = await lk_service.sync_from_lk(db, current_user.id)
-        logger.info("LK sync completed: %d grades, %d disciplines", grades_count, disciplines_count)
+        grades_count, disciplines_count = await lk_service.sync_from_lk(
+            db, current_user.id
+        )
+        logger.info(
+            "LK sync completed: %d grades, %d disciplines",
+            grades_count,
+            disciplines_count,
+        )
         creds = await lk_service.get_credentials(db, current_user.id)
         return LkSyncResponse(
             grades_synced=grades_count,
