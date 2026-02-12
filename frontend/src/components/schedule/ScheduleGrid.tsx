@@ -65,12 +65,18 @@ export function ScheduleGrid({
     <div className="overflow-x-auto">
       <div className="min-w-[700px]">
         {/* Grid container - narrow time column, equal day columns */}
-        <div className="grid rounded-lg overflow-hidden" style={{ gridTemplateColumns: '50px repeat(7, 1fr)' }}>
+        <div
+          className="grid rounded-lg overflow-hidden"
+          style={{ gridTemplateColumns: '50px repeat(7, 1fr)' }}
+          role="grid"
+          aria-label="Расписание на неделю"
+        >
           {/* Header row - time column + days */}
-          <div className="bg-muted p-1"></div>
+          <div className="bg-muted p-1" role="columnheader" aria-label="Время"></div>
           {weekSchedule.days.map((day) => (
             <div
               key={day.date}
+              role="columnheader"
               className={cn(
                 'bg-muted p-2 text-center',
                 isToday(day.date) && 'bg-primary/10'
@@ -87,9 +93,9 @@ export function ScheduleGrid({
 
           {/* Time slots rows */}
           {TIME_SLOTS.map((slot) => (
-            <div key={`row-${slot.pair}`} className="contents">
+            <div key={`row-${slot.pair}`} className="contents" role="row">
               {/* Time column */}
-              <div className="bg-muted p-1 text-center">
+              <div className="bg-muted p-1 text-center" role="rowheader">
                 <div className="font-semibold text-sm">{slot.pair}</div>
                 <div className="text-muted-foreground text-xs">
                   {slot.start}
@@ -125,6 +131,12 @@ export function ScheduleGrid({
                 return (
                   <div
                     key={`${day.date}-${slot.pair}`}
+                    role="gridcell"
+                    aria-label={
+                      entry
+                        ? `${entry.subject_name}, ${lessonTypeLabels[entry.lesson_type]}`
+                        : 'Нет занятий'
+                    }
                     className={cn(
                       'bg-background p-0.5 min-h-[60px] relative',
                       isTodayCell && 'bg-primary/5'

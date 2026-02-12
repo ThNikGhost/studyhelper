@@ -1,21 +1,27 @@
+import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AppLayout } from '@/components/AppLayout'
+import { PageSkeleton } from '@/components/PageSkeleton'
+
+// Eager-load auth pages (needed immediately)
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
-import DashboardPage from '@/pages/DashboardPage'
-import SchedulePage from '@/pages/SchedulePage'
-import SubjectsPage from '@/pages/SubjectsPage'
-import SemestersPage from '@/pages/SemestersPage'
-import WorksPage from '@/pages/WorksPage'
-import ClassmatesPage from '@/pages/ClassmatesPage'
-import FilesPage from '@/pages/FilesPage'
-import AttendancePage from '@/pages/AttendancePage'
-import NotesPage from '@/pages/NotesPage'
-import TimelinePage from '@/pages/TimelinePage'
-import SettingsPage from '@/pages/SettingsPage'
-import GradesPage from '@/pages/GradesPage'
+
+// Lazy-load all other pages for better initial bundle size
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
+const SchedulePage = lazy(() => import('@/pages/SchedulePage'))
+const SubjectsPage = lazy(() => import('@/pages/SubjectsPage'))
+const SemestersPage = lazy(() => import('@/pages/SemestersPage'))
+const WorksPage = lazy(() => import('@/pages/WorksPage'))
+const ClassmatesPage = lazy(() => import('@/pages/ClassmatesPage'))
+const FilesPage = lazy(() => import('@/pages/FilesPage'))
+const AttendancePage = lazy(() => import('@/pages/AttendancePage'))
+const NotesPage = lazy(() => import('@/pages/NotesPage'))
+const TimelinePage = lazy(() => import('@/pages/TimelinePage'))
+const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
+const GradesPage = lazy(() => import('@/pages/GradesPage'))
 
 function App() {
   const { isAuthenticated } = useAuthStore()
@@ -39,7 +45,9 @@ function App() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <DashboardPage />
+              <Suspense fallback={<PageSkeleton />}>
+                <DashboardPage />
+              </Suspense>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -50,7 +58,9 @@ function App() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <SchedulePage />
+              <Suspense fallback={<PageSkeleton />}>
+                <SchedulePage />
+              </Suspense>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -61,7 +71,9 @@ function App() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <SubjectsPage />
+              <Suspense fallback={<PageSkeleton />}>
+                <SubjectsPage />
+              </Suspense>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -71,7 +83,9 @@ function App() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <SemestersPage />
+              <Suspense fallback={<PageSkeleton />}>
+                <SemestersPage />
+              </Suspense>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -81,7 +95,9 @@ function App() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <WorksPage />
+              <Suspense fallback={<PageSkeleton />}>
+                <WorksPage />
+              </Suspense>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -91,7 +107,9 @@ function App() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <ClassmatesPage />
+              <Suspense fallback={<PageSkeleton />}>
+                <ClassmatesPage />
+              </Suspense>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -101,7 +119,9 @@ function App() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <FilesPage />
+              <Suspense fallback={<PageSkeleton />}>
+                <FilesPage />
+              </Suspense>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -111,7 +131,9 @@ function App() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <AttendancePage />
+              <Suspense fallback={<PageSkeleton />}>
+                <AttendancePage />
+              </Suspense>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -121,7 +143,9 @@ function App() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <NotesPage />
+              <Suspense fallback={<PageSkeleton />}>
+                <NotesPage />
+              </Suspense>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -131,7 +155,9 @@ function App() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <TimelinePage />
+              <Suspense fallback={<PageSkeleton />}>
+                <TimelinePage />
+              </Suspense>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -141,7 +167,9 @@ function App() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <SettingsPage />
+              <Suspense fallback={<PageSkeleton />}>
+                <SettingsPage />
+              </Suspense>
             </AppLayout>
           </ProtectedRoute>
         }
@@ -151,7 +179,9 @@ function App() {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <GradesPage />
+              <Suspense fallback={<PageSkeleton />}>
+                <GradesPage />
+              </Suspense>
             </AppLayout>
           </ProtectedRoute>
         }

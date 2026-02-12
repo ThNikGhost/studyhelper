@@ -23,6 +23,7 @@ from typing import Any
 import httpx
 
 from src.parser.lk_exceptions import LkAuthError, LkDataError, LkSessionExpired
+from src.parser.retry import RetryConfig, retry_async
 
 logger = logging.getLogger(__name__)
 
@@ -242,6 +243,8 @@ class LkParser:
     async def fetch_student_data(self) -> LkStudentData:
         """Fetch student data from /sinfo/backend/myStudents.
 
+        Uses retry logic for transient network failures.
+
         Returns:
             LkStudentData with sessions, sem_info, and summary.
 
@@ -250,10 +253,14 @@ class LkParser:
             LkDataError: If data format is unexpected.
         """
         client = self._get_client()
+        retry_config = RetryConfig(max_attempts=3, base_delay=1.0, max_delay=10.0)
+
+        async def _do_fetch() -> httpx.Response:
+            return await client.get(f"{self.BASE_URL}/sinfo/backend/myStudents")
 
         try:
             logger.debug("Fetching student data from myStudents endpoint")
-            resp = await client.get(f"{self.BASE_URL}/sinfo/backend/myStudents")
+            resp = await retry_async(_do_fetch, config=retry_config)
 
             # Follow redirects if any
             if resp.is_redirect:

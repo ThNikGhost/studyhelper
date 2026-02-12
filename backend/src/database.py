@@ -31,10 +31,17 @@ def get_session_maker():
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Dependency for getting async database session."""
+    """Dependency for getting async database session.
+
+    Automatically rolls back the transaction if an exception occurs,
+    ensuring no partial data is committed to the database.
+    """
     session_maker = get_session_maker()
     async with session_maker() as session:
         try:
             yield session
+        except Exception:
+            await session.rollback()
+            raise
         finally:
             await session.close()

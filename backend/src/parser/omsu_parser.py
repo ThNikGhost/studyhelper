@@ -13,6 +13,7 @@ from src.config import settings
 from src.parser.data_mapper import DataMapper
 from src.parser.exceptions import DataExtractionError, PageLoadError
 from src.parser.hash_utils import compute_schedule_hash
+from src.parser.retry import RetryConfig, retry_async
 from src.schemas.schedule import ScheduleEntryCreate
 
 logger = logging.getLogger(__name__)
@@ -173,7 +174,9 @@ class OmsuScheduleParser:
         return result
 
     async def _fetch_json(self, url: str) -> dict[str, Any]:
-        """Fetch JSON from API URL.
+        """Fetch JSON from API URL with retry logic.
+
+        Uses exponential backoff for transient failures (timeout, 502, 503, 504).
 
         Args:
             url: API URL to fetch.
@@ -182,7 +185,7 @@ class OmsuScheduleParser:
             Parsed JSON response.
 
         Raises:
-            PageLoadError: If request fails.
+            PageLoadError: If request fails after all retries.
         """
         # Use existing client or create temporary one
         client = self._client
@@ -192,10 +195,15 @@ class OmsuScheduleParser:
             client = httpx.AsyncClient(timeout=self.timeout)
             should_close = True
 
-        try:
+        retry_config = RetryConfig(max_attempts=3, base_delay=1.0, max_delay=10.0)
+
+        async def _do_fetch() -> dict[str, Any]:
             response = await client.get(url)
             response.raise_for_status()
             return response.json()
+
+        try:
+            return await retry_async(_do_fetch, config=retry_config)
         except httpx.HTTPStatusError as e:
             raise PageLoadError(
                 f"API returned status {e.response.status_code}: {e.response.text}"

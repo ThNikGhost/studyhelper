@@ -30,6 +30,7 @@ export default function DashboardPage() {
     await logout()
   }
 
+  // Schedule data - refreshes frequently
   const {
     data: todaySchedule,
     isLoading: todayLoading,
@@ -37,7 +38,7 @@ export default function DashboardPage() {
   } = useQuery({
     queryKey: ['schedule', 'today'],
     queryFn: ({ signal }) => scheduleService.getTodaySchedule(undefined, signal),
-    staleTime: 60000,
+    staleTime: 60 * 1000, // 1 min
   })
 
   const {
@@ -46,28 +47,20 @@ export default function DashboardPage() {
   } = useQuery({
     queryKey: ['currentLesson'],
     queryFn: ({ signal }) => scheduleService.getCurrentLesson(signal),
-    refetchInterval: 60000,
-    staleTime: 30000,
+    refetchInterval: 60 * 1000, // 1 min
+    staleTime: 30 * 1000, // 30 sec
   })
 
+  // Works data - moderate refresh
   const {
     data: upcomingWorks,
-    isLoading: worksLoading,
-    isError: worksError,
+    isLoading: upcomingWorksLoading,
+    isError: upcomingWorksError,
   } = useQuery({
     queryKey: ['upcomingWorks'],
     queryFn: ({ signal }) => workService.getUpcomingWorks(10, signal),
-    staleTime: 60000,
-  })
-
-  const {
-    data: subjects = [],
-    isLoading: subjectsLoading,
-    isError: subjectsError,
-  } = useQuery({
-    queryKey: ['subjects'],
-    queryFn: ({ signal }) => subjectService.getSubjects(undefined, signal),
-    staleTime: 60000,
+    staleTime: 2 * 60 * 1000, // 2 min
+    gcTime: 10 * 60 * 1000, // 10 min cache
   })
 
   const {
@@ -77,7 +70,20 @@ export default function DashboardPage() {
   } = useQuery({
     queryKey: ['works'],
     queryFn: ({ signal }) => workService.getWorks(undefined, signal),
-    staleTime: 60000,
+    staleTime: 2 * 60 * 1000, // 2 min
+    gcTime: 10 * 60 * 1000, // 10 min cache
+  })
+
+  // Reference data - rarely changes, longer cache
+  const {
+    data: subjects = [],
+    isLoading: subjectsLoading,
+    isError: subjectsError,
+  } = useQuery({
+    queryKey: ['subjects'],
+    queryFn: ({ signal }) => subjectService.getSubjects(undefined, signal),
+    staleTime: 5 * 60 * 1000, // 5 min
+    gcTime: 30 * 60 * 1000, // 30 min cache
   })
 
   const {
@@ -87,7 +93,8 @@ export default function DashboardPage() {
   } = useQuery<Semester | null>({
     queryKey: ['semesters', 'current'],
     queryFn: ({ signal }) => subjectService.getCurrentSemester(signal),
-    staleTime: 60000,
+    staleTime: 10 * 60 * 1000, // 10 min - semester rarely changes
+    gcTime: 60 * 60 * 1000, // 1 hour cache
   })
 
   const {
@@ -98,7 +105,8 @@ export default function DashboardPage() {
     queryKey: ['timeline', currentSemester?.id],
     queryFn: ({ signal }) => subjectService.getSemesterTimeline(currentSemester!.id, signal),
     enabled: !!currentSemester?.start_date && !!currentSemester?.end_date,
-    staleTime: 60000,
+    staleTime: 5 * 60 * 1000, // 5 min
+    gcTime: 30 * 60 * 1000, // 30 min cache
   })
 
   const filteredTodaySchedule = useMemo(() => {
@@ -149,8 +157,8 @@ export default function DashboardPage() {
           />
           <DeadlinesWidget
             data={upcomingWorks}
-            isLoading={worksLoading}
-            isError={worksError}
+            isLoading={upcomingWorksLoading}
+            isError={upcomingWorksError}
           />
           <SemesterProgressWidget
             progress={semesterProgress}
