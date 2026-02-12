@@ -167,3 +167,119 @@ class TestLogout:
         response = await client.post("/api/v1/auth/logout")
 
         assert response.status_code == 401
+
+
+class TestSettings:
+    """Tests for PATCH /api/v1/auth/me/settings."""
+
+    async def test_update_settings_success(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Test updating all settings at once."""
+        response = await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={
+                "preferred_subgroup": 1,
+                "preferred_pe_teacher": "Иванов И.И.",
+                "theme_mode": "dark",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["preferred_subgroup"] == 1
+        assert data["preferred_pe_teacher"] == "Иванов И.И."
+        assert data["theme_mode"] == "dark"
+
+    async def test_update_settings_partial(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Test updating only some settings (partial update)."""
+        # First, set all settings
+        await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={
+                "preferred_subgroup": 1,
+                "preferred_pe_teacher": "Иванов И.И.",
+                "theme_mode": "dark",
+            },
+        )
+
+        # Now update only subgroup
+        response = await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"preferred_subgroup": 2},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        # Updated field
+        assert data["preferred_subgroup"] == 2
+        # Other fields unchanged
+        assert data["preferred_pe_teacher"] == "Иванов И.И."
+        assert data["theme_mode"] == "dark"
+
+    async def test_update_settings_null_values(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Test clearing settings by setting them to null."""
+        # Set a value first
+        await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"preferred_subgroup": 1},
+        )
+
+        # Clear it
+        response = await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"preferred_subgroup": None},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["preferred_subgroup"] is None
+
+    async def test_update_settings_unauthorized(self, client: AsyncClient):
+        """Test updating settings without auth fails."""
+        response = await client.patch(
+            "/api/v1/auth/me/settings",
+            json={"preferred_subgroup": 1},
+        )
+
+        assert response.status_code == 401
+
+    async def test_update_settings_invalid_theme_mode(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Test invalid theme_mode value is rejected."""
+        response = await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"theme_mode": "invalid"},
+        )
+
+        assert response.status_code == 422
+
+    async def test_settings_in_user_response(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Test that settings are included in /me response."""
+        # Set some settings
+        await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"preferred_subgroup": 2, "theme_mode": "light"},
+        )
+
+        # Get user info
+        response = await client.get("/api/v1/auth/me", headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["preferred_subgroup"] == 2
+        assert data["theme_mode"] == "light"
+        assert "preferred_pe_teacher" in data

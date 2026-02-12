@@ -14,6 +14,9 @@ export const testUser: User = {
   email: 'test@example.com',
   name: 'Test User',
   avatar_url: null,
+  preferred_subgroup: null,
+  preferred_pe_teacher: null,
+  theme_mode: null,
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
 }
@@ -579,6 +582,20 @@ export const handlers = [
 
   http.get('/api/v1/auth/me', () => {
     return HttpResponse.json(testUser)
+  }),
+
+  http.patch('/api/v1/auth/me/settings', async ({ request }) => {
+    const body = (await request.json()) as {
+      preferred_subgroup?: number | null
+      preferred_pe_teacher?: string | null
+      theme_mode?: string | null
+    }
+    return HttpResponse.json({
+      ...testUser,
+      ...(body.preferred_subgroup !== undefined && { preferred_subgroup: body.preferred_subgroup }),
+      ...(body.preferred_pe_teacher !== undefined && { preferred_pe_teacher: body.preferred_pe_teacher }),
+      ...(body.theme_mode !== undefined && { theme_mode: body.theme_mode }),
+    })
   }),
 
   http.post('/api/v1/auth/logout', () => {

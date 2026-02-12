@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Dumbbell, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { useUserSettings } from '@/hooks/useUserSettings'
 
 interface PeTeacherSelectProps {
   /** List of available PE teacher names. */
@@ -11,19 +11,20 @@ interface PeTeacherSelectProps {
 }
 
 export function PeTeacherSelect({ teachers, onChange }: PeTeacherSelectProps) {
-  const { peTeacher, setPeTeacher } = useSettingsStore()
+  const { settings, updateSettings } = useUserSettings()
+  const peTeacher = settings.peTeacher
   const [isOpen, setIsOpen] = useState(false)
 
   if (teachers.length <= 1) return null
 
   const handleSelect = (teacher: string) => {
-    setPeTeacher(teacher)
+    updateSettings({ preferred_pe_teacher: teacher })
     setIsOpen(false)
     onChange(teacher)
   }
 
   const handleClear = () => {
-    setPeTeacher(null)
+    updateSettings({ preferred_pe_teacher: null })
     setIsOpen(false)
     onChange(null)
   }

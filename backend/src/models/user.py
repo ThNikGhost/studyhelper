@@ -23,6 +23,11 @@ class User(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String(100))
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
+    # User preferences (synced across devices)
+    preferred_subgroup: Mapped[int | None] = mapped_column(nullable=True)
+    preferred_pe_teacher: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    theme_mode: Mapped[str | None] = mapped_column(String(10), nullable=True)
+
     # Relationships
     work_statuses: Mapped[list["WorkStatus"]] = relationship(
         "WorkStatus", back_populates="user", cascade="all, delete-orphan"

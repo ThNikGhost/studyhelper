@@ -1,11 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
-import {
-  type ThemeMode,
-  getSavedTheme,
-  saveTheme,
-  applyTheme,
-  resolveTheme,
-} from '@/lib/theme'
+import { useEffect, useCallback } from 'react'
+import { applyTheme, resolveTheme } from '@/lib/theme'
+import { useUserSettings } from '@/hooks/useUserSettings'
+import type { ThemeMode } from '@/types/auth'
 
 interface UseThemeReturn {
   mode: ThemeMode
@@ -14,22 +10,25 @@ interface UseThemeReturn {
 }
 
 /**
- * React hook for theme management.
+ * React hook for theme management with server sync.
  *
- * Persists choice to localStorage, applies .dark class,
- * and listens for system preference changes when mode is 'system'.
+ * When authenticated, syncs theme to server.
+ * Applies .dark class and listens for system preference changes.
  */
 export function useTheme(): UseThemeReturn {
-  const [mode, setMode] = useState<ThemeMode>(getSavedTheme)
+  const { settings, updateSettings } = useUserSettings()
+  const mode = settings.themeMode
 
-  const setTheme = useCallback((newMode: ThemeMode) => {
-    setMode(newMode)
-  }, [])
+  const setTheme = useCallback(
+    (newMode: ThemeMode) => {
+      updateSettings({ theme_mode: newMode })
+    },
+    [updateSettings]
+  )
 
-  // Apply theme and persist on mode change
+  // Apply theme on mode change
   useEffect(() => {
     applyTheme(mode)
-    saveTheme(mode)
   }, [mode])
 
   // Listen for OS preference changes when mode is 'system'

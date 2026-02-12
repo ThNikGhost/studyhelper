@@ -12,7 +12,7 @@ import { LessonDetailModal } from '@/components/schedule/LessonDetailModal'
 import { formatDateLocal, getToday, formatTimeUntil } from '@/lib/dateUtils'
 import { filterWeekSchedule } from '@/lib/peTeacherFilter'
 import { filterWeekBySubgroup } from '@/lib/subgroupFilter'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { useUserSettings } from '@/hooks/useUserSettings'
 import { toast } from 'sonner'
 import scheduleService from '@/services/scheduleService'
 import { noteService } from '@/services/noteService'
@@ -30,7 +30,8 @@ export function SchedulePage() {
   const [targetDate, setTargetDate] = useState<string | undefined>(undefined)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
-  const { subgroup, peTeacher } = useSettingsStore()
+  const { settings } = useUserSettings()
+  const { subgroup, peTeacher } = settings
   const today = getToday()
   const queryClient = useQueryClient()
 

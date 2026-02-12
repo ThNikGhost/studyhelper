@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
 import { toast } from 'sonner'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { useUserSettings } from '@/hooks/useUserSettings'
 import { scheduleService } from '@/services/scheduleService'
 import { lkService } from '@/services/lkService'
 import { getPeTeachersFromWeek } from '@/lib/peTeacherFilter'
@@ -23,7 +23,8 @@ import type { LkCredentials } from '@/types/lk'
 
 export default function SettingsPage() {
   const queryClient = useQueryClient()
-  const { subgroup, peTeacher, setSubgroup, setPeTeacher } = useSettingsStore()
+  const { settings, updateSettings, isUpdating } = useUserSettings()
+  const { subgroup, peTeacher } = settings
 
   // LK form state
   const [lkEmail, setLkEmail] = useState('')
@@ -147,7 +148,8 @@ export default function SettingsPage() {
           <div className="flex flex-wrap gap-3">
             <Button
               variant={subgroup === null ? 'default' : 'outline'}
-              onClick={() => setSubgroup(null)}
+              onClick={() => updateSettings({ preferred_subgroup: null })}
+              disabled={isUpdating}
               className="gap-2"
             >
               {subgroup === null && <Check className="h-4 w-4" />}
@@ -155,7 +157,8 @@ export default function SettingsPage() {
             </Button>
             <Button
               variant={subgroup === 1 ? 'default' : 'outline'}
-              onClick={() => setSubgroup(1)}
+              onClick={() => updateSettings({ preferred_subgroup: 1 })}
+              disabled={isUpdating}
               className="gap-2"
             >
               {subgroup === 1 && <Check className="h-4 w-4" />}
@@ -163,7 +166,8 @@ export default function SettingsPage() {
             </Button>
             <Button
               variant={subgroup === 2 ? 'default' : 'outline'}
-              onClick={() => setSubgroup(2)}
+              onClick={() => updateSettings({ preferred_subgroup: 2 })}
+              disabled={isUpdating}
               className="gap-2"
             >
               {subgroup === 2 && <Check className="h-4 w-4" />}
@@ -195,7 +199,8 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <Button
                 variant={peTeacher === null ? 'default' : 'outline'}
-                onClick={() => setPeTeacher(null)}
+                onClick={() => updateSettings({ preferred_pe_teacher: null })}
+                disabled={isUpdating}
                 className="w-full justify-start gap-2"
               >
                 {peTeacher === null && <Check className="h-4 w-4" />}
@@ -205,7 +210,8 @@ export default function SettingsPage() {
                 <Button
                   key={teacher}
                   variant={peTeacher === teacher ? 'default' : 'outline'}
-                  onClick={() => setPeTeacher(teacher)}
+                  onClick={() => updateSettings({ preferred_pe_teacher: teacher })}
+                  disabled={isUpdating}
                   className="w-full justify-start gap-2"
                 >
                   {peTeacher === teacher && <Check className="h-4 w-4" />}

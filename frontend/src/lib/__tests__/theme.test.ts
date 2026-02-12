@@ -1,45 +1,40 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { getSavedTheme, saveTheme, resolveTheme, applyTheme } from '../theme'
+import { getSavedTheme, resolveTheme, applyTheme } from '../theme'
+
+const STORAGE_KEY = 'studyhelper-local-settings'
 
 describe('getSavedTheme', () => {
   beforeEach(() => {
     localStorage.clear()
   })
 
-  it('returns "system" when no saved theme', () => {
+  it('returns "system" when no saved settings', () => {
     expect(getSavedTheme()).toBe('system')
   })
 
-  it('returns saved "dark" theme', () => {
-    localStorage.setItem('studyhelper-theme', 'dark')
+  it('returns saved "dark" theme from JSON settings', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ themeMode: 'dark' }))
     expect(getSavedTheme()).toBe('dark')
   })
 
-  it('returns saved "light" theme', () => {
-    localStorage.setItem('studyhelper-theme', 'light')
+  it('returns saved "light" theme from JSON settings', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ themeMode: 'light' }))
     expect(getSavedTheme()).toBe('light')
   })
 
-  it('returns "system" for invalid stored value', () => {
-    localStorage.setItem('studyhelper-theme', 'invalid')
+  it('returns "system" for invalid JSON', () => {
+    localStorage.setItem(STORAGE_KEY, 'invalid json')
     expect(getSavedTheme()).toBe('system')
   })
-})
 
-describe('saveTheme', () => {
-  beforeEach(() => {
-    localStorage.clear()
+  it('returns "system" for invalid themeMode value', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ themeMode: 'invalid' }))
+    expect(getSavedTheme()).toBe('system')
   })
 
-  it('persists theme to localStorage', () => {
-    saveTheme('dark')
-    expect(localStorage.getItem('studyhelper-theme')).toBe('dark')
-  })
-
-  it('overwrites previous value', () => {
-    saveTheme('dark')
-    saveTheme('light')
-    expect(localStorage.getItem('studyhelper-theme')).toBe('light')
+  it('returns "system" when themeMode is missing', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ subgroup: 1 }))
+    expect(getSavedTheme()).toBe('system')
   })
 })
 

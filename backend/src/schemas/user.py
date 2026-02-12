@@ -1,6 +1,7 @@
 """User schemas."""
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -25,6 +26,14 @@ class UserUpdate(BaseModel):
     avatar_url: str | None = None
 
 
+class UserSettingsUpdate(BaseModel):
+    """Schema for updating user settings (synced across devices)."""
+
+    preferred_subgroup: int | None = None
+    preferred_pe_teacher: str | None = Field(None, max_length=200)
+    theme_mode: Literal["light", "dark", "system"] | None = None
+
+
 class UserResponse(UserBase):
     """Schema for user response."""
 
@@ -32,5 +41,8 @@ class UserResponse(UserBase):
 
     id: int
     avatar_url: str | None
+    preferred_subgroup: int | None
+    preferred_pe_teacher: str | None
+    theme_mode: str | None
     created_at: datetime
     updated_at: datetime

@@ -11,7 +11,7 @@ from src.schemas.auth import (
     RefreshRequest,
     TokenResponse,
 )
-from src.schemas.user import UserCreate, UserResponse
+from src.schemas.user import UserCreate, UserResponse, UserSettingsUpdate
 from src.services.auth import (
     login_user,
     refresh_access_token,
@@ -59,6 +59,25 @@ async def get_me(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """Get current authenticated user."""
+    return current_user
+
+
+@router.patch("/me/settings", response_model=UserResponse)
+async def update_settings(
+    settings: UserSettingsUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Update current user's settings.
+
+    Partial update — only provided fields are updated.
+    Settings are synced across all user's devices.
+    """
+    update_data = settings.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(current_user, key, value)
+    await db.commit()
+    await db.refresh(current_user)
     return current_user
 
 

@@ -1,10 +1,21 @@
+export type ThemeMode = 'light' | 'dark' | 'system'
+
 export interface User {
   id: number
   email: string
   name: string
   avatar_url: string | null
+  preferred_subgroup: number | null
+  preferred_pe_teacher: string | null
+  theme_mode: ThemeMode | null
   created_at: string
   updated_at: string
+}
+
+export interface UserSettingsUpdate {
+  preferred_subgroup?: number | null
+  preferred_pe_teacher?: string | null
+  theme_mode?: ThemeMode | null
 }
 
 export interface RegisterRequest {

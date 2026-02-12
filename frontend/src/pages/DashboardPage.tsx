@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useAuthStore } from '@/stores/authStore'
-import { useSettingsStore } from '@/stores/settingsStore'
+import { useUserSettings } from '@/hooks/useUserSettings'
 import { Button } from '@/components/ui/button'
 import { LogOut } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -21,7 +21,8 @@ import type { Semester } from '@/types/subject'
 
 export default function DashboardPage() {
   const { user, logout } = useAuthStore()
-  const { peTeacher, subgroup } = useSettingsStore()
+  const { settings } = useUserSettings()
+  const { peTeacher, subgroup } = settings
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
 
   const handleLogout = async () => {

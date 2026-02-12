@@ -1,42 +1,44 @@
 /**
  * Theme management utilities (framework-agnostic).
  *
- * Handles localStorage persistence, system preference detection,
- * and DOM updates for light/dark theme switching.
+ * Handles system preference detection and DOM updates
+ * for light/dark theme switching.
+ *
+ * Note: Theme persistence is now handled by useUserSettings hook
+ * (server sync) and useLocalSettingsStore (local fallback).
  */
 
-export type ThemeMode = 'light' | 'dark' | 'system'
+import type { ThemeMode } from '@/types/auth'
 
-const STORAGE_KEY = 'studyhelper-theme'
+// Re-export for backwards compatibility
+export type { ThemeMode }
+
+const STORAGE_KEY = 'studyhelper-local-settings'
 const DARK_THEME_COLOR = '#0a0f1f'
 const LIGHT_THEME_COLOR = '#3B82F6'
 
 /**
- * Read saved theme from localStorage.
+ * Read saved theme from localStorage (for FOUC prevention).
  *
  * @returns Saved ThemeMode or 'system' as default.
  */
 export function getSavedTheme(): ThemeMode {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored === 'light' || stored === 'dark' || stored === 'system') {
-      return stored
+    if (stored) {
+      const parsed = JSON.parse(stored) as { themeMode?: string }
+      if (
+        parsed.themeMode === 'light' ||
+        parsed.themeMode === 'dark' ||
+        parsed.themeMode === 'system'
+      ) {
+        return parsed.themeMode
+      }
     }
   } catch {
     // localStorage unavailable (SSR, private browsing, etc.)
   }
   return 'system'
-}
-
-/**
- * Persist theme choice to localStorage.
- */
-export function saveTheme(mode: ThemeMode): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, mode)
-  } catch {
-    // localStorage unavailable
-  }
 }
 
 /**
