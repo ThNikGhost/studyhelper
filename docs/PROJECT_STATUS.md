@@ -2,7 +2,7 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-12
-- **Сессия**: User Settings Sync + Deploy (синхронизация настроек, CI fixes, деплой)
+- **Сессия**: Code Review Phase 3 (Accessibility + Testing)
 
 ## Общий прогресс
 **Фаза**: Production
@@ -82,8 +82,9 @@
 - [x] Тесты утилит: dateUtils (31), errorUtils (13), constants (6)
 - [x] Тесты store: authStore (11)
 - [x] Тесты компонентов: ProtectedRoute (3), ErrorBoundary (3), Modal (6)
-- [x] Тесты страниц: LoginPage (6), DashboardPage (10)
+- [x] Тесты страниц: LoginPage (6), DashboardPage (10), SchedulePage (12)
 - [x] Тесты dashboard виджетов: TodayScheduleWidget (10), DeadlinesWidget (10)
+- [x] Тесты schedule компонентов: LessonCard (16), LessonDetailModal (17)
 - [x] TypeScript + ESLint чисто на тестовых файлах
 
 ### Code Review (ЗАВЕРШЁН ✅)
@@ -452,6 +453,27 @@
 - [x] Frontend: Обновлены тестовые моки и исправлены тесты темы
 - [x] TypeScript, ESLint, build — всё чисто
 
+### Code Review Phase 2 (ЗАВЕРШЕНА ✅) — 2026-02-12
+Реализация улучшений из code review плана:
+
+#### P0 — Critical
+- [x] Backend: Transaction rollback в `database.py` — `get_db()` теперь откатывает транзакцию при исключениях
+- [x] Frontend: React.lazy() для 12 страниц — уменьшен начальный bundle, страницы загружаются по требованию
+- [x] Frontend: `PageSkeleton` компонент — loading fallback для Suspense
+- [x] Frontend: Global error handler — `unhandledrejection` listener для async ошибок (7 тестов)
+
+#### P1 — High
+- [x] Backend: Retry logic в парсерах — `src/parser/retry.py` с exponential backoff (19 тестов)
+- [x] Backend: `omsu_parser._fetch_json()` и `lk_parser.fetch_student_data()` используют retry
+- [x] Frontend: Оптимизация DashboardPage queries — увеличен staleTime/gcTime для редко меняющихся данных
+- [x] Frontend: ScheduleGrid ARIA атрибуты — role="grid", role="columnheader", role="rowheader", role="gridcell"
+
+#### Метрики
+- Backend тестов: 421 (было 402, +19 retry)
+- Frontend тестов: 366 (было 359, +7 globalErrorHandler)
+- Линтер: ✅ Ruff + ESLint чисто
+- Build: ✅ TypeScript + Vite
+
 ---
 
 ## Что в работе
@@ -561,8 +583,8 @@ Nginx healthcheck проверяет `/api/v1/health`, а правильный �
 
 | Метрика | Значение |
 |---------|----------|
-| Тестов backend | 418 |
-| Тестов frontend | 359 |
+| Тестов backend | 421 |
+| Тестов frontend | 375 |
 | Покрытие тестами | ~80% |
 | API endpoints | ~70 |
 | Моделей | 16 |

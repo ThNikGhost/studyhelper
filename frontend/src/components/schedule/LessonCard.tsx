@@ -55,6 +55,11 @@ export function LessonCard({ entry, isActive = false, hasNote = false, onClick }
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? handleKeyDown : undefined}
+      aria-label={
+        onClick
+          ? `Открыть занятие: ${entry.subject_name}, ${startTime}–${endTime}`
+          : undefined
+      }
     >
       <CardContent className="p-4">
         {/* Time and type */}

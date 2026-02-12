@@ -3,7 +3,7 @@ import type { User, TokenResponse } from '@/types/auth'
 import type { AttendanceEntry, AttendanceStats } from '@/types/attendance'
 import type { StudyFile } from '@/types/file'
 import type { LessonNote } from '@/types/note'
-import type { CurrentLesson, DaySchedule, ScheduleEntry } from '@/types/schedule'
+import type { CurrentLesson, DaySchedule, ScheduleEntry, WeekSchedule } from '@/types/schedule'
 import type { Semester, Subject } from '@/types/subject'
 import type { TimelineData, TimelineDeadline, TimelineExam } from '@/types/timeline'
 import type { UpcomingWork, WorkWithStatus } from '@/types/work'
@@ -120,6 +120,22 @@ export const testCurrentLesson: CurrentLesson = {
     updated_at: '2026-01-01T00:00:00Z',
   },
   time_until_next: 60,
+}
+
+export const testWeekSchedule: WeekSchedule = {
+  week_start: '2026-02-02',
+  week_end: '2026-02-08',
+  week_number: 6,
+  is_odd_week: false,
+  days: [
+    { date: '2026-02-02', day_of_week: 1, day_name: 'Понедельник', entries: [] },
+    { date: '2026-02-03', day_of_week: 2, day_name: 'Вторник', entries: [] },
+    { date: '2026-02-04', day_of_week: 3, day_name: 'Среда', entries: [] },
+    { date: '2026-02-05', day_of_week: 4, day_name: 'Четверг', entries: [] },
+    { date: '2026-02-06', day_of_week: 5, day_name: 'Пятница', entries: [] },
+    { date: '2026-02-07', day_of_week: 6, day_name: 'Суббота', entries: testScheduleEntries },
+    { date: '2026-02-08', day_of_week: 7, day_name: 'Воскресенье', entries: [] },
+  ],
 }
 
 export const testSubjects: Subject[] = [
@@ -631,6 +647,14 @@ export const handlers = [
 
   http.get('/api/v1/schedule/current', () => {
     return HttpResponse.json(testCurrentLesson)
+  }),
+
+  http.get('/api/v1/schedule/week', () => {
+    return HttpResponse.json(testWeekSchedule)
+  }),
+
+  http.post('/api/v1/schedule/refresh', () => {
+    return HttpResponse.json({ changed: true, entries_count: 3088 })
   }),
 
   // Schedule entry update

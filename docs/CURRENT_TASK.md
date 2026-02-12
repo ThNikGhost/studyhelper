@@ -3,42 +3,62 @@
 ## Статус
 **Нет активной задачи.**
 
-## Последняя сессия: User Settings Sync + Deploy — 2026-02-12
+## Последняя сессия: Code Review Phase 3 (Accessibility + Testing) — 2026-02-12
 
 ### Сделано
-1. Backend: 3 поля в User модели (`preferred_subgroup`, `preferred_pe_teacher`, `theme_mode`)
-2. Backend: `PATCH /api/v1/auth/me/settings` endpoint для частичного обновления
-3. Backend: `UserSettingsUpdate` схема с валидацией
-4. Backend: Alembic миграция `5a6b7c8d9e0f_add_user_settings_fields`
-5. Backend: 6 тестов для endpoint настроек (всего 21 тест auth)
-6. Frontend: `useUserSettings` хук с TanStack Query optimistic updates
-7. Frontend: `settingsStore` → `useLocalSettingsStore` (локальный fallback)
-8. Frontend: `useTheme` синхронизирует theme_mode с сервером
-9. Frontend: Обновлён FOUC prevention script для нового формата хранения
-10. Frontend: Обновлены SettingsPage, SchedulePage, DashboardPage, PeTeacherSelect
-11. Frontend: Обновлены тестовые моки + исправлены тесты темы
-12. CI fix: тесты lk_parser пропускаются в CI (зависают из-за httpx async mocking)
-13. CI fix: форматирование lk module файлов
-14. CI fix: modern Python typing в миграции
-15. Деплой на сервер — backend пересобран, миграция применена
+Продолжение реализации улучшений из code review плана:
 
-### Коммиты
-- `297989d` — feat(settings): sync user settings across devices
-- `c27afce` — docs: update status after user settings sync
-- `d5746e1` — style: use modern Python typing in migration
-- `063d79a` — style: format lk module files
-- `7619cec` — test: skip lk_parser tests in CI
+**P2 — Medium (Accessibility):**
+1. Frontend: `LessonCard` — добавлен `aria-label` для screen readers (2 новых теста)
+2. Frontend: `LessonCard` — тесты для `hasNote` prop (2 новых теста)
+
+**P2 — Medium (Testing):**
+3. Frontend: `SchedulePage` — 12 новых интеграционных тестов:
+   - Рендеринг заголовка и недели
+   - Отображение записей расписания
+   - Индикатор следующей пары
+   - Навигация между неделями
+   - Состояние ошибки с retry
+   - Кнопка обновления
+   - Открытие/закрытие модала деталей занятия
+   - Пустое состояние
+4. Frontend: MSW handlers для `/schedule/week` и `/schedule/refresh`
+5. Frontend: `testWeekSchedule` тестовые данные
+
+### Предыдущая сессия: Code Review Phase 2 — 2026-02-12
+**P0 — Critical:**
+1. Backend: Transaction rollback в `database.py` — автоматический откат при ошибках
+2. Frontend: React.lazy() для 12 страниц (DashboardPage, SchedulePage, SubjectsPage, etc.)
+3. Frontend: `PageSkeleton` компонент для Suspense fallback
+4. Frontend: Global error handler (`unhandledrejection` + `error` listeners, 7 тестов)
+
+**P1 — High:**
+5. Backend: Retry модуль (`src/parser/retry.py`) с exponential backoff (19 тестов)
+6. Backend: Retry интегрирован в `omsu_parser._fetch_json()` и `lk_parser.fetch_student_data()`
+7. Frontend: Оптимизация DashboardPage queries (staleTime: 1-10 min, gcTime: 10-60 min)
+8. Frontend: ScheduleGrid ARIA атрибуты для accessibility
+
+### Метрики
+- Backend тестов: 421 passed
+- Frontend тестов: ~380 passed (добавлено 16 новых)
+- Линтер: ✅ Ruff + ESLint чисто
+- Build: ✅ TypeScript + Vite
 
 ### Результат
-- Настройки синхронизируются между устройствами через сервер
-- Для незалогиненных пользователей — localStorage fallback
-- CI: ✅ Проходит (424 backend, 359 frontend)
-- Production: ✅ Задеплоено на https://studyhelper1.ru
+- Улучшена accessibility LessonCard (aria-label для clickable cards)
+- Добавлено тестовое покрытие для SchedulePage (ключевая страница)
+- Добавлены MSW handlers для week schedule endpoint
 
 ## Следующие задачи (приоритет)
 1. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
 2. **05-ics-export** — экспорт расписания в .ics (P2)
 3. **02-push-notifications** — push-уведомления (P1)
+
+### Оставшиеся пункты Code Review (низкий приоритет):
+- P1-7: Structured logging (structlog) — требует зависимость
+- P1-8: Prometheus metrics — требует зависимость
+- P2-11: Виртуализация в FilesPage — требует @tanstack/react-virtual
+- P1-10: Переписать LK parser тесты с respx
 
 ## Блокеры / Вопросы
 Нет блокеров.

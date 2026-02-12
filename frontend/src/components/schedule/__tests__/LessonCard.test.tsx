@@ -54,6 +54,23 @@ describe('LessonCard', () => {
     expect(card).toHaveAttribute('tabindex', '0')
   })
 
+  it('has aria-label when onClick is provided', () => {
+    render(<LessonCard entry={entry} onClick={vi.fn()} />)
+
+    const card = screen.getByRole('button')
+    expect(card).toHaveAttribute(
+      'aria-label',
+      'Открыть занятие: Математический анализ, 10:30–12:05'
+    )
+  })
+
+  it('does not have aria-label when onClick is not provided', () => {
+    const { container } = render(<LessonCard entry={entry} />)
+
+    const card = container.firstChild
+    expect(card).not.toHaveAttribute('aria-label')
+  })
+
   it('does not have role="button" when onClick is not provided', () => {
     render(<LessonCard entry={entry} />)
 
@@ -100,5 +117,17 @@ describe('LessonCard', () => {
     render(<LessonCard entry={entryWithSubgroup} />)
 
     expect(screen.getByText('Подгруппа 2')).toBeInTheDocument()
+  })
+
+  it('shows note icon when hasNote is true', () => {
+    render(<LessonCard entry={entry} hasNote />)
+
+    expect(screen.getByLabelText('Есть заметка')).toBeInTheDocument()
+  })
+
+  it('does not show note icon when hasNote is false', () => {
+    render(<LessonCard entry={entry} hasNote={false} />)
+
+    expect(screen.queryByLabelText('Есть заметка')).not.toBeInTheDocument()
   })
 })
