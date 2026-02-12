@@ -2,7 +2,7 @@
 
 ## Последнее обновление
 - **Дата**: 2026-02-12
-- **Сессия**: LK Integration — Frontend (зачётка, настройки ЛК, импорт)
+- **Сессия**: User Settings Sync (синхронизация настроек между устройствами)
 
 ## Общий прогресс
 **Фаза**: Production
@@ -32,12 +32,12 @@
 - [x] Инициализация проекта (pyproject.toml, uv)
 - [x] Конфигурация (pydantic-settings)
 - [x] База данных (SQLAlchemy 2.0 async)
-- [x] Alembic миграции (18 миграций применено)
+- [x] Alembic миграции (19 миграций применено)
 
 #### Модули:
 | Модуль | Модель | Схемы | Сервис | Роутер | Тесты |
 |--------|--------|-------|--------|--------|-------|
-| Auth | ✅ User | ✅ | ✅ | ✅ | ✅ 16 |
+| Auth | ✅ User (+settings) | ✅ (+UserSettingsUpdate) | ✅ | ✅ (+PATCH /me/settings) | ✅ 21 |
 | Semesters | ✅ (+start_date, end_date) | ✅ (+Timeline) | ✅ (+timeline) | ✅ (+timeline) | ✅ 26 |
 | Subjects | ✅ (+planned_classes, +total_hours) | ✅ | ✅ | ✅ | ✅ 18 |
 | Works | ✅ Work, WorkStatus, WorkStatusHistory | ✅ | ✅ | ✅ | ✅ 23 |
@@ -437,6 +437,21 @@
 - [x] Frontend: Маршрут /grades в App.tsx
 - [x] Деплой на сервер — 18 миграций применено, все контейнеры healthy
 
+### User Settings Sync (ЗАВЕРШЕНА ✅) — 2026-02-12
+Синхронизация настроек пользователя между устройствами по плану `temporal-coalescing-taco.md`:
+- [x] Backend: 3 поля в User модели (`preferred_subgroup`, `preferred_pe_teacher`, `theme_mode`)
+- [x] Backend: `PATCH /api/v1/auth/me/settings` endpoint для частичного обновления
+- [x] Backend: `UserSettingsUpdate` схема с валидацией (Literal для theme_mode)
+- [x] Backend: Alembic миграция `5a6b7c8d9e0f_add_user_settings_fields`
+- [x] Backend: 6 тестов для endpoint настроек (всего 21 тест auth)
+- [x] Frontend: `useUserSettings` хук с TanStack Query optimistic updates
+- [x] Frontend: `settingsStore` → `useLocalSettingsStore` (локальный fallback для незалогиненных)
+- [x] Frontend: `useTheme` синхронизирует theme_mode с сервером
+- [x] Frontend: FOUC prevention script обновлён для нового формата хранения
+- [x] Frontend: Обновлены SettingsPage, SchedulePage, DashboardPage, PeTeacherSelect
+- [x] Frontend: Обновлены тестовые моки и исправлены тесты темы
+- [x] TypeScript, ESLint, build — всё чисто
+
 ---
 
 ## Что в работе
@@ -522,11 +537,11 @@ Nginx healthcheck использует `wget`, который может дол�
 - **File upload**: File модель (immutable), FileDropzone (HTML5 DnD), FileList, magic bytes validation, StreamingResponse для download, path traversal protection
 - **Lesson notes**: LessonNote модель (one per subject per user), upsert POST (201/200), GET /subject/{name}, NoteEditor (autosave debounce 500ms), NoteCard, NotesPage, LessonDetailModal query по subject_name с cache invalidation
 - **Semester timeline**: start_date/end_date на Semester (nullable), TimelineBar (CSS positioning via left%), TimelineMarker (Popover tooltips), getPositionPercent/getMonthLabels/getSemesterProgress утилиты, TimelinePage с фильтрами, SemesterTimelineWidget на Dashboard
-- **Dark theme**: ThemeMode (light/dark/system), FOUC prevention (inline script), cycling toggle (Sun/Moon/Monitor), localStorage persistence, .dark CSS class, theme-color meta update, dark: variants для hardcoded цветов
+- **Dark theme**: ThemeMode (light/dark/system), FOUC prevention (inline script), cycling toggle (Sun/Moon/Monitor), server sync для залогиненных + localStorage fallback, .dark CSS class, theme-color meta update, dark: variants для hardcoded цветов
 - **Production Docker**: multi-stage builds (uv для backend, node для frontend), nginx reverse proxy, rate limiting (nginx + slowapi), --proxy-headers для корректного client IP, memory limits ~1.3GB total, PostgreSQL tuning (shared_buffers=256MB), Redis LRU (128mb)
 - **Schedule auto-sync**: APScheduler 3.x AsyncIOScheduler в lifespan FastAPI, IntervalTrigger(hours=6, jitter=60), misfire_grace_time=3600, Redis distributed lock (non-blocking, TTL 600s, LockNotOwnedError handling), Redis auto-reconnect (ping healthcheck), initial sync в entrypoint.sh (если snapshot нет), configurable via SCHEDULE_SYNC_ENABLED/SCHEDULE_UPDATE_INTERVAL_HOURS
 - **SSL/TLS**: Let's Encrypt certbot (webroot mode), auto-renewal каждые 12ч, nginx 3 server-блока (HTTP redirect + HTTPS www redirect + HTTPS main), http2, HSTS, bootstrap скрипт `scripts/init-letsencrypt.sh` (self-signed → real cert)
-- **Settings**: settingsStore (Zustand) с localStorage persistence, subgroup фильтрация (filterBySubgroup), SettingsPage (/settings) с секциями (подгруппа, физра, ЛК)
+- **Settings sync**: useUserSettings (TanStack Query) с optimistic updates, PATCH /auth/me/settings для синхронизации между устройствами, useLocalSettingsStore (Zustand) как fallback для незалогиненных, subgroup фильтрация (filterBySubgroup), SettingsPage (/settings) с секциями (подгруппа, физра, тема, ЛК)
 - **Subgroup filtering**: Parser извлекает subgroup из поля `subgroupName` API (e.g. "МБС-301-О-01/1" → 1), ScheduleGrid показывает "!" на пустых ячейках где есть пара для другой подгруппы, popover с деталями
 - **LK Parser**: OAuth2-based auth (CSRF + form-login + redirects), httpx cookie persistence, Fernet encryption (PBKDF2HMAC 1.2M iterations), SessionGrade/SemesterDiscipline upsert, verify без сохранения credentials
 - **LK Integration**: import_to_app() создаёт Semester/Subject из SemesterDiscipline, total_hours из ЛК, GradesPage со статистикой и группировкой по сессиям
@@ -542,7 +557,7 @@ Nginx healthcheck использует `wget`, который может дол�
 | Покрытие тестами | ~80% |
 | API endpoints | ~70 |
 | Моделей | 16 |
-| Миграций | 18 |
+| Миграций | 19 |
 | Линтер backend | ✅ Ruff проходит |
 | Линтер frontend | ✅ ESLint проходит (shadcn/ui исключён из линтинга) |
 | Frontend тесты | ✅ Vitest проходит (359 тестов) |

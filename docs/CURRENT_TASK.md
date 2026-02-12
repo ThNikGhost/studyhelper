@@ -3,31 +3,30 @@
 ## Статус
 **Нет активной задачи.**
 
-## Последняя сессия: LK Integration — Frontend — 2026-02-12
+## Последняя сессия: User Settings Sync — 2026-02-12
 
 ### Сделано
-1. Backend: `total_hours` поле в Subject модели + миграция `488c2925b15c`
-2. Backend: `POST /api/v1/lk/import` endpoint + `import_to_app()` сервис
-3. Frontend: `lkService.ts` — полный API сервис для ЛК
-4. Frontend: `types/lk.ts` — типы (LkStatus, SessionGrade, LkImportResult и др.)
-5. Frontend: `SettingsPage.tsx` — рабочая секция ЛК (verify/save/sync/disconnect)
-6. Frontend: `SemestersPage.tsx` — кнопка "Импорт из ЛК" с confirm modal
-7. Frontend: `SubjectsPage.tsx` — отображение total_hours
-8. Frontend: `GradesPage.tsx` — новая страница зачётки со статистикой
-9. Frontend: `QuickActions.tsx` — пункт "Зачётка"
-10. Frontend: `dateUtils.ts` — `formatDistanceToNow()` utility
-11. Фикс: удалён импорт LkTestPage из App.tsx (ломал build)
-12. Деплой на сервер — 18 миграций, все контейнеры healthy
+1. Backend: 3 поля в User модели (`preferred_subgroup`, `preferred_pe_teacher`, `theme_mode`)
+2. Backend: `PATCH /api/v1/auth/me/settings` endpoint для частичного обновления
+3. Backend: `UserSettingsUpdate` схема с валидацией
+4. Backend: Alembic миграция `5a6b7c8d9e0f_add_user_settings_fields`
+5. Backend: 6 тестов для endpoint настроек (всего 21 тест auth)
+6. Frontend: `useUserSettings` хук с TanStack Query optimistic updates
+7. Frontend: `settingsStore` → `useLocalSettingsStore` (локальный fallback)
+8. Frontend: `useTheme` синхронизирует theme_mode с сервером
+9. Frontend: Обновлён FOUC prevention script для нового формата хранения
+10. Frontend: Обновлены SettingsPage, SchedulePage, DashboardPage, PeTeacherSelect
+11. Frontend: Обновлены тестовые моки + исправлены тесты темы
 
 ### Коммиты
-- `a702b8f` — feat(lk): implement LK integration with grades page and import
-- `1a7d6b7` — fix(frontend): remove unused LkTestPage import
+- `297989d` — feat(settings): sync user settings across devices
 
 ### Результат
-- Production задеплоен: https://studyhelper1.ru
-- Новые страницы: /grades, обновлённая /settings
-- 18 миграций применено
-- 14 frontend страниц
+- Настройки синхронизируются между устройствами через сервер
+- Для незалогиненных пользователей — localStorage fallback
+- 21 тест backend (auth) ✅
+- 359 тестов frontend ✅
+- Frontend build ✅
 
 ## Следующие задачи (приоритет)
 1. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
