@@ -1,8 +1,8 @@
 # Статус проекта StudyHelper
 
 ## Последнее обновление
-- **Дата**: 2026-02-12
-- **Сессия**: Code Review Phase 3 (Accessibility + Testing)
+- **Дата**: 2026-02-14
+- **Сессия**: Code Review Final (P1-7, P1-8, P1-10)
 
 ## Общий прогресс
 **Фаза**: Production
@@ -474,6 +474,35 @@
 - Линтер: ✅ Ruff + ESLint чисто
 - Build: ✅ TypeScript + Vite
 
+### Code Review Final (ЗАВЕРШЕНА ✅) — 2026-02-14
+Финальные пункты code review (P1-7, P1-8, P1-10):
+
+#### P1-7: Structured Logging (structlog)
+- [x] Backend: `src/logging_config.py` — structlog ProcessorFormatter (JSON prod, ConsoleRenderer dev)
+- [x] Backend: `src/middleware/request_id.py` — RequestIdMiddleware (X-Request-ID header + ContextVar)
+- [x] Backend: `src/main.py` — удалена старая setup_logging(), подключены structlog + RequestIdMiddleware
+- [x] Backend: Noisy loggers silenced (uvicorn.access, httpx, httpcore, apscheduler → WARNING)
+- [x] Backend: 8 тестов logging + 3 теста request_id middleware
+- [x] Zero changes в 15+ модулях с logging.getLogger() — structlog перехватывает автоматически
+
+#### P1-8: Prometheus Metrics
+- [x] Backend: `src/metrics.py` — HTTP counters/histograms, schedule sync counters, app_info gauge
+- [x] Backend: `src/middleware/prometheus.py` — auto-instrumentation (path normalization `/{id}/`, excludes /metrics + /health)
+- [x] Backend: `GET /metrics` endpoint (include_in_schema=False)
+- [x] Backend: `src/scheduler.py` — SCHEDULE_SYNC_TOTAL (success/skipped/error) + duration histogram
+- [x] nginx: `/metrics` location restricted to internal networks (172.16.0.0/12, 10.0.0.0/8, 127.0.0.1)
+- [x] Backend: 12 тестов metrics
+
+#### P1-10: LK Parser тесты с respx
+- [x] Backend: `tests/test_lk_parser.py` полностью переписан с respx (transport-level mocking)
+- [x] Удалён CI_SKIP — все 16 тестов работают в CI (было 14 skipped)
+- [x] Зависимости: structlog>=24.1.0, prometheus-client>=0.21.0, respx>=0.21.1 (dev)
+
+#### Метрики
+- Backend тестов: 466 (было 421, +45)
+- CI skipped: 0 (было 14)
+- Линтер: ✅ Ruff чисто
+
 ---
 
 ## Что в работе
@@ -520,13 +549,12 @@ Vite на Windows может не слушать на правильном ад�
 ### ~~ESLint: pre-existing ошибки в shadcn/ui~~ ✅ РЕШЕНО
 ~~3 ошибки в shadcn/ui компонентах~~ — `src/components/ui` добавлен в globalIgnores ESLint.
 
-### Vitest: процесс подвисает при завершении (Windows)
-При `vitest run` на Windows процесс не завершается после прохождения всех тестов (MSW + jsdom удерживают сокеты).
-**Решение**: Использовать `pool: 'forks'` в конфиге + `timeout` при запуске из CI. Все 114 тестов проходят корректно, подвисание только при cleanup.
-
-### Vitest: OOM при cleanup (Windows)
-При `vitest run` на Windows воркер падает с OOM (`JavaScript heap out of memory`) на ~4GB после прохождения всех тестов (Vitest 4.0.18, issue #9560).
-**Решение**: Создан Claude Code агент `.claude/agents/test-runner.md` — запускает тесты в фоне, парсит вывод, убивает зависший процесс через TaskStop. Все 348+ тестов проходят корректно, OOM только при cleanup.
+### Vitest: зависание + OOM при cleanup (Windows)
+При `vitest run` на Windows процесс зависает после завершения тестов и потребляет до 4GB+ RAM (Vitest bug #9560). jsdom + MSW держат сокеты/воркеры.
+- Попытки автоматического workaround не работают: `process.exit()` в воркере вызывает ошибку, `onFinished` не существует в Vitest API, `globalTeardown` выполняется до завершения репортов
+- **Решение**: Использовать `/test` skill (агент test-runner) — запускает тесты в фоне, парсит результат, принудительно убивает зависший процесс
+- Конфиг: `pool: 'forks'`, `teardownTimeout: 3000`
+- Все 380+ тестов проходят корректно, проблема только при cleanup
 
 ### Production: Nginx healthcheck медленный
 Nginx healthcheck использует `wget`, который может долго стартовать (>30 сек). Контейнер в статусе `health: starting` дольше ожидаемого.
@@ -536,10 +564,9 @@ Nginx healthcheck использует `wget`, который может дол�
 `/api/v1/docs` возвращает 404 на production сервере.
 **Статус**: Возможно, отключены в production конфигурации. Требует проверки.
 
-### CI: test_lk_parser зависает в GitHub Actions
-Тесты httpx AsyncClient с MagicMock зависают в CI (~5 минут), хотя локально работают.
-**Решение**: Добавлен `@pytest.mark.skipif(os.environ.get("CI") == "true")` декоратор. 14 тестов пропускаются в CI.
-**TODO**: Переписать тесты с использованием `respx` или `pytest-httpx` для корректного async mocking.
+### ~~CI: test_lk_parser зависает в GitHub Actions~~ ✅ РЕШЕНО
+~~Тесты httpx AsyncClient с MagicMock зависают в CI.~~
+**Решение**: Переписаны с respx (transport-level mocking). CI_SKIP удалён, все 16 тестов работают в CI.
 
 ### Production: Nginx показывает unhealthy
 Nginx healthcheck проверяет `/api/v1/health`, а правильный путь `/health`.
@@ -576,6 +603,8 @@ Nginx healthcheck проверяет `/api/v1/health`, а правильный �
 - **Subgroup filtering**: Parser извлекает subgroup из поля `subgroupName` API (e.g. "МБС-301-О-01/1" → 1), ScheduleGrid показывает "!" на пустых ячейках где есть пара для другой подгруппы, popover с деталями
 - **LK Parser**: OAuth2-based auth (CSRF + form-login + redirects), httpx cookie persistence, Fernet encryption (PBKDF2HMAC 1.2M iterations), SessionGrade/SemesterDiscipline upsert, verify без сохранения credentials
 - **LK Integration**: import_to_app() создаёт Semester/Subject из SemesterDiscipline, total_hours из ЛК, GradesPage со статистикой и группировкой по сессиям
+- **Structured logging**: structlog ProcessorFormatter перехватывает stdlib logging (JSON prod / ConsoleRenderer dev), RequestIdMiddleware (X-Request-ID ContextVar), noisy loggers silenced
+- **Prometheus metrics**: HTTP_REQUESTS_TOTAL/DURATION/IN_PROGRESS + SCHEDULE_SYNC_TOTAL/DURATION, PrometheusMiddleware (path normalization /{id}/), GET /metrics endpoint, nginx /metrics restricted to internal networks
 
 ---
 
@@ -583,7 +612,7 @@ Nginx healthcheck проверяет `/api/v1/health`, а правильный �
 
 | Метрика | Значение |
 |---------|----------|
-| Тестов backend | 421 |
+| Тестов backend | 466 |
 | Тестов frontend | 375 |
 | Покрытие тестами | ~80% |
 | API endpoints | ~70 |

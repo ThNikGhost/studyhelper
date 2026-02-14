@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import time
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
@@ -12,6 +13,7 @@ from redis.exceptions import LockNotOwnedError
 
 from src.config import settings
 from src.database import get_session_maker
+from src.metrics import SCHEDULE_SYNC_DURATION_SECONDS, SCHEDULE_SYNC_TOTAL
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +61,10 @@ async def _sync_schedule_with_lock() -> None:
     acquired = await lock.acquire()
     if not acquired:
         logger.info("Schedule auto-sync skipped: another worker holds the lock")
+        SCHEDULE_SYNC_TOTAL.labels(status="skipped").inc()
         return
 
+    start = time.perf_counter()
     try:
         logger.info("Schedule auto-sync started")
 
@@ -70,18 +74,24 @@ async def _sync_schedule_with_lock() -> None:
         async with session_maker() as db:
             result = await sync_schedule(db)
 
+        duration = time.perf_counter() - start
+        SCHEDULE_SYNC_DURATION_SECONDS.observe(duration)
+
         if result.get("success"):
+            SCHEDULE_SYNC_TOTAL.labels(status="success").inc()
             logger.info(
                 "Schedule auto-sync completed: changed=%s, entries=%s",
                 result.get("changed"),
                 result.get("entries_count"),
             )
         else:
+            SCHEDULE_SYNC_TOTAL.labels(status="success").inc()
             logger.warning(
                 "Schedule auto-sync finished with issues: %s",
                 result.get("message"),
             )
     except Exception:
+        SCHEDULE_SYNC_TOTAL.labels(status="error").inc()
         logger.exception("Schedule auto-sync failed")
     finally:
         try:

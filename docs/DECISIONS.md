@@ -779,6 +779,64 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 23. Code Review Final решения (2026-02-14)
+
+### structlog ProcessorFormatter вместо замены логгеров
+
+**Решение:** Использовать structlog `ProcessorFormatter` с `foreign_pre_chain` для перехвата stdlib `logging.getLogger()`.
+
+**Обоснование:**
+- 15+ модулей уже используют `logging.getLogger(__name__)` — менять их не нужно
+- `ProcessorFormatter` перехватывает все stdlib log записи и обрабатывает их через structlog pipeline
+- JSON output в production (`JSONRenderer`), colored console в dev (`ConsoleRenderer`)
+- Единая точка конфигурации в `setup_logging(debug=bool)`
+
+**Альтернативы рассмотренные:**
+- Замена всех `logging.getLogger()` на `structlog.get_logger()` — 15+ файлов менять, больше diff
+- loguru — ещё одна зависимость, менее стандартный подход
+
+### ContextVar для request_id
+
+**Решение:** `contextvars.ContextVar` для передачи request_id в structured logs.
+
+**Обоснование:**
+- ContextVar привязан к async контексту — каждый request видит свой ID
+- structlog processor `add_request_id()` читает ContextVar и добавляет в event_dict
+- Middleware ставит/сбрасывает ContextVar в dispatch/finally
+- X-Request-ID из входящего запроса сохраняется или генерируется uuid4().hex[:12]
+
+### Path normalization для Prometheus
+
+**Решение:** Regex `/\d+(?=/|$)/` → `/{id}/` для нормализации path в метриках.
+
+**Обоснование:**
+- Без нормализации `/api/v1/subjects/1`, `/api/v1/subjects/2`, ... — отдельные timeseries
+- Cardinality explosion → OOM в Prometheus при тысячах уникальных path
+- Regex заменяет числовые сегменты: `/api/v1/subjects/5/works/123` → `/api/v1/subjects/{id}/works/{id}`
+- `/metrics` и `/health` исключены из инструментации (бесполезный шум)
+
+### /metrics без аутентификации, с nginx IP restriction
+
+**Решение:** Endpoint `/metrics` без JWT auth, доступ ограничен через nginx allow/deny.
+
+**Обоснование:**
+- Prometheus scraper не умеет JWT — auth усложняет настройку
+- nginx `allow 172.16.0.0/12; allow 10.0.0.0/8; deny all` — только Docker internal network
+- Стандартный паттерн в production: сетевая изоляция вместо application-level auth для метрик
+
+### respx вместо MagicMock для httpx тестов
+
+**Решение:** Заменить `patch.object(parser._client, "get/post")` + MagicMock на `respx` transport-level mocking.
+
+**Обоснование:**
+- MagicMock подменяет методы на уже созданном AsyncClient — внутренний connection pool теряет state
+- В CI (GitHub Actions) это вызывало deadlock (~5 минут зависания), 14 тестов пропускались
+- respx работает на уровне httpx transport — client internals не затронуты
+- `@respx.mock` decorator + `respx.get(url).mock(return_value=Response(...))` — чистый API
+- Для тестов network error: `side_effect=httpx.RequestError()` (base class, NOT in RETRYABLE_EXCEPTIONS) — retry не срабатывает
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -855,3 +913,8 @@ notification_settings — настройки уведомлений
 | 2026-02-11 | 3 nginx server-блока для SSL | HTTP (ACME + redirect), HTTPS www (redirect → apex), HTTPS main (приложение) — чистое разделение ответственности |
 | 2026-02-11 | Security headers дублируются в nested locations | nginx add_header в дочернем блоке сбрасывает все родительские add_header — HSTS/CSP явно повторяются |
 | 2026-02-11 | STAGING mode в init-letsencrypt.sh | STAGING=1 для тестов без расхода лимитов Let's Encrypt (5 дубликатов/неделю) |
+| 2026-02-14 | structlog ProcessorFormatter | Перехват stdlib logging, 0 изменений в 15+ модулях |
+| 2026-02-14 | ContextVar для request_id | Per-request tracking через middleware + structlog processor |
+| 2026-02-14 | Path normalization `/\d+/` → `/{id}/` | Предотвращение cardinality explosion в Prometheus |
+| 2026-02-14 | /metrics без auth + nginx IP restrict | Prometheus scraper не умеет JWT, сетевая изоляция |
+| 2026-02-14 | respx вместо MagicMock для httpx | MagicMock ломал connection pool → deadlock в CI |

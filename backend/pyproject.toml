@@ -29,6 +29,10 @@ dependencies = [
     "apscheduler>=3.10.0,<4.0",
     # Redis (for distributed locks)
     "redis>=5.0.0",
+    # Structured logging
+    "structlog>=24.1.0",
+    # Prometheus metrics
+    "prometheus-client>=0.21.0",
 ]
 
 [project.optional-dependencies]
@@ -38,6 +42,7 @@ dev = [
     "pytest-cov>=6.0.0",
     "httpx>=0.28.0",
     "ruff>=0.8.0",
+    "respx>=0.21.1",
 ]
 parser = [
     "playwright>=1.49.0",

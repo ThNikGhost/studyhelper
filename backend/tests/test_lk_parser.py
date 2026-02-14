@@ -1,22 +1,20 @@
-"""Tests for LK parser HTTP client."""
+"""Tests for LK parser HTTP client.
 
-import os
-from unittest.mock import MagicMock, patch
+Uses respx for transport-level HTTP mocking (replaces MagicMock approach
+that caused deadlocks in CI).
+"""
 
 import httpx
 import pytest
+import respx
+from httpx import Response
 
 from src.parser.lk_exceptions import LkAuthError, LkDataError, LkSessionExpired
 from src.parser.lk_parser import LkParser, LkStudentData
 
-# Skip all tests in this class in CI - httpx AsyncClient mocking causes hangs
-CI_SKIP = pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="httpx async mocking hangs in CI",
-)
+BASE_URL = "https://eservice.omsu.ru"
 
 
-@CI_SKIP
 class TestLkParser:
     """Tests for LkParser class."""
 
@@ -38,193 +36,219 @@ class TestLkParser:
             parser._get_client()
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_login_success(self) -> None:
         """Test successful login flow."""
+        # Step 1: GET /sinfo/backend/ — initial OAuth entry point
+        respx.get(f"{BASE_URL}/sinfo/backend/").mock(
+            return_value=Response(200, headers={"X-CSRF-TOKEN": "test-csrf-token"})
+        )
+        # Step 2: POST /dasext/login.do — submit credentials, get redirect
+        respx.post(f"{BASE_URL}/dasext/login.do").mock(
+            return_value=Response(
+                302,
+                headers={"Location": f"{BASE_URL}/sinfo/dashboard"},
+            )
+        )
+        # Step 3: Follow redirect to dashboard
+        respx.get(f"{BASE_URL}/sinfo/dashboard").mock(
+            return_value=Response(200, text="<html>Dashboard</html>")
+        )
+
         async with LkParser() as parser:
-            # Mock HTTP responses
-            with patch.object(parser._client, "get") as mock_get:
-                with patch.object(parser._client, "post") as mock_post:
-                    # Mock GET /dasext/login response
-                    mock_login_page = MagicMock()
-                    mock_login_page.headers = {"X-CSRF-TOKEN": "test-csrf-token"}
-                    mock_get.return_value = mock_login_page
+            result = await parser.login("test@omsu.ru", "password123")
 
-                    # Mock POST /dasext/login.do response (redirected to /sinfo/)
-                    mock_login_resp = MagicMock()
-                    mock_login_resp.url = "https://eservice.omsu.ru/sinfo/dashboard"
-                    mock_login_resp.status_code = 200
-                    mock_login_resp.text = "<html>Dashboard</html>"
-                    mock_post.return_value = mock_login_resp
-
-                    result = await parser.login("test@omsu.ru", "password123")
-
-                    assert result is True
-                    mock_get.assert_called_once()
-                    mock_post.assert_called_once()
+        assert result is True
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_login_csrf_not_found(self) -> None:
         """Test login fails when CSRF token not found."""
-        async with LkParser() as parser:
-            with patch.object(parser._client, "get") as mock_get:
-                # No CSRF token in response
-                mock_login_page = MagicMock()
-                mock_login_page.headers = {}
-                mock_login_page.cookies = {}
-                mock_get.return_value = mock_login_page
+        # No CSRF token in response headers or cookies
+        respx.get(f"{BASE_URL}/sinfo/backend/").mock(
+            return_value=Response(200, text="<html>No CSRF here</html>")
+        )
 
-                with pytest.raises(LkAuthError, match="CSRF"):
-                    await parser.login("test@omsu.ru", "password123")
+        async with LkParser() as parser:
+            with pytest.raises(LkAuthError, match="CSRF"):
+                await parser.login("test@omsu.ru", "password123")
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_login_csrf_from_cookies(self) -> None:
         """Test CSRF token from cookies fallback."""
+        # CSRF in cookies, not header
+        respx.get(f"{BASE_URL}/sinfo/backend/").mock(
+            return_value=Response(
+                200,
+                text="<html>Login</html>",
+                headers={"Set-Cookie": "XSRF-TOKEN=cookie-csrf-token; Path=/"},
+            )
+        )
+        respx.post(f"{BASE_URL}/dasext/login.do").mock(
+            return_value=Response(302, headers={"Location": f"{BASE_URL}/sinfo/"})
+        )
+        respx.get(f"{BASE_URL}/sinfo/").mock(
+            return_value=Response(200, text="<html>Home</html>")
+        )
+        # check_session call after landing on root
+        respx.get(f"{BASE_URL}/sinfo/backend/myStudents").mock(
+            return_value=Response(200, text="{}")
+        )
+
         async with LkParser() as parser:
-            with patch.object(parser._client, "get") as mock_get:
-                with patch.object(parser._client, "post") as mock_post:
-                    # CSRF in cookies, not header
-                    mock_login_page = MagicMock()
-                    mock_login_page.headers = {}
-                    mock_login_page.cookies = {"XSRF-TOKEN": "cookie-csrf-token"}
-                    mock_get.return_value = mock_login_page
+            result = await parser.login("test@omsu.ru", "password123")
 
-                    mock_login_resp = MagicMock()
-                    mock_login_resp.url = "https://eservice.omsu.ru/sinfo/"
-                    mock_login_resp.status_code = 200
-                    mock_login_resp.text = ""
-                    mock_post.return_value = mock_login_resp
-
-                    result = await parser.login("test@omsu.ru", "password123")
-                    assert result is True
+        assert result is True
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_login_failed_still_on_login_page(self) -> None:
         """Test login fails when still on login page."""
+        respx.get(f"{BASE_URL}/sinfo/backend/").mock(
+            return_value=Response(200, headers={"X-CSRF-TOKEN": "test-csrf"})
+        )
+        # Login fails — response is 200 with login form (not redirect)
+        respx.post(f"{BASE_URL}/dasext/login.do").mock(
+            return_value=Response(
+                200,
+                text='<input name="j_password">',
+                headers={"Location": ""},
+            )
+        )
+
         async with LkParser() as parser:
-            with patch.object(parser._client, "get") as mock_get:
-                with patch.object(parser._client, "post") as mock_post:
-                    mock_login_page = MagicMock()
-                    mock_login_page.headers = {"X-CSRF-TOKEN": "test-csrf"}
-                    mock_get.return_value = mock_login_page
+            result = await parser.login("test@omsu.ru", "wrongpass")
 
-                    # Still on login page (contains j_password)
-                    mock_login_resp = MagicMock()
-                    mock_login_resp.url = "https://eservice.omsu.ru/dasext/login"
-                    mock_login_resp.status_code = 200
-                    mock_login_resp.text = '<input name="j_password">'
-                    mock_post.return_value = mock_login_resp
-
-                    result = await parser.login("test@omsu.ru", "wrongpass")
-                    assert result is False
+        assert result is False
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_login_network_error(self) -> None:
         """Test login handles network errors."""
-        async with LkParser() as parser:
-            with patch.object(parser._client, "get") as mock_get:
-                mock_get.side_effect = httpx.RequestError("Network error")
+        respx.get(f"{BASE_URL}/sinfo/backend/").mock(
+            side_effect=httpx.ConnectError("Network error")
+        )
 
-                with pytest.raises(LkAuthError, match="Network error"):
-                    await parser.login("test@omsu.ru", "password123")
+        async with LkParser() as parser:
+            with pytest.raises(LkAuthError, match="Network error"):
+                await parser.login("test@omsu.ru", "password123")
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_fetch_student_data_success(self) -> None:
         """Test successful data fetch."""
-        async with LkParser() as parser:
-            with patch.object(parser._client, "get") as mock_get:
-                mock_resp = MagicMock()
-                mock_resp.url = "https://eservice.omsu.ru/sinfo/backend/myStudents"
-                mock_resp.status_code = 200
-                mock_resp.json.return_value = {
+        respx.get(f"{BASE_URL}/sinfo/backend/myStudents").mock(
+            return_value=Response(
+                200,
+                json={
                     "sessions": [{"number": "5", "entries": []}],
                     "semInfo": [{"semester": 5, "discipline": "Math"}],
                     "summary": {"name": "Test Student"},
-                }
-                mock_resp.raise_for_status = MagicMock()
-                mock_get.return_value = mock_resp
+                },
+            )
+        )
 
-                data = await parser.fetch_student_data()
+        async with LkParser() as parser:
+            data = await parser.fetch_student_data()
 
-                assert isinstance(data, LkStudentData)
-                assert len(data.sessions) == 1
-                assert len(data.sem_info) == 1
-                assert data.summary["name"] == "Test Student"
+        assert isinstance(data, LkStudentData)
+        assert len(data.sessions) == 1
+        assert len(data.sem_info) == 1
+        assert data.summary["name"] == "Test Student"
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_fetch_student_data_session_expired_redirect(self) -> None:
         """Test session expired detection via redirect."""
-        async with LkParser() as parser:
-            with patch.object(parser._client, "get") as mock_get:
-                mock_resp = MagicMock()
-                mock_resp.url = "https://eservice.omsu.ru/dasext/login"
-                mock_resp.status_code = 200
-                mock_get.return_value = mock_resp
+        # First call returns redirect to login
+        respx.get(f"{BASE_URL}/sinfo/backend/myStudents").mock(
+            return_value=Response(
+                302,
+                headers={"Location": f"{BASE_URL}/dasext/login"},
+            )
+        )
+        # Follow redirect to login page
+        respx.get(f"{BASE_URL}/dasext/login").mock(
+            return_value=Response(200, text="<html>Login</html>")
+        )
 
-                with pytest.raises(LkSessionExpired):
-                    await parser.fetch_student_data()
+        async with LkParser() as parser:
+            with pytest.raises(LkSessionExpired):
+                await parser.fetch_student_data()
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_fetch_student_data_401(self) -> None:
         """Test session expired detection via 401."""
-        async with LkParser() as parser:
-            with patch.object(parser._client, "get") as mock_get:
-                mock_resp = MagicMock()
-                mock_resp.status_code = 401
-                mock_resp.raise_for_status.side_effect = httpx.HTTPStatusError(
-                    "401",
-                    request=MagicMock(),
-                    response=MagicMock(status_code=401),
-                )
-                mock_get.return_value = mock_resp
+        respx.get(f"{BASE_URL}/sinfo/backend/myStudents").mock(
+            return_value=Response(401, text="Unauthorized")
+        )
 
-                with pytest.raises(LkSessionExpired):
-                    await parser.fetch_student_data()
+        async with LkParser() as parser:
+            with pytest.raises(LkSessionExpired):
+                await parser.fetch_student_data()
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_fetch_student_data_network_error(self) -> None:
-        """Test data fetch handles network errors."""
-        async with LkParser() as parser:
-            with patch.object(parser._client, "get") as mock_get:
-                mock_get.side_effect = httpx.RequestError("Network error")
+        """Test data fetch handles network errors.
 
-                with pytest.raises(LkDataError, match="Network error"):
-                    await parser.fetch_student_data()
+        Uses httpx.RequestError (base class) which is NOT in RETRYABLE_EXCEPTIONS,
+        so retry logic does not kick in (no asyncio.sleep delays).
+        """
+        respx.get(f"{BASE_URL}/sinfo/backend/myStudents").mock(
+            side_effect=httpx.RequestError("Network error")
+        )
+
+        async with LkParser() as parser:
+            with pytest.raises(LkDataError, match="Network error"):
+                await parser.fetch_student_data()
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_check_session_valid(self) -> None:
         """Test check_session returns True for valid session."""
-        async with LkParser() as parser:
-            with patch.object(parser._client, "get") as mock_get:
-                mock_resp = MagicMock()
-                mock_resp.url = "https://eservice.omsu.ru/sinfo/backend/myStudents"
-                mock_resp.status_code = 200
-                mock_get.return_value = mock_resp
+        respx.get(f"{BASE_URL}/sinfo/backend/myStudents").mock(
+            return_value=Response(200, json={"sessions": []})
+        )
 
-                result = await parser.check_session()
-                assert result is True
+        async with LkParser() as parser:
+            result = await parser.check_session()
+
+        assert result is True
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_check_session_expired(self) -> None:
         """Test check_session returns False for expired session."""
-        async with LkParser() as parser:
-            with patch.object(parser._client, "get") as mock_get:
-                mock_resp = MagicMock()
-                mock_resp.url = "https://eservice.omsu.ru/dasext/login"
-                mock_resp.status_code = 302
-                mock_get.return_value = mock_resp
+        respx.get(f"{BASE_URL}/sinfo/backend/myStudents").mock(
+            return_value=Response(
+                302,
+                headers={"Location": f"{BASE_URL}/dasext/login"},
+            )
+        )
+        respx.get(f"{BASE_URL}/dasext/login").mock(
+            return_value=Response(200, text="<html>Login</html>")
+        )
 
-                result = await parser.check_session()
-                assert result is False
+        async with LkParser() as parser:
+            result = await parser.check_session()
+
+        assert result is False
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_check_session_network_error(self) -> None:
         """Test check_session returns False on network error."""
-        async with LkParser() as parser:
-            with patch.object(parser._client, "get") as mock_get:
-                mock_get.side_effect = httpx.RequestError("Network error")
+        respx.get(f"{BASE_URL}/sinfo/backend/myStudents").mock(
+            side_effect=httpx.ConnectError("Network error")
+        )
 
-                result = await parser.check_session()
-                assert result is False
+        async with LkParser() as parser:
+            result = await parser.check_session()
+
+        assert result is False
 
 
 class TestLkStudentData:

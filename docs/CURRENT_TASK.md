@@ -3,51 +3,40 @@
 ## Статус
 **Нет активной задачи.**
 
-## Последняя сессия: Code Review Phase 3 (Accessibility + Testing) — 2026-02-12
+## Последняя сессия: Code Review Final (P1-7, P1-8, P1-10) — 2026-02-14
 
 ### Сделано
-Продолжение реализации улучшений из code review плана:
+Реализованы финальные пункты code review:
 
-**P2 — Medium (Accessibility):**
-1. Frontend: `LessonCard` — добавлен `aria-label` для screen readers (2 новых теста)
-2. Frontend: `LessonCard` — тесты для `hasNote` prop (2 новых теста)
+**P1-7: Structured Logging (structlog):**
+1. Backend: `src/logging_config.py` — ProcessorFormatter перехватывает stdlib logging (0 изменений в 15+ модулях)
+2. Backend: `src/middleware/request_id.py` — X-Request-ID header + ContextVar для per-request tracking
+3. Backend: `src/main.py` — удалена старая setup_logging(), добавлены middleware
+4. Backend: 8 тестов (JSON output, console output, log levels, stdlib interception, noisy loggers, request_id)
+5. Backend: 3 теста RequestIdMiddleware (response header, incoming ID preserved, unique IDs)
 
-**P2 — Medium (Testing):**
-3. Frontend: `SchedulePage` — 12 новых интеграционных тестов:
-   - Рендеринг заголовка и недели
-   - Отображение записей расписания
-   - Индикатор следующей пары
-   - Навигация между неделями
-   - Состояние ошибки с retry
-   - Кнопка обновления
-   - Открытие/закрытие модала деталей занятия
-   - Пустое состояние
-4. Frontend: MSW handlers для `/schedule/week` и `/schedule/refresh`
-5. Frontend: `testWeekSchedule` тестовые данные
+**P1-8: Prometheus Metrics:**
+6. Backend: `src/metrics.py` — Counter, Histogram, Gauge для HTTP и schedule sync
+7. Backend: `src/middleware/prometheus.py` — auto-instrumentation с path normalization (`/\d+/` → `/{id}/`)
+8. Backend: `src/main.py` — GET /metrics endpoint, PrometheusMiddleware, APP_INFO
+9. Backend: `src/scheduler.py` — SCHEDULE_SYNC_TOTAL (success/skipped/error) + duration
+10. `nginx/nginx.conf` — /metrics location (Docker internal networks only)
+11. Backend: 12 тестов (endpoint, path normalization, counters, exclusions)
 
-### Предыдущая сессия: Code Review Phase 2 — 2026-02-12
-**P0 — Critical:**
-1. Backend: Transaction rollback в `database.py` — автоматический откат при ошибках
-2. Frontend: React.lazy() для 12 страниц (DashboardPage, SchedulePage, SubjectsPage, etc.)
-3. Frontend: `PageSkeleton` компонент для Suspense fallback
-4. Frontend: Global error handler (`unhandledrejection` + `error` listeners, 7 тестов)
-
-**P1 — High:**
-5. Backend: Retry модуль (`src/parser/retry.py`) с exponential backoff (19 тестов)
-6. Backend: Retry интегрирован в `omsu_parser._fetch_json()` и `lk_parser.fetch_student_data()`
-7. Frontend: Оптимизация DashboardPage queries (staleTime: 1-10 min, gcTime: 10-60 min)
-8. Frontend: ScheduleGrid ARIA атрибуты для accessibility
+**P1-10: LK Parser тесты с respx:**
+12. Backend: `tests/test_lk_parser.py` — полностью переписан с respx transport-level mocking
+13. Удалены: MagicMock, patch, CI_SKIP — все 16 тестов работают в CI без пропусков
 
 ### Метрики
-- Backend тестов: 421 passed
-- Frontend тестов: ~380 passed (добавлено 16 новых)
+- Backend тестов: 466 passed (было 421, +45 новых)
+- Frontend тестов: ~380 passed
 - Линтер: ✅ Ruff + ESLint чисто
 - Build: ✅ TypeScript + Vite
 
 ### Результат
-- Улучшена accessibility LessonCard (aria-label для clickable cards)
-- Добавлено тестовое покрытие для SchedulePage (ключевая страница)
-- Добавлены MSW handlers для week schedule endpoint
+- Structured logging: JSON output в production, colored console в dev, request_id tracking
+- Prometheus: HTTP метрики, schedule sync метрики, /metrics endpoint (restricted to internal networks)
+- LK parser тесты: 0 CI skips, transport-level mocking с respx
 
 ## Следующие задачи (приоритет)
 1. **Бэкапы PostgreSQL** — настроить cron + pg_dump (P0)
@@ -55,10 +44,7 @@
 3. **02-push-notifications** — push-уведомления (P1)
 
 ### Оставшиеся пункты Code Review (низкий приоритет):
-- P1-7: Structured logging (structlog) — требует зависимость
-- P1-8: Prometheus metrics — требует зависимость
 - P2-11: Виртуализация в FilesPage — требует @tanstack/react-virtual
-- P1-10: Переписать LK parser тесты с respx
 
 ## Блокеры / Вопросы
 Нет блокеров.

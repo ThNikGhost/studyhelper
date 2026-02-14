@@ -15,12 +15,17 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
 from src.config import settings
+from src.logging_config import setup_logging
+from src.metrics import APP_INFO
+from src.middleware.prometheus import PrometheusMiddleware
+from src.middleware.request_id import RequestIdMiddleware
 from src.routers import (
     attendance,
     auth,
@@ -39,13 +44,6 @@ from src.routers import (
 from src.utils.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
-
-
-def setup_logging() -> None:
-    """Configure structured logging based on debug mode."""
-    log_level = logging.DEBUG if settings.debug else logging.INFO
-    log_format = "%(asctime)s | %(levelname)-8s | %(name)s:%(lineno)d | %(message)s"
-    logging.basicConfig(level=log_level, format=log_format, force=True)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -67,7 +65,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     from src.scheduler import start_scheduler, stop_scheduler
 
     # Startup
-    setup_logging()
+    setup_logging(debug=settings.debug)
+    APP_INFO.labels(version="0.1.0").set(1)
     logger.info("StudyHelper API starting up")
     await start_scheduler()
     yield
@@ -89,6 +88,9 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Request ID middleware (for structured logging)
+app.add_middleware(RequestIdMiddleware)
+
 # Security headers middleware
 app.add_middleware(SecurityHeadersMiddleware)
 
@@ -100,6 +102,9 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
+# Prometheus metrics middleware (outermost — captures total request time)
+app.add_middleware(PrometheusMiddleware)
 
 
 @app.exception_handler(Exception)
@@ -116,6 +121,12 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 async def root() -> dict[str, str]:
     """Root endpoint."""
     return {"message": "StudyHelper API", "version": "0.1.0"}
+
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics() -> Response:
+    """Prometheus metrics endpoint."""
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.get("/health")
