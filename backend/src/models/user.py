@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
+    from src.models.calendar_feed import CalendarFeed
     from src.models.lk import LkCredentials
     from src.models.telegram import TelegramLink
     from src.models.work import WorkStatus
@@ -41,6 +42,12 @@ class User(Base, TimestampMixin):
     )
     telegram_link: Mapped["TelegramLink | None"] = relationship(
         "TelegramLink",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    calendar_feed: Mapped["CalendarFeed | None"] = relationship(
+        "CalendarFeed",
         back_populates="user",
         uselist=False,
         cascade="all, delete-orphan",

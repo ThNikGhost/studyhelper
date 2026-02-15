@@ -36,6 +36,8 @@ dependencies = [
     # Error tracking
     "sentry-sdk[fastapi]>=2.0.0",
     "aiogram>=3.20.0",
+    # Calendar feed (iCal)
+    "icalendar>=7.0.0",
 ]
 
 [project.optional-dependencies]

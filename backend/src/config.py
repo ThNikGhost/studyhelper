@@ -80,6 +80,9 @@ class Settings(BaseSettings):
     sentry_dsn: str | None = None
     sentry_environment: str | None = None
 
+    # Base URL (used for calendar feed URLs etc.)
+    base_url: str = "https://studyhelper1.ru"
+
     # Telegram bot
     telegram_bot_token: str | None = None
     telegram_webhook_url: str | None = None

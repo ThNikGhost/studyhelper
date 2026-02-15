@@ -29,6 +29,7 @@ from src.middleware.request_id import RequestIdMiddleware
 from src.routers import (
     attendance,
     auth,
+    calendar_feed,
     classmates,
     files,
     lk,
@@ -239,5 +240,6 @@ api_v1.include_router(attendance.router, prefix="/attendance", tags=["Attendance
 api_v1.include_router(notes.router, prefix="/notes", tags=["Notes"])
 api_v1.include_router(lk.router, prefix="/lk", tags=["LK"])
 api_v1.include_router(telegram.router, prefix="/telegram", tags=["Telegram"])
+api_v1.include_router(calendar_feed.router, prefix="/calendar", tags=["Calendar"])
 
 app.include_router(api_v1)

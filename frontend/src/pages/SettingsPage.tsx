@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Settings, Dumbbell, Users, Building2, Check, Loader2, RefreshCw, LogOut, Eye, EyeOff, Sun, Moon, Monitor, MessageCircle, Copy, Bell, BellOff, LinkIcon, Unlink } from 'lucide-react'
+import { Settings, Dumbbell, Users, Building2, Check, Loader2, RefreshCw, LogOut, Eye, EyeOff, Sun, Moon, Monitor, MessageCircle, Copy, Bell, BellOff, LinkIcon, Unlink, Calendar, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
   Card,
@@ -19,6 +19,7 @@ import { useTheme } from '@/hooks/useTheme'
 import { scheduleService } from '@/services/scheduleService'
 import { lkService } from '@/services/lkService'
 import { telegramService } from '@/services/telegramService'
+import { calendarFeedService } from '@/services/calendarFeedService'
 import { getPeTeachersFromWeek } from '@/lib/peTeacherFilter'
 import { formatDistanceToNow } from '@/lib/dateUtils'
 import type { LkCredentials } from '@/types/lk'
@@ -34,6 +35,9 @@ export default function SettingsPage() {
   const [lkPassword, setLkPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [disconnectModalOpen, setDisconnectModalOpen] = useState(false)
+
+  // Calendar feed state
+  const [calDisableModalOpen, setCalDisableModalOpen] = useState(false)
 
   // Telegram state
   const [tgUnlinkModalOpen, setTgUnlinkModalOpen] = useState(false)
@@ -152,6 +156,47 @@ export default function SettingsPage() {
       toast.error('Не удалось обновить настройки уведомлений')
     },
   })
+
+  // Calendar feed status
+  const { data: calStatus, isLoading: calStatusLoading } = useQuery({
+    queryKey: ['calendar', 'status'],
+    queryFn: ({ signal }) => calendarFeedService.getStatus(signal),
+    staleTime: 1000 * 60,
+  })
+
+  // Calendar feed enable
+  const calEnableMutation = useMutation({
+    mutationFn: () => calendarFeedService.enable(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar', 'status'] })
+      toast.success('Подписка на календарь активирована')
+    },
+    onError: () => {
+      toast.error('Не удалось активировать подписку')
+    },
+  })
+
+  // Calendar feed disable
+  const calDisableMutation = useMutation({
+    mutationFn: () => calendarFeedService.disable(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar', 'status'] })
+      setCalDisableModalOpen(false)
+      toast.success('Подписка на календарь отключена')
+    },
+    onError: () => {
+      toast.error('Не удалось отключить подписку')
+    },
+  })
+
+  const isCalMutating = calEnableMutation.isPending || calDisableMutation.isPending
+
+  const copyFeedUrl = () => {
+    if (calStatus?.feed_url) {
+      navigator.clipboard.writeText(calStatus.feed_url)
+      toast.success('Ссылка скопирована')
+    }
+  }
 
   // Countdown timer for link code
   const expiresAt = tgStatus?.link_code_expires_at
@@ -490,6 +535,104 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Calendar Feed Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-orange-500" />
+              <CardTitle>Подписка на календарь</CardTitle>
+            </div>
+            <CardDescription>
+              Экспортируйте расписание и дедлайны в Google Calendar, Apple Calendar или Outlook через iCal-подписку.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {calStatusLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : calStatus?.is_active ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <Check className="h-5 w-5" />
+                  <span className="font-medium">Подписка активна</span>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <code className="bg-muted px-3 py-2 rounded text-xs font-mono break-all flex-1">
+                      {calStatus.feed_url}
+                    </code>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={copyFeedUrl}
+                      title="Скопировать ссылку"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {calStatus.last_accessed_at && (
+                  <p className="text-sm text-muted-foreground">
+                    Последнее обращение: {formatDistanceToNow(new Date(calStatus.last_accessed_at))}
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => calEnableMutation.mutate()}
+                    disabled={isCalMutating}
+                    className="gap-2"
+                  >
+                    {calEnableMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    Обновить ссылку
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCalDisableModalOpen(true)}
+                    disabled={isCalMutating}
+                    className="gap-2 text-destructive hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                    Отключить
+                  </Button>
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Скопируйте ссылку и добавьте как подписку по URL в вашем календаре.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <Button
+                  onClick={() => calEnableMutation.mutate()}
+                  disabled={isCalMutating}
+                  className="gap-2"
+                >
+                  {calEnableMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Calendar className="h-4 w-4" />
+                  )}
+                  Подключить
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Создаст секретную ссылку для подписки на расписание.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* OmSU LK Integration Section */}
         <Card>
           <CardHeader>
@@ -656,6 +799,38 @@ export default function SettingsPage() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 'Отвязать'
+              )}
+            </Button>
+          </div>
+        </Modal>
+
+        {/* Calendar disable confirmation modal */}
+        <Modal
+          open={calDisableModalOpen}
+          onClose={() => setCalDisableModalOpen(false)}
+          title="Отключить подписку на календарь?"
+        >
+          <p className="text-muted-foreground mb-4">
+            Текущая ссылка перестанет работать. Вы сможете создать новую подписку в любой момент.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setCalDisableModalOpen(false)}
+            >
+              Отмена
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={() => calDisableMutation.mutate()}
+              disabled={calDisableMutation.isPending}
+            >
+              {calDisableMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Отключить'
               )}
             </Button>
           </div>
