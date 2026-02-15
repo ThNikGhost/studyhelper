@@ -38,7 +38,7 @@
 - `docs/StudyHelper_TZ.md` — техническое задание
 - `docs/Decisions.md` — архитектурные решения
 - `docs/database_schema.md` — схема БД
-- `docs/plans/MVP_plan.md` — план MVP
+- `docs/plans/tasks/` — активные задачи (B1-B12, F1-F5)
 
 ## Workflow сессии
 - `/session-start` — загрузить контекст проекта
