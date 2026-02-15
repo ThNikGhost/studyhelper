@@ -50,11 +50,11 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **B8**: GradesPage light theme contrast — border-классы к grade badges
 - **B9**: Semester dates from LK — _determine_current_semester(), auto-dates, is_current fix
 - **B11**: File download JWT fix — blob download с авторизацией
+- **B12**: Nginx healthcheck path — `http://localhost/health` вместо `https://localhost/`
 
 ### Следующие задачи (приоритет):
-1. **B12** — Nginx healthcheck path
-2. **F1** — PostgreSQL backups
-3. **F2** — Sentry integration
+1. **F1** — PostgreSQL backups
+2. **F2** — Sentry integration
 
 ## Что отложено
 - httpOnly cookies вместо localStorage
@@ -72,9 +72,6 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 ### Vitest: зависание при cleanup (Windows)
 Процесс зависает после тестов, 4GB+ RAM (Vitest bug #9560).
 **Решение**: `/test` skill (test-runner агент с принудительным kill).
-
-### Production: Nginx healthcheck путь
-Проверяет `/api/v1/health`, правильный путь `/health`. Не критично, в плане (B12).
 
 ### Production: API docs недоступны
 `/api/v1/docs` → 404. Требует проверки.

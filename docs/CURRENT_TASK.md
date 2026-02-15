@@ -1,20 +1,19 @@
 # Текущая задача
 
 ## Статус
-**B8 завершена. Следующая: B12 (Nginx healthcheck path).**
+**B12 завершена. Следующая: F1 (PostgreSQL backups).**
 
-## Последняя сессия: B8 GradesPage light theme contrast — 2026-02-15
+## Последняя сессия: B12 Nginx healthcheck path — 2026-02-15
 
 ### Сделано
-- **B8**: Добавлены `border border-*-200 dark:border-*-800` ко всем вариантам в `getGradeColor()`
-- 6 вариантов оценок: отлично, хорошо, удовл., зачтено, неудовл., прочее
-- Fallback (gray) использует `dark:border-gray-700` (не 800) — чтобы border не сливался с `dark:bg-gray-800`
-- Lint + build чистые, code review пройден
+- **B12**: Healthcheck изменён с `https://localhost/` на `http://localhost/health`
+- Убран SSL handshake — теперь проверяется реальный health endpoint (DB + Redis)
+- 2 файла: `nginx/Dockerfile`, `docker-compose.prod.yml`
+- `docker compose config` валиден
 
 ## Следующие шаги (по приоритету)
-1. **B12** — Nginx healthcheck path
-2. **F1** — PostgreSQL backups
-3. **F2** — Sentry integration
+1. **F1** — PostgreSQL backups
+2. **F2** — Sentry integration
 4. **F5** — Phone widgets
 5. **F3** — Telegram bot
 6. **F4** — Google Calendar sync
