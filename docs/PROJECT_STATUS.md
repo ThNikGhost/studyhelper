@@ -43,14 +43,18 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 
 ### Завершено (закоммичено):
 - **B1-B3**: ClassmatesPage mobile fixes (grid, аватарки, кнопка "+")
+- **B4**: Schedule scroll indicator — fade-градиент справа на мобильных
 - **B5**: SettingsPage padding fix
 - **B6**: ThemeToggle → Settings (перенос, удаление мёртвых файлов, aria-pressed)
 - **B7**: Remove "Notes" tab (route + QuickActions)
 - **B9**: Semester dates from LK — _determine_current_semester(), auto-dates, is_current fix
+- **B11**: File download JWT fix — blob download с авторизацией
 
 ### Следующие задачи (приоритет):
-1. **B10** — Verification после B9 (re-import на проде)
-2. **B11** — File download JWT fix
+1. **B8** — GradesPage light theme contrast
+2. **B12** — Nginx healthcheck path
+3. **F1** — PostgreSQL backups
+4. **F2** — Sentry integration
 
 ## Что отложено
 - httpOnly cookies вместо localStorage
