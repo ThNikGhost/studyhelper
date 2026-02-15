@@ -837,6 +837,38 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 24. PostgreSQL Backups решения (2026-02-15)
+
+### Host-level cron вместо Docker backup контейнера
+
+**Решение:** Использовать cron на хосте + `docker compose exec -T db pg_dump` вместо отдельного backup-контейнера.
+
+**Обоснование:**
+- Минимум инфраструктуры — не нужен ещё один контейнер (уже 5 шт.)
+- cron на хосте надёжнее — работает даже если Docker-стек упал
+- `docker compose exec -T` позволяет выполнить pg_dump в существующем контейнере db
+- Простое обслуживание — обычный bash-скрипт, логи в `/var/log/`
+
+### pg_dump --clean --if-exists
+
+**Решение:** Добавить `--clean --if-exists` в pg_dump команду.
+
+**Обоснование:**
+- `--clean` добавляет DROP TABLE перед CREATE TABLE в дампе
+- `--if-exists` предотвращает ошибки при восстановлении в пустую БД
+- Без `--clean` restore поверх существующей БД даёт ошибки "table already exists"
+
+### flock для предотвращения параллельных бэкапов
+
+**Решение:** `flock -n 200` на `/var/lock/studyhelper-backup.lock` в начале backup.sh.
+
+**Обоснование:**
+- Если предыдущий бэкап не завершился, cron запустит второй экземпляр
+- Параллельные pg_dump могут конкурировать за ресурсы БД
+- flock с `-n` (non-blocking) сразу завершается, если lock занят
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -920,3 +952,6 @@ notification_settings — настройки уведомлений
 | 2026-02-14 | respx вместо MagicMock для httpx | MagicMock ломал connection pool → deadlock в CI |
 | 2026-02-15 | Текущий семестр из SessionGrade, не из max(disciplines) | SemesterDiscipline содержит весь учебный план (1-11), max=11 для 3 курса — неверно. session_number парсинг + cap by plan |
 | 2026-02-15 | Даты семестров: осень Sep1-Dec30, весна Feb9-Jul7 | Приблизительные, пользователь может изменить вручную. Не перезаписываются при re-import |
+| 2026-02-15 | Host-level cron вместо Docker backup | Минимум инфраструктуры, работает если Docker упал |
+| 2026-02-15 | pg_dump --clean --if-exists | DROP перед CREATE для корректного restore |
+| 2026-02-15 | flock в backup.sh | Предотвращение параллельных pg_dump |
