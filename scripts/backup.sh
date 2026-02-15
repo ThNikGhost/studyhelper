@@ -16,6 +16,15 @@ LOCK_FILE="/var/lock/studyhelper-backup.lock"
 exec 200>"$LOCK_FILE"
 flock -n 200 || { echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: Backup already running"; exit 1; }
 
+# Clean up partial backup on failure
+cleanup() {
+  if [ -f "$BACKUP_FILE" ]; then
+    rm -f "$BACKUP_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Cleaned up partial backup: $BACKUP_FILE"
+  fi
+}
+trap cleanup ERR
+
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting backup..."
 
 # Load database credentials from .env
