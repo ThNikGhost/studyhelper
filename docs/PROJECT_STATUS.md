@@ -26,7 +26,7 @@
 
 ## Frontend
 
-14 страниц: Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Notes, Timeline, Settings, Grades.
+13 страниц: Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Timeline, Settings, Grades. (Notes убрана из навигации, доступна через LessonDetailModal)
 
 React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (system/light/dark).
 
@@ -41,15 +41,16 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 
 См. `docs/Current_task.md` — 15 задач (B1-B12 bugfixes, F1-F5 features).
 
-### Завершено (незакоммичено):
+### Завершено (закоммичено):
 - **B1-B3**: ClassmatesPage mobile fixes (grid, аватарки, кнопка "+")
 - **B5**: SettingsPage padding fix
 - **B6**: ThemeToggle → Settings (перенос, удаление мёртвых файлов, aria-pressed)
+- **B7**: Remove "Notes" tab (route + QuickActions)
 
 ### Следующие задачи (приоритет):
-1. **B7** — Remove "Notes" tab
-2. **B9** — Semester dates from LK (CRITICAL)
-3. **F1** — Бэкапы PostgreSQL — cron + pg_dump
+1. **B9** — Semester dates from LK (CRITICAL)
+2. **B10** — Verification после B9
+3. **B11** — File download JWT fix
 
 ## Что отложено
 - httpOnly cookies вместо localStorage
@@ -109,6 +110,6 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 | API endpoints | ~70 |
 | Моделей | 16 |
 | Миграций | 19 |
-| Frontend страниц | 14 |
+| Frontend страниц | 13 |
 | Линтеры | Ruff + ESLint clean |
 | Build | TypeScript + Vite clean |
