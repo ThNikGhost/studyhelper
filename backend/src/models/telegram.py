@@ -30,12 +30,8 @@ class TelegramLink(Base, TimestampMixin):
     telegram_id: Mapped[int | None] = mapped_column(
         BigInteger, unique=True, nullable=True, index=True
     )
-    telegram_username: Mapped[str | None] = mapped_column(
-        String(255), nullable=True
-    )
-    link_code: Mapped[str | None] = mapped_column(
-        String(6), nullable=True, index=True
-    )
+    telegram_username: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    link_code: Mapped[str | None] = mapped_column(String(6), nullable=True, index=True)
     link_code_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -50,7 +46,4 @@ class TelegramLink(Base, TimestampMixin):
 
     def __repr__(self) -> str:
         """String representation."""
-        return (
-            f"<TelegramLink(user_id={self.user_id}, "
-            f"telegram_id={self.telegram_id})>"
-        )
+        return f"<TelegramLink(user_id={self.user_id}, telegram_id={self.telegram_id})>"

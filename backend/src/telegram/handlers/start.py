@@ -128,9 +128,7 @@ async def cmd_status(message: Message) -> None:
 
     dl_status = "\u2705" if link.notify_deadlines else "\u274c"
     ms_status = "\u2705" if link.morning_summary else "\u274c"
-    linked_str = (
-        link.linked_at.strftime("%d.%m.%Y %H:%M") if link.linked_at else "—"
-    )
+    linked_str = link.linked_at.strftime("%d.%m.%Y %H:%M") if link.linked_at else "—"
     await message.answer(
         f"\u2705 <b>Привязан</b>\n\n"
         f"\U0001f464 Пользователь #{link.user_id}\n"

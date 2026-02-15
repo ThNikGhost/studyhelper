@@ -42,9 +42,7 @@ async def telegram_webhook(request: Request) -> dict[str, str]:
     bot = get_bot()
     dp = get_dispatcher()
     if bot is None or dp is None:
-        raise HTTPException(
-            status_code=503, detail="Telegram bot not initialized"
-        )
+        raise HTTPException(status_code=503, detail="Telegram bot not initialized")
 
     data = await request.json()
     update = Update.model_validate(data, context={"bot": bot})

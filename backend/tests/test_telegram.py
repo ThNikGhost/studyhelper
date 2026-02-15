@@ -42,9 +42,7 @@ async def user2(db_session: AsyncSession) -> User:
 class TestGenerateLinkCode:
     """Tests for generate_link_code."""
 
-    async def test_creates_new_link(
-        self, db_session: AsyncSession, user: User
-    ) -> None:
+    async def test_creates_new_link(self, db_session: AsyncSession, user: User) -> None:
         """First call creates a new TelegramLink record."""
         link = await tg_service.generate_link_code(db_session, user.id)
         assert link.user_id == user.id
@@ -53,9 +51,7 @@ class TestGenerateLinkCode:
         assert link.link_code_expires_at is not None
         assert link.telegram_id is None
 
-    async def test_regenerates_code(
-        self, db_session: AsyncSession, user: User
-    ) -> None:
+    async def test_regenerates_code(self, db_session: AsyncSession, user: User) -> None:
         """Second call updates existing record with new code."""
         link1 = await tg_service.generate_link_code(db_session, user.id)
         code1 = link1.link_code
@@ -75,9 +71,7 @@ class TestGenerateLinkCode:
 class TestGetLinkByCode:
     """Tests for get_link_by_code."""
 
-    async def test_finds_valid_code(
-        self, db_session: AsyncSession, user: User
-    ) -> None:
+    async def test_finds_valid_code(self, db_session: AsyncSession, user: User) -> None:
         """Should find link with valid, non-expired code."""
         link = await tg_service.generate_link_code(db_session, user.id)
         found = await tg_service.get_link_by_code(db_session, link.link_code)  # type: ignore[arg-type]
@@ -108,9 +102,7 @@ class TestGetLinkByCode:
 class TestCompleteLink:
     """Tests for complete_link."""
 
-    async def test_completes_link(
-        self, db_session: AsyncSession, user: User
-    ) -> None:
+    async def test_completes_link(self, db_session: AsyncSession, user: User) -> None:
         """Should set telegram_id and clear code."""
         link = await tg_service.generate_link_code(db_session, user.id)
         updated = await tg_service.complete_link(
@@ -126,9 +118,7 @@ class TestCompleteLink:
 class TestUnlink:
     """Tests for unlink."""
 
-    async def test_unlinks_existing(
-        self, db_session: AsyncSession, user: User
-    ) -> None:
+    async def test_unlinks_existing(self, db_session: AsyncSession, user: User) -> None:
         """Should remove telegram link."""
         link = await tg_service.generate_link_code(db_session, user.id)
         await tg_service.complete_link(

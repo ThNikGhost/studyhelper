@@ -25,8 +25,7 @@ async def _require_linked(message: Message) -> int | None:
         link = await tg_service.get_link_by_telegram_id(db, telegram_id)
     if not link:
         await message.answer(
-            "\u274c Аккаунт не привязан.\n"
-            "Используйте /start для инструкции."
+            "\u274c Аккаунт не привязан.\nИспользуйте /start для инструкции."
         )
         return None
     return link.user_id

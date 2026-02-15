@@ -40,7 +40,9 @@ def _format_time(t: time) -> str:
 def _format_entry(entry: ScheduleEntryResponse) -> str:
     """Format a single schedule entry."""
     emoji = LESSON_TYPE_EMOJI.get(entry.lesson_type.value, "\U0001f4cc")
-    parts = [f"{emoji} <b>{_format_time(entry.start_time)}-{_format_time(entry.end_time)}</b>"]
+    parts = [
+        f"{emoji} <b>{_format_time(entry.start_time)}-{_format_time(entry.end_time)}</b>"
+    ]
     parts.append(f"  {entry.subject_name}")
     if entry.teacher_name:
         parts.append(f"  \U0001f468\u200d\U0001f3eb {entry.teacher_name}")

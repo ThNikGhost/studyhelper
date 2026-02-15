@@ -33,8 +33,12 @@ def upgrade() -> None:
             sa.DateTime(timezone=True),
             nullable=True,
         ),
-        sa.Column("notify_deadlines", sa.Boolean(), nullable=False, server_default="true"),
-        sa.Column("morning_summary", sa.Boolean(), nullable=False, server_default="true"),
+        sa.Column(
+            "notify_deadlines", sa.Boolean(), nullable=False, server_default="true"
+        ),
+        sa.Column(
+            "morning_summary", sa.Boolean(), nullable=False, server_default="true"
+        ),
         sa.Column("linked_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column(
             "created_at",
@@ -55,8 +59,12 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_telegram_links_user_id", "telegram_links", ["user_id"], unique=True)
-    op.create_index("ix_telegram_links_telegram_id", "telegram_links", ["telegram_id"], unique=True)
+    op.create_index(
+        "ix_telegram_links_user_id", "telegram_links", ["user_id"], unique=True
+    )
+    op.create_index(
+        "ix_telegram_links_telegram_id", "telegram_links", ["telegram_id"], unique=True
+    )
     op.create_index("ix_telegram_links_link_code", "telegram_links", ["link_code"])
 
 

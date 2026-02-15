@@ -27,14 +27,12 @@ async def cmd_notifications(message: Message) -> None:
 
     if not link:
         await message.answer(
-            "\u274c Аккаунт не привязан.\n"
-            "Используйте /start для инструкции."
+            "\u274c Аккаунт не привязан.\nИспользуйте /start для инструкции."
         )
         return
 
     await message.answer(
-        "\u2699\ufe0f <b>Настройки уведомлений</b>\n\n"
-        "Нажмите кнопку для переключения:",
+        "\u2699\ufe0f <b>Настройки уведомлений</b>\n\nНажмите кнопку для переключения:",
         reply_markup=notifications_keyboard(
             link.notify_deadlines,
             link.morning_summary,
@@ -62,8 +60,7 @@ async def cmd_notify(message: Message) -> None:
         link = await tg_service.get_link_by_telegram_id(db, telegram_id)
         if not link:
             await message.answer(
-                "\u274c Аккаунт не привязан.\n"
-                "Используйте /start для инструкции."
+                "\u274c Аккаунт не привязан.\nИспользуйте /start для инструкции."
             )
             return
         await tg_service.update_notifications(
@@ -94,13 +91,10 @@ async def cmd_morning(message: Message) -> None:
         link = await tg_service.get_link_by_telegram_id(db, telegram_id)
         if not link:
             await message.answer(
-                "\u274c Аккаунт не привязан.\n"
-                "Используйте /start для инструкции."
+                "\u274c Аккаунт не привязан.\nИспользуйте /start для инструкции."
             )
             return
-        await tg_service.update_notifications(
-            db, link.user_id, morning_summary=enabled
-        )
+        await tg_service.update_notifications(db, link.user_id, morning_summary=enabled)
 
     status = "\u2705 включена" if enabled else "\u274c выключена"
     await message.answer(f"Утренняя сводка {status}.")

@@ -96,9 +96,7 @@ async def _sync_schedule_with_lock() -> None:
 
                     await send_schedule_changed()
                 except Exception:
-                    logger.warning(
-                        "Failed to send schedule change notifications"
-                    )
+                    logger.warning("Failed to send schedule change notifications")
         else:
             SCHEDULE_SYNC_TOTAL.labels(status="success").inc()
             logger.warning(
