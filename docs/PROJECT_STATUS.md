@@ -39,7 +39,7 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 
 ## Что в работе
 
-См. `docs/Current_task.md` — 15 задач (B1-B12 bugfixes, F1-F5 features).
+См. `docs/Current_task.md` — все B1-B12 bugfixes завершены, осталось F1-F5 features.
 
 ### Завершено (закоммичено):
 - **B1-B3**: ClassmatesPage mobile fixes (grid, аватарки, кнопка "+")
