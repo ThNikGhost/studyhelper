@@ -80,6 +80,11 @@ class Settings(BaseSettings):
     sentry_dsn: str | None = None
     sentry_environment: str | None = None
 
+    # Telegram bot
+    telegram_bot_token: str | None = None
+    telegram_webhook_url: str | None = None
+    telegram_webhook_secret: str | None = None
+
     @model_validator(mode="after")
     def validate_secret_key(self) -> "Settings":
         """Ensure secret_key is changed in production."""

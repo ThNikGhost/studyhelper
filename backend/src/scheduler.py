@@ -23,6 +23,11 @@ _redis: Redis | None = None
 LOCK_KEY = "studyhelper:schedule_sync_lock"
 
 
+def get_scheduler() -> AsyncIOScheduler | None:
+    """Get the scheduler instance (None if not started)."""
+    return _scheduler
+
+
 async def _get_redis() -> Redis:
     """Get or create async Redis client.
 
@@ -84,6 +89,16 @@ async def _sync_schedule_with_lock() -> None:
                 result.get("changed"),
                 result.get("entries_count"),
             )
+            # Notify Telegram users about schedule changes
+            if result.get("changed") and settings.telegram_bot_token:
+                try:
+                    from src.telegram.notifications import send_schedule_changed
+
+                    await send_schedule_changed()
+                except Exception:
+                    logger.warning(
+                        "Failed to send schedule change notifications"
+                    )
         else:
             SCHEDULE_SYNC_TOTAL.labels(status="success").inc()
             logger.warning(

@@ -23,6 +23,7 @@
 | Attendance | Absence | +total_planned/completed | semester filter | — | 29 |
 | Notes | LessonNote | — | upsert | — | 26 |
 | LK | LkCredentials, SessionGrade, SemesterDiscipline | +LkImportResult | +import_to_app | +/import | 51 |
+| Telegram | TelegramLink | Status/LinkCode/Notifications | link/unlink/notifications | webhook+REST | ~40 |
 
 ## Frontend
 
@@ -34,7 +35,7 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **URL**: https://studyhelper1.ru (89.110.93.63)
 - **SSL**: Let's Encrypt, certbot auto-renewal (12h)
 - **Контейнеры**: db, redis, backend, nginx, certbot (5 шт.)
-- **Миграции**: 19 применено
+- **Миграции**: 20 применено
 - **Sync**: APScheduler каждые 6ч + Redis distributed lock
 - **Backups**: pg_dump daily cron (3:00 UTC), gzip, 7-day rotation
 
@@ -54,9 +55,11 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **B12**: Nginx healthcheck path — `http://localhost/health` вместо `https://localhost/`
 - **F1**: PostgreSQL backups — pg_dump cron daily, gzip, 7-day rotation, restore script
 - **F2**: Sentry integration — sentry-sdk[fastapi] + @sentry/react, conditional init, user context
+- **F3**: Telegram bot — aiogram 3.25, webhook mode, 15 команд, 5 типов уведомлений, SettingsPage integration
 
 ### Следующие задачи (приоритет):
 1. **F5** — Phone widgets
+2. **F4** — Google Calendar sync
 
 ## Что отложено
 - httpOnly cookies вместо localStorage
@@ -100,6 +103,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 - **Docker**: multi-stage builds (uv backend, node frontend), nginx reverse proxy, ~1.3GB total
 - **SSL**: Let's Encrypt certbot (webroot), 3 nginx server-blocks, http2, HSTS
 - **Auto-sync**: APScheduler 3.x, IntervalTrigger(6h, jitter=60), Redis lock (TTL 600s)
+- **Telegram**: aiogram 3.25 webhook mode, conditional init (token-gated), 15 commands, CronTrigger notifications
 - **Observability**: structlog (JSON prod / ConsoleRenderer dev), X-Request-ID, Prometheus metrics (/metrics), Sentry error tracking (optional, DSN-gated)
 - **CI**: GitHub Actions (backend lint+test, frontend lint+build)
 
@@ -111,8 +115,8 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 | Frontend тестов | 375 |
 | Покрытие | ~80% |
 | API endpoints | ~70 |
-| Моделей | 16 |
-| Миграций | 19 |
+| Моделей | 17 |
+| Миграций | 20 |
 | Frontend страниц | 13 |
 | Линтеры | Ruff + ESLint clean |
 | Build | TypeScript + Vite clean |

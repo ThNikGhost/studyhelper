@@ -37,6 +37,7 @@ from src.routers import (
     semesters,
     subjects,
     teachers,
+    telegram,
     university,
     uploads,
     works,
@@ -105,8 +106,29 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     APP_INFO.labels(version="0.1.0").set(1)
     logger.info("StudyHelper API starting up")
     await start_scheduler()
+
+    # Telegram bot (conditional, like Sentry)
+    if settings.telegram_bot_token:
+        from src.telegram.bot import setup_bot
+
+        await setup_bot()
+
+        # Register Telegram notification jobs
+        from src.scheduler import get_scheduler
+        from src.telegram.jobs import register_telegram_jobs
+
+        scheduler = get_scheduler()
+        if scheduler is not None:
+            register_telegram_jobs(scheduler)
+
     yield
+
     # Shutdown
+    if settings.telegram_bot_token:
+        from src.telegram.bot import shutdown_bot
+
+        await shutdown_bot()
+
     await stop_scheduler()
     logger.info("StudyHelper API shutting down")
 
@@ -216,5 +238,6 @@ api_v1.include_router(files.router, prefix="/files", tags=["Files"])
 api_v1.include_router(attendance.router, prefix="/attendance", tags=["Attendance"])
 api_v1.include_router(notes.router, prefix="/notes", tags=["Notes"])
 api_v1.include_router(lk.router, prefix="/lk", tags=["LK"])
+api_v1.include_router(telegram.router, prefix="/telegram", tags=["Telegram"])
 
 app.include_router(api_v1)

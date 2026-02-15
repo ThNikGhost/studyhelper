@@ -10,6 +10,7 @@ from src.models.schedule import ScheduleEntry, ScheduleSnapshot
 from src.models.semester import Semester
 from src.models.subject import Subject
 from src.models.teacher import Teacher
+from src.models.telegram import TelegramLink
 from src.models.university import Building, Department
 from src.models.user import User
 from src.models.work import Work, WorkStatus, WorkStatusHistory
@@ -30,6 +31,7 @@ __all__ = [
     "SessionGrade",
     "Subject",
     "Teacher",
+    "TelegramLink",
     "User",
     "Work",
     "WorkStatus",

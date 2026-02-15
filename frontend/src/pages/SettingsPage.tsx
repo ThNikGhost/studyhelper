@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Settings, Dumbbell, Users, Building2, Check, Loader2, RefreshCw, LogOut, Eye, EyeOff, Sun, Moon, Monitor } from 'lucide-react'
+import { Settings, Dumbbell, Users, Building2, Check, Loader2, RefreshCw, LogOut, Eye, EyeOff, Sun, Moon, Monitor, MessageCircle, Copy, Bell, BellOff, LinkIcon, Unlink } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
   Card,
@@ -18,6 +18,7 @@ import { useUserSettings } from '@/hooks/useUserSettings'
 import { useTheme } from '@/hooks/useTheme'
 import { scheduleService } from '@/services/scheduleService'
 import { lkService } from '@/services/lkService'
+import { telegramService } from '@/services/telegramService'
 import { getPeTeachersFromWeek } from '@/lib/peTeacherFilter'
 import { formatDistanceToNow } from '@/lib/dateUtils'
 import type { LkCredentials } from '@/types/lk'
@@ -33,6 +34,10 @@ export default function SettingsPage() {
   const [lkPassword, setLkPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [disconnectModalOpen, setDisconnectModalOpen] = useState(false)
+
+  // Telegram state
+  const [tgUnlinkModalOpen, setTgUnlinkModalOpen] = useState(false)
+  const [tgCodeCountdown, setTgCodeCountdown] = useState(0)
 
   // Fetch schedule to get available subgroups and PE teachers
   const { data: weekSchedule } = useQuery({
@@ -103,6 +108,77 @@ export default function SettingsPage() {
       toast.error('Не удалось отключить подключение')
     },
   })
+
+  // Telegram status
+  const { data: tgStatus, isLoading: tgStatusLoading } = useQuery({
+    queryKey: ['telegram', 'status'],
+    queryFn: ({ signal }) => telegramService.getStatus(signal),
+    staleTime: 1000 * 60,
+  })
+
+  // Telegram generate link code
+  const tgGenerateCodeMutation = useMutation({
+    mutationFn: () => telegramService.generateLinkCode(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['telegram', 'status'] })
+      toast.success('Код привязки сгенерирован')
+    },
+    onError: () => {
+      toast.error('Не удалось сгенерировать код')
+    },
+  })
+
+  // Telegram unlink
+  const tgUnlinkMutation = useMutation({
+    mutationFn: () => telegramService.unlink(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['telegram', 'status'] })
+      setTgUnlinkModalOpen(false)
+      toast.success('Telegram отвязан')
+    },
+    onError: () => {
+      toast.error('Не удалось отвязать Telegram')
+    },
+  })
+
+  // Telegram notification toggles
+  const tgNotifyMutation = useMutation({
+    mutationFn: (data: { notify_deadlines?: boolean; morning_summary?: boolean }) =>
+      telegramService.updateNotifications(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['telegram', 'status'] })
+    },
+    onError: () => {
+      toast.error('Не удалось обновить настройки уведомлений')
+    },
+  })
+
+  // Countdown timer for link code
+  const expiresAt = tgStatus?.link_code_expires_at
+  useEffect(() => {
+    if (!expiresAt) {
+      return
+    }
+    const updateCountdown = () => {
+      const remaining = Math.max(
+        0,
+        Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)
+      )
+      setTgCodeCountdown(remaining)
+    }
+    updateCountdown()
+    const interval = setInterval(updateCountdown, 1000)
+    return () => clearInterval(interval)
+  }, [expiresAt])
+
+  const copyLinkCode = () => {
+    if (tgStatus?.link_code) {
+      navigator.clipboard.writeText(tgStatus.link_code)
+      toast.success('Код скопирован')
+    }
+  }
+
+  const isTgMutating = tgGenerateCodeMutation.isPending || tgUnlinkMutation.isPending || tgNotifyMutation.isPending
 
   const availablePeTeachers = weekSchedule ? getPeTeachersFromWeek(weekSchedule) : []
 
@@ -279,6 +355,141 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Telegram Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-sky-500" />
+              <CardTitle>Telegram</CardTitle>
+            </div>
+            <CardDescription>
+              Привяжите Telegram для получения уведомлений о расписании и дедлайнах.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {tgStatusLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : tgStatus?.is_linked ? (
+              // State 3: Linked
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <Check className="h-5 w-5" />
+                  <span className="font-medium">
+                    Привязан{tgStatus.telegram_username ? ` (@${tgStatus.telegram_username})` : ''}
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">Уведомления:</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={tgStatus.notify_deadlines ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() =>
+                        tgNotifyMutation.mutate({
+                          notify_deadlines: !tgStatus.notify_deadlines,
+                        })
+                      }
+                      disabled={isTgMutating}
+                      className="gap-2"
+                    >
+                      {tgStatus.notify_deadlines ? (
+                        <Bell className="h-4 w-4" />
+                      ) : (
+                        <BellOff className="h-4 w-4" />
+                      )}
+                      Дедлайны
+                    </Button>
+                    <Button
+                      variant={tgStatus.morning_summary ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() =>
+                        tgNotifyMutation.mutate({
+                          morning_summary: !tgStatus.morning_summary,
+                        })
+                      }
+                      disabled={isTgMutating}
+                      className="gap-2"
+                    >
+                      {tgStatus.morning_summary ? (
+                        <Bell className="h-4 w-4" />
+                      ) : (
+                        <BellOff className="h-4 w-4" />
+                      )}
+                      Утренняя сводка
+                    </Button>
+                  </div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTgUnlinkModalOpen(true)}
+                  disabled={isTgMutating}
+                  className="gap-2 text-destructive hover:text-destructive"
+                >
+                  <Unlink className="h-4 w-4" />
+                  Отвязать
+                </Button>
+              </div>
+            ) : tgStatus?.link_code && tgCodeCountdown > 0 ? (
+              // State 2: Code generated
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Отправьте эту команду боту в Telegram:
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="bg-muted px-3 py-2 rounded text-lg font-mono tracking-wider">
+                    /link {tgStatus.link_code}
+                  </code>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={copyLinkCode}
+                    title="Скопировать код"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Код действует ещё {Math.floor(tgCodeCountdown / 60)}:{String(tgCodeCountdown % 60).padStart(2, '0')}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => tgGenerateCodeMutation.mutate()}
+                  disabled={isTgMutating}
+                  className="gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Новый код
+                </Button>
+              </div>
+            ) : (
+              // State 1: Not linked
+              <div className="space-y-4">
+                <Button
+                  onClick={() => tgGenerateCodeMutation.mutate()}
+                  disabled={isTgMutating}
+                  className="gap-2"
+                >
+                  {tgGenerateCodeMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <LinkIcon className="h-4 w-4" />
+                  )}
+                  Сгенерировать код привязки
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  После генерации кода отправьте его боту в Telegram для привязки аккаунта.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* OmSU LK Integration Section */}
         <Card>
           <CardHeader>
@@ -417,6 +628,38 @@ export default function SettingsPage() {
             <Button variant="outline">← На главную</Button>
           </Link>
         </div>
+
+        {/* Telegram unlink confirmation modal */}
+        <Modal
+          open={tgUnlinkModalOpen}
+          onClose={() => setTgUnlinkModalOpen(false)}
+          title="Отвязать Telegram?"
+        >
+          <p className="text-muted-foreground mb-4">
+            Уведомления будут отключены. Вы сможете привязать аккаунт повторно.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setTgUnlinkModalOpen(false)}
+            >
+              Отмена
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={() => tgUnlinkMutation.mutate()}
+              disabled={tgUnlinkMutation.isPending}
+            >
+              {tgUnlinkMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Отвязать'
+              )}
+            </Button>
+          </div>
+        </Modal>
 
         {/* Disconnect confirmation modal */}
         <Modal

@@ -9,6 +9,7 @@ from src.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from src.models.lk import LkCredentials
+    from src.models.telegram import TelegramLink
     from src.models.work import WorkStatus
 
 
@@ -34,6 +35,12 @@ class User(Base, TimestampMixin):
     )
     lk_credentials: Mapped["LkCredentials | None"] = relationship(
         "LkCredentials",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    telegram_link: Mapped["TelegramLink | None"] = relationship(
+        "TelegramLink",
         back_populates="user",
         uselist=False,
         cascade="all, delete-orphan",
