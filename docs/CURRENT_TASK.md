@@ -1,25 +1,25 @@
 # Текущая задача
 
 ## Статус
-**B12 завершена. Следующая: F1 (PostgreSQL backups).**
+**F1 завершена. Следующая: F2 (Sentry integration).**
 
-## Последняя сессия: B12 Nginx healthcheck path — 2026-02-15
+## Последняя сессия: F1 PostgreSQL backups — 2026-02-15
 
 ### Сделано
-- **B12**: Healthcheck изменён с `https://localhost/` на `http://localhost/health`
-- Убран SSL handshake — теперь проверяется реальный health endpoint (DB + Redis)
-- 2 файла: `nginx/Dockerfile`, `docker-compose.prod.yml`
-- `docker compose config` валиден
+- **F1**: PostgreSQL автобэкапы на продакшене
+- `scripts/backup.sh` — pg_dump через Docker, gzip, ротация 7 дней, логирование
+- `scripts/restore.sh` — интерактивное восстановление из .sql.gz
+- Cron: ежедневно в 3:00 UTC → `/var/log/studyhelper-backup.log`
+- Тестовый бэкап: 296K, валидный SQL дамп
+- Все коммиты запушены на origin
 
 ## Следующие шаги (по приоритету)
-1. **F1** — PostgreSQL backups
-2. **F2** — Sentry integration
-4. **F5** — Phone widgets
-5. **F3** — Telegram bot
-6. **F4** — Google Calendar sync
+1. **F2** — Sentry integration
+2. **F5** — Phone widgets
+3. **F3** — Telegram bot
+4. **F4** — Google Calendar sync
 
 ## Блокеры / Вопросы
 - F2 требует создание аккаунта Sentry
 - F3 требует Telegram Bot Token
 - F4 требует Google Cloud Console проект
-- 11 локальных коммитов не запушены на origin

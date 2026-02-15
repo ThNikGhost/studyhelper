@@ -36,10 +36,11 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **Контейнеры**: db, redis, backend, nginx, certbot (5 шт.)
 - **Миграции**: 19 применено
 - **Sync**: APScheduler каждые 6ч + Redis distributed lock
+- **Backups**: pg_dump daily cron (3:00 UTC), gzip, 7-day rotation
 
 ## Что в работе
 
-См. `docs/Current_task.md` — все B1-B12 bugfixes завершены, осталось F1-F5 features.
+См. `docs/Current_task.md` — все B1-B12 bugfixes завершены, F1 done, осталось F2-F5 features.
 
 ### Завершено (закоммичено):
 - **B1-B3**: ClassmatesPage mobile fixes (grid, аватарки, кнопка "+")
@@ -51,10 +52,11 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **B9**: Semester dates from LK — _determine_current_semester(), auto-dates, is_current fix
 - **B11**: File download JWT fix — blob download с авторизацией
 - **B12**: Nginx healthcheck path — `http://localhost/health` вместо `https://localhost/`
+- **F1**: PostgreSQL backups — pg_dump cron daily, gzip, 7-day rotation, restore script
 
 ### Следующие задачи (приоритет):
-1. **F1** — PostgreSQL backups
-2. **F2** — Sentry integration
+1. **F2** — Sentry integration
+2. **F5** — Phone widgets
 
 ## Что отложено
 - httpOnly cookies вместо localStorage
