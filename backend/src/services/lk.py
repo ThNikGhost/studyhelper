@@ -6,7 +6,7 @@ Business logic for LK credential management and data synchronization.
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import delete, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -383,6 +383,52 @@ async def get_unique_semesters(db: AsyncSession, user_id: int) -> list[int]:
     return [row[0] for row in result.all()]
 
 
+async def _determine_current_semester(
+    db: AsyncSession,
+    user_id: int,
+    max_discipline_semester: int,
+) -> int:
+    """Determine current semester from session grades.
+
+    Parses session_number (format "5 2025/2026") to extract the semester
+    number. Current semester = max(session_numbers) + 1, capped by
+    max_discipline_semester.
+
+    Args:
+        db: Database session.
+        user_id: User ID.
+        max_discipline_semester: Highest semester in the study plan.
+
+    Returns:
+        Current semester number (1-based).
+    """
+    grades = await get_grades(db, user_id)
+    if not grades:
+        return 1
+
+    session_numbers: list[int] = []
+    for grade in grades:
+        # session_number format: "5 2025/2026" → extract first part
+        parts = grade.session_number.strip().split()
+        if not parts:
+            logger.warning("Empty session_number for user %d", user_id)
+            continue
+        try:
+            session_numbers.append(int(parts[0]))
+        except (ValueError, TypeError):
+            logger.warning(
+                "Invalid session_number format: %s",
+                grade.session_number,
+            )
+            continue
+
+    if not session_numbers:
+        return 1
+
+    current = max(session_numbers) + 1
+    return min(current, max_discipline_semester)
+
+
 async def import_to_app(db: AsyncSession, user_id: int) -> LkImportResult:
     """Import semesters and subjects from LK data to app.
 
@@ -427,23 +473,36 @@ async def import_to_app(db: AsyncSession, user_id: int) -> LkImportResult:
     subjects_created = 0
     subjects_updated = 0
 
+    # Determine current semester from session grades
+    max_discipline_semester = max(disciplines_by_semester.keys())
+    current_semester = await _determine_current_semester(
+        db,
+        user_id,
+        max_discipline_semester,
+    )
+
     # Process each semester
     for semester_number, sem_disciplines in disciplines_by_semester.items():
-        # Calculate year_start/year_end based on semester number
-        # Assuming current semester is the max semester number
-        max_semester = max(disciplines_by_semester.keys())
-
         # Calculate how many years back this semester is
-        years_back = (max_semester - semester_number) // 2
+        years_back = (current_semester - semester_number) // 2
         year_start = current_year_start - years_back
         year_end = current_year_end - years_back
 
         # Adjust for even/odd semester within academic year
         # Odd = fall (first half), Even = spring (second half)
-        # If max_semester is even (spring) and this is odd, it's previous year
-        if max_semester % 2 == 0 and semester_number % 2 == 1:
+        # Example: current=6 (spring 2026), sem=5 (fall 2025)
+        # years_back = (6-5)//2 = 0, but sem 5 is in prev academic year → -1
+        if current_semester % 2 == 0 and semester_number % 2 == 1:
             year_start -= 1
             year_end -= 1
+
+        # Default semester dates
+        if semester_number % 2 == 1:  # Fall
+            default_start = date(year_start, 9, 1)
+            default_end = date(year_start, 12, 30)
+        else:  # Spring
+            default_start = date(year_end, 2, 9)
+            default_end = date(year_end, 7, 7)
 
         # Generate semester name
         season = "Осенний" if semester_number % 2 == 1 else "Весенний"
@@ -460,6 +519,12 @@ async def import_to_app(db: AsyncSession, user_id: int) -> LkImportResult:
             semester.year_start = year_start
             semester.year_end = year_end
             semester.name = name
+            semester.is_current = semester_number == current_semester
+            # Fill dates only if not manually set
+            if semester.start_date is None:
+                semester.start_date = default_start
+            if semester.end_date is None:
+                semester.end_date = default_end
             semesters_updated += 1
         else:
             # Create new semester
@@ -468,7 +533,9 @@ async def import_to_app(db: AsyncSession, user_id: int) -> LkImportResult:
                 year_start=year_start,
                 year_end=year_end,
                 name=name,
-                is_current=semester_number == max_semester,
+                is_current=semester_number == current_semester,
+                start_date=default_start,
+                end_date=default_end,
             )
             db.add(semester)
             await db.flush()

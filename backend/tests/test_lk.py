@@ -1,11 +1,16 @@
 """Tests for LK (личный кабинет) module."""
 
+from datetime import date
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.models.lk import SemesterDiscipline, SessionGrade
+from src.models.semester import Semester
 from src.parser.lk_parser import LkStudentData
+from src.services.lk import import_to_app
 from src.utils.crypto import decrypt_credential, encrypt_credential
 
 # ============================================================================
@@ -730,3 +735,252 @@ class TestLkSemesters:
         assert len(data) == 3
         # Sorted ascending
         assert data == [3, 4, 5]
+
+
+# ============================================================================
+# LK Import tests (B9: semester dates from LK)
+# ============================================================================
+
+
+class TestLkImport:
+    """Tests for import_to_app() semester logic."""
+
+    async def _create_user(self, db: AsyncSession) -> int:
+        """Create a test user and return user_id."""
+        from src.models.user import User
+
+        user = User(
+            email="import_test@example.com",
+            password_hash="fakehash",
+            name="Import Test",
+        )
+        db.add(user)
+        await db.flush()
+        return user.id
+
+    async def _add_disciplines(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        semester_numbers: list[int],
+    ) -> None:
+        """Add SemesterDiscipline records for given semesters."""
+        from datetime import UTC, datetime
+
+        now = datetime.now(UTC)
+        for sem_num in semester_numbers:
+            disc = SemesterDiscipline(
+                user_id=user_id,
+                semester_number=sem_num,
+                discipline_name=f"Subject_{sem_num}",
+                control_form="Экзамен",
+                hours=72,
+                synced_at=now,
+            )
+            db.add(disc)
+        await db.flush()
+
+    async def _add_session_grades(
+        self,
+        db: AsyncSession,
+        user_id: int,
+        session_numbers: list[str],
+    ) -> None:
+        """Add SessionGrade records for given sessions."""
+        from datetime import UTC, datetime
+
+        now = datetime.now(UTC)
+        for sess in session_numbers:
+            grade = SessionGrade(
+                user_id=user_id,
+                session_number=sess,
+                subject_name=f"Subject_{sess}",
+                result="Отлично",
+                synced_at=now,
+            )
+            db.add(grade)
+        await db.flush()
+
+    @pytest.mark.asyncio
+    async def test_import_correct_semester_3rd_year(
+        self,
+        db_session: AsyncSession,
+    ) -> None:
+        """Test 5 sessions → current=6, semester 6 = is_current."""
+        user_id = await self._create_user(db_session)
+
+        # Disciplines for semesters 1-11 (full study plan)
+        await self._add_disciplines(
+            db_session,
+            user_id,
+            list(range(1, 12)),
+        )
+        # 5 completed sessions → current semester = 6
+        await self._add_session_grades(
+            db_session,
+            user_id,
+            ["1 2023/2024", "2 2023/2024", "3 2024/2025", "4 2024/2025", "5 2025/2026"],
+        )
+
+        result = await import_to_app(db_session, user_id)
+
+        assert result.semesters_created == 11
+
+        # Check semester 6 is current
+        from sqlalchemy import select
+
+        res = await db_session.execute(select(Semester).where(Semester.number == 6))
+        sem6 = res.scalar_one()
+        assert sem6.is_current is True
+
+        # Check semester 11 is NOT current
+        res = await db_session.execute(select(Semester).where(Semester.number == 11))
+        sem11 = res.scalar_one()
+        assert sem11.is_current is False
+
+    @pytest.mark.asyncio
+    async def test_import_no_grades_defaults_to_semester_1(
+        self,
+        db_session: AsyncSession,
+    ) -> None:
+        """Test no sessions → current=1."""
+        user_id = await self._create_user(db_session)
+
+        await self._add_disciplines(
+            db_session,
+            user_id,
+            [1, 2, 3, 4, 5],
+        )
+        # No session grades at all
+
+        result = await import_to_app(db_session, user_id)
+
+        assert result.semesters_created == 5
+
+        from sqlalchemy import select
+
+        res = await db_session.execute(select(Semester).where(Semester.number == 1))
+        sem1 = res.scalar_one()
+        assert sem1.is_current is True
+
+        res = await db_session.execute(select(Semester).where(Semester.number == 5))
+        sem5 = res.scalar_one()
+        assert sem5.is_current is False
+
+    @pytest.mark.asyncio
+    async def test_import_fills_semester_dates(
+        self,
+        db_session: AsyncSession,
+    ) -> None:
+        """Test odd=Sep1-Dec30, even=Feb9-Jul7."""
+        user_id = await self._create_user(db_session)
+
+        await self._add_disciplines(db_session, user_id, [5, 6])
+        await self._add_session_grades(
+            db_session,
+            user_id,
+            ["1 2023/2024", "2 2023/2024", "3 2024/2025", "4 2024/2025", "5 2025/2026"],
+        )
+
+        await import_to_app(db_session, user_id)
+
+        from sqlalchemy import select
+
+        # Semester 5 (odd = fall)
+        res = await db_session.execute(select(Semester).where(Semester.number == 5))
+        sem5 = res.scalar_one()
+        assert sem5.start_date is not None
+        assert sem5.end_date is not None
+        assert sem5.start_date.month == 9
+        assert sem5.start_date.day == 1
+        assert sem5.end_date.month == 12
+        assert sem5.end_date.day == 30
+
+        # Semester 6 (even = spring)
+        res = await db_session.execute(select(Semester).where(Semester.number == 6))
+        sem6 = res.scalar_one()
+        assert sem6.start_date is not None
+        assert sem6.end_date is not None
+        assert sem6.start_date.month == 2
+        assert sem6.start_date.day == 9
+        assert sem6.end_date.month == 7
+        assert sem6.end_date.day == 7
+
+    @pytest.mark.asyncio
+    async def test_import_does_not_overwrite_manual_dates(
+        self,
+        db_session: AsyncSession,
+    ) -> None:
+        """Test manual dates are preserved after re-import."""
+        user_id = await self._create_user(db_session)
+
+        await self._add_disciplines(db_session, user_id, [5])
+        await self._add_session_grades(
+            db_session,
+            user_id,
+            ["1 2023/2024", "2 2023/2024", "3 2024/2025", "4 2024/2025"],
+        )
+
+        # First import creates semester with default dates
+        await import_to_app(db_session, user_id)
+
+        from sqlalchemy import select
+
+        res = await db_session.execute(select(Semester).where(Semester.number == 5))
+        sem5 = res.scalar_one()
+
+        # Simulate user manually changing dates
+        manual_start = date(2025, 9, 2)
+        manual_end = date(2025, 12, 28)
+        sem5.start_date = manual_start
+        sem5.end_date = manual_end
+        await db_session.commit()
+
+        # Re-import should NOT overwrite manual dates
+        await import_to_app(db_session, user_id)
+
+        await db_session.refresh(sem5)
+        assert sem5.start_date == manual_start
+        assert sem5.end_date == manual_end
+
+    @pytest.mark.asyncio
+    async def test_import_is_current_updated_on_reimport(
+        self,
+        db_session: AsyncSession,
+    ) -> None:
+        """Test is_current updates when new sessions appear."""
+        user_id = await self._create_user(db_session)
+
+        await self._add_disciplines(db_session, user_id, [5, 6])
+        # First import: 4 sessions → current = 5
+        await self._add_session_grades(
+            db_session,
+            user_id,
+            ["1 2023/2024", "2 2023/2024", "3 2024/2025", "4 2024/2025"],
+        )
+
+        await import_to_app(db_session, user_id)
+
+        from sqlalchemy import select
+
+        res = await db_session.execute(select(Semester).where(Semester.number == 5))
+        sem5 = res.scalar_one()
+        assert sem5.is_current is True
+
+        res = await db_session.execute(select(Semester).where(Semester.number == 6))
+        sem6 = res.scalar_one()
+        assert sem6.is_current is False
+
+        # Add session 5 → current becomes 6
+        await self._add_session_grades(
+            db_session,
+            user_id,
+            ["5 2025/2026"],
+        )
+
+        await import_to_app(db_session, user_id)
+
+        await db_session.refresh(sem5)
+        await db_session.refresh(sem6)
+        assert sem5.is_current is False
+        assert sem6.is_current is True

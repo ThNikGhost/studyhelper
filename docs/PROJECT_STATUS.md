@@ -46,11 +46,11 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **B5**: SettingsPage padding fix
 - **B6**: ThemeToggle → Settings (перенос, удаление мёртвых файлов, aria-pressed)
 - **B7**: Remove "Notes" tab (route + QuickActions)
+- **B9**: Semester dates from LK — _determine_current_semester(), auto-dates, is_current fix
 
 ### Следующие задачи (приоритет):
-1. **B9** — Semester dates from LK (CRITICAL)
-2. **B10** — Verification после B9
-3. **B11** — File download JWT fix
+1. **B10** — Verification после B9 (re-import на проде)
+2. **B11** — File download JWT fix
 
 ## Что отложено
 - httpOnly cookies вместо localStorage
@@ -104,7 +104,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 466 |
+| Backend тестов | 471 |
 | Frontend тестов | 375 |
 | Покрытие | ~80% |
 | API endpoints | ~70 |

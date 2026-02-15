@@ -1,19 +1,20 @@
 # Текущая задача
 
 ## Статус
-**B7 завершена и закоммичена. Следующая: B9 (semester dates from LK).**
+**B9 завершена. Следующая: B10 (verification после B9).**
 
-## Последняя сессия: B7 Remove Notes Tab — 2026-02-15
+## Последняя сессия: B9 Semester dates from LK — 2026-02-15
 
 ### Сделано
-- **B7**: Удалён route `/notes` из App.tsx и карточка "Заметки" из QuickActions
-- Code review пройден — Approved
-- Коммит: `65aae8c fix(frontend): remove Notes tab from navigation (B7)`
-- Заметки по-прежнему доступны через LessonDetailModal в расписании
+- **B9**: Исправлен `import_to_app()` — текущий семестр определяется по session grades, а не max(disciplines)
+- Новая функция `_determine_current_semester()`: парсит session_number, current = max+1, capped by study plan
+- Авто-заполнение `start_date`/`end_date` (осень: Sep1-Dec30, весна: Feb9-Jul7)
+- Ручные даты не перезаписываются при re-import
+- `is_current` обновляется при каждом import (не только при create)
+- 5 новых тестов в `TestLkImport`, все 471 тест зелёные
 
 ## Следующие шаги (по приоритету)
-1. **B9** — Semester dates from LK (CRITICAL backend fix)
-2. **B10** — Verification после B9
+1. **B10** — Verification после B9 (re-import на проде)
 3. **B11** — File download JWT fix
 4. **B4** — Schedule scroll indicator
 5. **B8** — GradesPage light theme contrast
