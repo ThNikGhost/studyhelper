@@ -3,13 +3,14 @@
 ## Статус
 **Bugfixes + Features — планирование завершено, реализация начата.**
 
-## Последняя сессия: Bugfixes + Features Planning — 2026-02-15
+## Последняя сессия: Documentation Cleanup — 2026-02-15
 
 ### Сделано
-- Создан master plan (15 задач: 12 bugfixes + 5 features) в `docs/plans/tasks/`
-- B1-B3: ClassmatesPage mobile — grid responsive, avatar responsive, header cleanup, shrink-0
-- B5: SettingsPage padding — container wrapper добавлен
-- B6: ThemeToggle → Settings — ЧАСТИЧНО (AppLayout/SettingsPage done, ThemeToggle.tsx/.test.tsx не удалены)
+- Ранее: master plan (15 задач), B1-B3, B5, B6 (частично)
+- project_status.md: 625 → 110 строк (-85%), убраны завершённые чеклисты
+- Удалено 35 завершённых план-файлов из docs/plans/
+- CLAUDE.md: обновлена ссылка на docs/plans/tasks/
+- Незакоммичены: B1-B3, B5, B6 изменения в frontend (из предыдущей сессии)
 
 ## Следующие шаги (по приоритету)
 1. **B6** — завершить: удалить ThemeToggle.tsx и ThemeToggle.test.tsx
