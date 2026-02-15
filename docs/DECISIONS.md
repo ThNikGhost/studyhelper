@@ -995,3 +995,4 @@ notification_settings — настройки уведомлений
 | 2026-02-15 | traces_sampler вместо flat rate | Drop /health + /metrics, 100% auth/schedule, 20% rest — экономия free tier |
 | 2026-02-15 | reactRouterV7BrowserTracingIntegration | Параметризованные transaction names + Web Vitals для react-router v7 |
 | 2026-02-15 | React 19 onUncaughtError/onCaughtError | Component stack traces для ошибок вне ErrorBoundary |
+| 2026-02-15 | DSN в .env, не .env.production | Docker Compose читает `.env` по умолчанию; `.env.production` — только для документации |
