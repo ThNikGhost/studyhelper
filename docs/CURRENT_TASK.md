@@ -1,20 +1,20 @@
 # Текущая задача
 
 ## Статус
-**Bugfixes + Features — планирование завершено, реализация начата.**
+**Bugfixes B1-B3, B5, B6 — завершены. Код-ревью пройдено. Готово к коммиту.**
 
-## Последняя сессия: Documentation Cleanup — 2026-02-15
+## Последняя сессия: Code Review Fixes — 2026-02-15
 
 ### Сделано
-- Ранее: master plan (15 задач), B1-B3, B5, B6 (частично)
-- project_status.md: 625 → 110 строк (-85%), убраны завершённые чеклисты
-- Удалено 35 завершённых план-файлов из docs/plans/
-- CLAUDE.md: обновлена ссылка на docs/plans/tasks/
-- Незакоммичены: B1-B3, B5, B6 изменения в frontend (из предыдущей сессии)
+- Код-ревью B1-B3, B5, B6 — все замечания исправлены:
+  - **P0**: Удалены мёртвые файлы ThemeToggle.tsx и ThemeToggle.test.tsx
+  - **P2**: Исправлена индентация в SettingsPage.tsx (строки 130-448 сдвинуты на +2 пробела)
+  - **P2**: Добавлен `aria-pressed` на кнопки темы в SettingsPage.tsx
+- Верификация: ESLint clean, AppLayout тесты 3/3, TypeScript clean
+- Незакоммичено: B1-B3, B5, B6 изменения в frontend (7 файлов)
 
 ## Следующие шаги (по приоритету)
-1. **B6** — завершить: удалить ThemeToggle.tsx и ThemeToggle.test.tsx
-2. **B7** — Remove "Notes" tab (App.tsx + QuickActions)
+1. **B7** — Remove "Notes" tab (App.tsx + QuickActions)
 3. **B9** — Semester dates from LK (CRITICAL backend fix)
 4. **B10** — Verification после B9
 5. **B11** — File download JWT fix

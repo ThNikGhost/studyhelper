@@ -11,10 +11,6 @@ vi.mock('@/components/UpdatePrompt', () => ({
   UpdatePrompt: () => <div data-testid="update-prompt" />,
 }))
 
-vi.mock('@/components/ThemeToggle', () => ({
-  ThemeToggle: () => <div data-testid="theme-toggle" />,
-}))
-
 describe('AppLayout', () => {
   it('renders children', () => {
     render(
@@ -41,14 +37,5 @@ describe('AppLayout', () => {
       </AppLayout>,
     )
     expect(screen.getByTestId('update-prompt')).toBeInTheDocument()
-  })
-
-  it('renders ThemeToggle', () => {
-    render(
-      <AppLayout>
-        <div>Content</div>
-      </AppLayout>,
-    )
-    expect(screen.getByTestId('theme-toggle')).toBeInTheDocument()
   })
 })

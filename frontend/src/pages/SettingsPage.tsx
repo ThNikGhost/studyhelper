@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Settings, Dumbbell, Users, Building2, Check, Loader2, RefreshCw, LogOut, Eye, EyeOff } from 'lucide-react'
+import { Settings, Dumbbell, Users, Building2, Check, Loader2, RefreshCw, LogOut, Eye, EyeOff, Sun, Moon, Monitor } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
   Card,
@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
 import { toast } from 'sonner'
 import { useUserSettings } from '@/hooks/useUserSettings'
+import { useTheme } from '@/hooks/useTheme'
 import { scheduleService } from '@/services/scheduleService'
 import { lkService } from '@/services/lkService'
 import { getPeTeachersFromWeek } from '@/lib/peTeacherFilter'
@@ -25,6 +26,7 @@ export default function SettingsPage() {
   const queryClient = useQueryClient()
   const { settings, updateSettings, isUpdating } = useUserSettings()
   const { subgroup, peTeacher } = settings
+  const { mode, setTheme } = useTheme()
 
   // LK form state
   const [lkEmail, setLkEmail] = useState('')
@@ -123,285 +125,331 @@ export default function SettingsPage() {
   const isLkMutating = verifyMutation.isPending || saveMutation.isPending || syncMutation.isPending || deleteMutation.isPending
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Settings className="h-8 w-8 text-gray-500" />
-        <div>
-          <h1 className="text-2xl font-bold">Настройки</h1>
-          <p className="text-muted-foreground">Персональные настройки приложения</p>
+    <div className="min-h-screen bg-background">
+      <div className="container max-w-2xl mx-auto px-4 py-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <Settings className="h-8 w-8 text-gray-500" />
+          <div>
+            <h1 className="text-2xl font-bold">Настройки</h1>
+            <p className="text-muted-foreground">Персональные настройки приложения</p>
+          </div>
         </div>
-      </div>
 
-      {/* Subgroup Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-blue-500" />
-            <CardTitle>Подгруппа</CardTitle>
-          </div>
-          <CardDescription>
-            Фильтрует расписание по вашей подгруппе. Общие занятия (без подгруппы) отображаются всегда.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              variant={subgroup === null ? 'default' : 'outline'}
-              onClick={() => updateSettings({ preferred_subgroup: null })}
-              disabled={isUpdating}
-              className="gap-2"
-            >
-              {subgroup === null && <Check className="h-4 w-4" />}
-              Все подгруппы
-            </Button>
-            <Button
-              variant={subgroup === 1 ? 'default' : 'outline'}
-              onClick={() => updateSettings({ preferred_subgroup: 1 })}
-              disabled={isUpdating}
-              className="gap-2"
-            >
-              {subgroup === 1 && <Check className="h-4 w-4" />}
-              1 подгруппа
-            </Button>
-            <Button
-              variant={subgroup === 2 ? 'default' : 'outline'}
-              onClick={() => updateSettings({ preferred_subgroup: 2 })}
-              disabled={isUpdating}
-              className="gap-2"
-            >
-              {subgroup === 2 && <Check className="h-4 w-4" />}
-              2 подгруппа
-            </Button>
-          </div>
-          {subgroup !== null && (
-            <p className="mt-3 text-sm text-muted-foreground">
-              Выбрана {subgroup} подгруппа. Занятия для других подгрупп будут помечены значком "!".
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* PE Teacher Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Dumbbell className="h-5 w-5 text-green-500" />
-            <CardTitle>Физкультура</CardTitle>
-          </div>
-          <CardDescription>
-            Выберите вашего преподавателя для занятий по физкультуре.
-            В расписании несколько преподавателей на одно время — выберите своего.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {availablePeTeachers.length > 0 ? (
-            <div className="space-y-2">
+        {/* Subgroup Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-500" />
+              <CardTitle>Подгруппа</CardTitle>
+            </div>
+            <CardDescription>
+              Фильтрует расписание по вашей подгруппе. Общие занятия (без подгруппы) отображаются всегда.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
               <Button
-                variant={peTeacher === null ? 'default' : 'outline'}
-                onClick={() => updateSettings({ preferred_pe_teacher: null })}
+                variant={subgroup === null ? 'default' : 'outline'}
+                onClick={() => updateSettings({ preferred_subgroup: null })}
                 disabled={isUpdating}
-                className="w-full justify-start gap-2"
+                className="gap-2"
               >
-                {peTeacher === null && <Check className="h-4 w-4" />}
-                Показать всех преподавателей
+                {subgroup === null && <Check className="h-4 w-4" />}
+                Все подгруппы
               </Button>
-              {availablePeTeachers.map((teacher) => (
+              <Button
+                variant={subgroup === 1 ? 'default' : 'outline'}
+                onClick={() => updateSettings({ preferred_subgroup: 1 })}
+                disabled={isUpdating}
+                className="gap-2"
+              >
+                {subgroup === 1 && <Check className="h-4 w-4" />}
+                1 подгруппа
+              </Button>
+              <Button
+                variant={subgroup === 2 ? 'default' : 'outline'}
+                onClick={() => updateSettings({ preferred_subgroup: 2 })}
+                disabled={isUpdating}
+                className="gap-2"
+              >
+                {subgroup === 2 && <Check className="h-4 w-4" />}
+                2 подгруппа
+              </Button>
+            </div>
+            {subgroup !== null && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Выбрана {subgroup} подгруппа. Занятия для других подгрупп будут помечены значком "!".
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* PE Teacher Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Dumbbell className="h-5 w-5 text-green-500" />
+              <CardTitle>Физкультура</CardTitle>
+            </div>
+            <CardDescription>
+              Выберите вашего преподавателя для занятий по физкультуре.
+              В расписании несколько преподавателей на одно время — выберите своего.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {availablePeTeachers.length > 0 ? (
+              <div className="space-y-2">
                 <Button
-                  key={teacher}
-                  variant={peTeacher === teacher ? 'default' : 'outline'}
-                  onClick={() => updateSettings({ preferred_pe_teacher: teacher })}
+                  variant={peTeacher === null ? 'default' : 'outline'}
+                  onClick={() => updateSettings({ preferred_pe_teacher: null })}
                   disabled={isUpdating}
                   className="w-full justify-start gap-2"
                 >
-                  {peTeacher === teacher && <Check className="h-4 w-4" />}
-                  <span className="truncate">{teacher}</span>
+                  {peTeacher === null && <Check className="h-4 w-4" />}
+                  Показать всех преподавателей
                 </Button>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Преподаватели физкультуры будут доступны после загрузки расписания.
-            </p>
-          )}
-          {peTeacher && (
-            <p className="mt-3 text-sm text-muted-foreground">
-              Выбран: {peTeacher}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* OmSU LK Integration Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-purple-500" />
-            <CardTitle>Личный кабинет ОмГУ</CardTitle>
-          </div>
-          <CardDescription>
-            Интеграция с личным кабинетом ОмГУ для автоматического импорта оценок и дисциплин.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {lkStatusLoading ? (
-            <div className="flex items-center justify-center py-4">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : lkStatus?.has_credentials ? (
-            // Connected state
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                <Check className="h-5 w-5" />
-                <span className="font-medium">Подключено</span>
-              </div>
-
-              {lkStatus.last_sync_at && (
-                <p className="text-sm text-muted-foreground">
-                  Последняя синхронизация: {formatDistanceToNow(new Date(lkStatus.last_sync_at))}
-                </p>
-              )}
-
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => syncMutation.mutate()}
-                  disabled={isLkMutating}
-                  className="gap-2"
-                >
-                  {syncMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                  Синхронизировать
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setDisconnectModalOpen(true)}
-                  disabled={isLkMutating}
-                  className="gap-2 text-destructive hover:text-destructive"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Отключить
-                </Button>
-              </div>
-
-              <p className="text-xs text-muted-foreground">
-                После синхронизации вы можете импортировать семестры и предметы на странице "Семестры".
-              </p>
-            </div>
-          ) : (
-            // Not connected state - show form
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="lk-email">Email</Label>
-                <Input
-                  id="lk-email"
-                  type="email"
-                  placeholder="your.email@omsu.ru"
-                  value={lkEmail}
-                  onChange={(e) => setLkEmail(e.target.value)}
-                  className="max-w-sm"
-                  disabled={isLkMutating}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lk-password">Пароль</Label>
-                <div className="relative max-w-sm">
-                  <Input
-                    id="lk-password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={lkPassword}
-                    onChange={(e) => setLkPassword(e.target.value)}
-                    className="pr-10"
-                    disabled={isLkMutating}
-                  />
+                {availablePeTeachers.map((teacher) => (
                   <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
+                    key={teacher}
+                    variant={peTeacher === teacher ? 'default' : 'outline'}
+                    onClick={() => updateSettings({ preferred_pe_teacher: teacher })}
+                    disabled={isUpdating}
+                    className="w-full justify-start gap-2"
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    {peTeacher === teacher && <Check className="h-4 w-4" />}
+                    <span className="truncate">{teacher}</span>
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Преподаватели физкультуры будут доступны после загрузки расписания.
+              </p>
+            )}
+            {peTeacher && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Выбран: {peTeacher}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Theme Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Sun className="h-5 w-5 text-amber-500" />
+              <CardTitle>Тема</CardTitle>
+            </div>
+            <CardDescription>
+              Выберите тему оформления приложения.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant={mode === 'light' ? 'default' : 'outline'}
+                onClick={() => setTheme('light')}
+                aria-pressed={mode === 'light'}
+                className="gap-2"
+              >
+                <Sun className="h-4 w-4" />
+                Светлая
+              </Button>
+              <Button
+                variant={mode === 'dark' ? 'default' : 'outline'}
+                onClick={() => setTheme('dark')}
+                aria-pressed={mode === 'dark'}
+                className="gap-2"
+              >
+                <Moon className="h-4 w-4" />
+                Тёмная
+              </Button>
+              <Button
+                variant={mode === 'system' ? 'default' : 'outline'}
+                onClick={() => setTheme('system')}
+                aria-pressed={mode === 'system'}
+                className="gap-2"
+              >
+                <Monitor className="h-4 w-4" />
+                Системная
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* OmSU LK Integration Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-purple-500" />
+              <CardTitle>Личный кабинет ОмГУ</CardTitle>
+            </div>
+            <CardDescription>
+              Интеграция с личным кабинетом ОмГУ для автоматического импорта оценок и дисциплин.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {lkStatusLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : lkStatus?.has_credentials ? (
+              // Connected state
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <Check className="h-5 w-5" />
+                  <span className="font-medium">Подключено</span>
+                </div>
+
+                {lkStatus.last_sync_at && (
+                  <p className="text-sm text-muted-foreground">
+                    Последняя синхронизация: {formatDistanceToNow(new Date(lkStatus.last_sync_at))}
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => syncMutation.mutate()}
+                    disabled={isLkMutating}
+                    className="gap-2"
+                  >
+                    {syncMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <RefreshCw className="h-4 w-4" />
                     )}
+                    Синхронизировать
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setDisconnectModalOpen(true)}
+                    disabled={isLkMutating}
+                    className="gap-2 text-destructive hover:text-destructive"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Отключить
                   </Button>
                 </div>
+
+                <p className="text-xs text-muted-foreground">
+                  После синхронизации вы можете импортировать семестры и предметы на странице "Семестры".
+                </p>
               </div>
-
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleVerify}
-                  disabled={isLkMutating || !lkEmail || !lkPassword}
-                >
-                  {verifyMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : null}
-                  Проверить
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={isLkMutating || !lkEmail || !lkPassword}
-                >
-                  {saveMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : null}
-                  Сохранить
-                </Button>
-              </div>
-
-              <p className="text-xs text-muted-foreground">
-                Учётные данные хранятся в зашифрованном виде. Используются для доступа к вашим оценкам и учебному плану.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Navigation back */}
-      <div className="pt-4">
-        <Link to="/">
-          <Button variant="outline">← На главную</Button>
-        </Link>
-      </div>
-
-      {/* Disconnect confirmation modal */}
-      <Modal
-        open={disconnectModalOpen}
-        onClose={() => setDisconnectModalOpen(false)}
-        title="Отключить личный кабинет?"
-      >
-        <p className="text-muted-foreground mb-4">
-          Учётные данные будут удалены. Синхронизированные данные (оценки, дисциплины) останутся в приложении.
-        </p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            className="flex-1"
-            onClick={() => setDisconnectModalOpen(false)}
-          >
-            Отмена
-          </Button>
-          <Button
-            variant="destructive"
-            className="flex-1"
-            onClick={() => deleteMutation.mutate()}
-            disabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              'Отключить'
+              // Not connected state - show form
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="lk-email">Email</Label>
+                  <Input
+                    id="lk-email"
+                    type="email"
+                    placeholder="your.email@omsu.ru"
+                    value={lkEmail}
+                    onChange={(e) => setLkEmail(e.target.value)}
+                    className="max-w-sm"
+                    disabled={isLkMutating}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lk-password">Пароль</Label>
+                  <div className="relative max-w-sm">
+                    <Input
+                      id="lk-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={lkPassword}
+                      onChange={(e) => setLkPassword(e.target.value)}
+                      className="pr-10"
+                      disabled={isLkMutating}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleVerify}
+                    disabled={isLkMutating || !lkEmail || !lkPassword}
+                  >
+                    {verifyMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : null}
+                    Проверить
+                  </Button>
+                  <Button
+                    onClick={handleSave}
+                    disabled={isLkMutating || !lkEmail || !lkPassword}
+                  >
+                    {saveMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : null}
+                    Сохранить
+                  </Button>
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Учётные данные хранятся в зашифрованном виде. Используются для доступа к вашим оценкам и учебному плану.
+                </p>
+              </div>
             )}
-          </Button>
+          </CardContent>
+        </Card>
+
+        {/* Navigation back */}
+        <div className="pt-4">
+          <Link to="/">
+            <Button variant="outline">← На главную</Button>
+          </Link>
         </div>
-      </Modal>
+
+        {/* Disconnect confirmation modal */}
+        <Modal
+          open={disconnectModalOpen}
+          onClose={() => setDisconnectModalOpen(false)}
+          title="Отключить личный кабинет?"
+        >
+          <p className="text-muted-foreground mb-4">
+            Учётные данные будут удалены. Синхронизированные данные (оценки, дисциплины) останутся в приложении.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setDisconnectModalOpen(false)}
+            >
+              Отмена
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Отключить'
+              )}
+            </Button>
+          </div>
+        </Modal>
+      </div>
     </div>
   )
 }

@@ -41,10 +41,15 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 
 См. `docs/Current_task.md` — 15 задач (B1-B12 bugfixes, F1-F5 features).
 
+### Завершено (незакоммичено):
+- **B1-B3**: ClassmatesPage mobile fixes (grid, аватарки, кнопка "+")
+- **B5**: SettingsPage padding fix
+- **B6**: ThemeToggle → Settings (перенос, удаление мёртвых файлов, aria-pressed)
+
 ### Следующие задачи (приоритет):
-1. **Бэкапы PostgreSQL** — cron + pg_dump (P0)
-2. **02-push-notifications** — push-уведомления (P1)
-3. **05-ics-export** — экспорт в .ics (P2)
+1. **B7** — Remove "Notes" tab
+2. **B9** — Semester dates from LK (CRITICAL)
+3. **F1** — Бэкапы PostgreSQL — cron + pg_dump
 
 ## Что отложено
 - httpOnly cookies вместо localStorage

@@ -41,14 +41,14 @@ function Avatar({
   className?: string
 }) {
   const sizeClasses = {
-    sm: 'w-20 h-20',
-    md: 'w-20 h-20',
+    sm: 'w-16 h-16 sm:w-20 sm:h-20',
+    md: 'w-16 h-16 sm:w-20 sm:h-20',
     lg: 'w-24 h-24',
   }
 
   const iconSizes = {
-    sm: 'h-10 w-10',
-    md: 'h-10 w-10',
+    sm: 'h-8 w-8 sm:h-10 sm:w-10',
+    md: 'h-8 w-8 sm:h-10 sm:w-10',
     lg: 'h-12 w-12',
   }
 
@@ -299,7 +299,7 @@ export function ClassmatesPage() {
         <div className="container max-w-2xl mx-auto px-4 py-6">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-muted rounded w-1/3" />
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="aspect-square bg-muted rounded" />
               ))}
@@ -337,11 +337,8 @@ export function ClassmatesPage() {
             </Button>
           </Link>
           <h1 className="text-xl sm:text-2xl font-bold">Одногруппники</h1>
-          <span className="flex-1 text-center text-sm text-muted-foreground font-medium">
-            МБС-301-О-01
-          </span>
           <span className="text-sm text-muted-foreground">{classmates.length}</span>
-          <Button size="icon" onClick={openAddModal} disabled={!isOnline}>
+          <Button size="icon" onClick={openAddModal} disabled={!isOnline} className="shrink-0">
             <Plus className="h-5 w-5" />
           </Button>
         </div>
@@ -353,7 +350,7 @@ export function ClassmatesPage() {
               {group.label}
               <span className="ml-2 text-sm font-normal">({group.classmates.length})</span>
             </h2>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {group.classmates.map((classmate) => (
                 <button
                   key={classmate.id}
