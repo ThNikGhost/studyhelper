@@ -1,9 +1,12 @@
-import { Download, Trash2 } from 'lucide-react'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { useState } from 'react'
+import { Download, Loader2, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 import type { StudyFile } from '@/types/file'
 import { fileCategoryLabels } from '@/types/file'
 import { formatFileSize, getFileIcon } from '@/lib/fileUtils'
 import { fileService } from '@/services/fileService'
+import { getErrorMessage } from '@/lib/errorUtils'
 
 interface FileListProps {
   files: StudyFile[]
@@ -12,6 +15,19 @@ interface FileListProps {
 }
 
 export function FileList({ files, onDelete, disabled }: FileListProps) {
+  const [downloadingId, setDownloadingId] = useState<number | null>(null)
+
+  async function handleDownload(file: StudyFile) {
+    setDownloadingId(file.id)
+    try {
+      await fileService.downloadFile(file.id, file.filename)
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
   if (files.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -32,6 +48,7 @@ export function FileList({ files, onDelete, disabled }: FileListProps) {
           month: 'short',
           year: 'numeric',
         })
+        const isDownloading = downloadingId === file.id
 
         return (
           <div
@@ -53,14 +70,19 @@ export function FileList({ files, onDelete, disabled }: FileListProps) {
             </div>
 
             <div className="flex gap-1 shrink-0">
-              <a
-                href={fileService.getDownloadUrl(file.id)}
-                download={file.filename}
-                className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDownload(file)}
+                disabled={isDownloading || disabled}
                 aria-label={`Скачать ${file.filename}`}
               >
-                <Download className="h-4 w-4" />
-              </a>
+                {isDownloading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+              </Button>
 
               <Button
                 variant="ghost"

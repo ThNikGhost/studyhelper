@@ -45,8 +45,18 @@ export const fileService = {
     await api.delete(`/files/${id}`)
   },
 
-  getDownloadUrl(id: number): string {
-    return `/api/v1/files/${id}/download`
+  async downloadFile(id: number, filename: string): Promise<void> {
+    const response = await api.get(`/files/${id}/download`, {
+      responseType: 'blob',
+    })
+    const url = URL.createObjectURL(response.data as Blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
   },
 }
 
