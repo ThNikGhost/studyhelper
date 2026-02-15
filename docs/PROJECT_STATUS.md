@@ -47,14 +47,14 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **B5**: SettingsPage padding fix
 - **B6**: ThemeToggle → Settings (перенос, удаление мёртвых файлов, aria-pressed)
 - **B7**: Remove "Notes" tab (route + QuickActions)
+- **B8**: GradesPage light theme contrast — border-классы к grade badges
 - **B9**: Semester dates from LK — _determine_current_semester(), auto-dates, is_current fix
 - **B11**: File download JWT fix — blob download с авторизацией
 
 ### Следующие задачи (приоритет):
-1. **B8** — GradesPage light theme contrast
-2. **B12** — Nginx healthcheck path
-3. **F1** — PostgreSQL backups
-4. **F2** — Sentry integration
+1. **B12** — Nginx healthcheck path
+2. **F1** — PostgreSQL backups
+3. **F2** — Sentry integration
 
 ## Что отложено
 - httpOnly cookies вместо localStorage
