@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramRetryAfter
 
 from src.config import settings
 
@@ -50,11 +52,20 @@ async def setup_bot() -> tuple[Bot, Dispatcher] | None:
 
     # Set webhook if URL is configured
     if settings.telegram_webhook_url:
-        await _bot.set_webhook(
-            url=settings.telegram_webhook_url,
-            secret_token=settings.telegram_webhook_secret,
-            drop_pending_updates=True,
-        )
+        for _attempt in range(3):
+            try:
+                await _bot.set_webhook(
+                    url=settings.telegram_webhook_url,
+                    secret_token=settings.telegram_webhook_secret,
+                    drop_pending_updates=True,
+                )
+                break
+            except TelegramRetryAfter as e:
+                logger.warning(
+                    "Flood control on SetWebhook, retrying in %s seconds",
+                    e.retry_after,
+                )
+                await asyncio.sleep(e.retry_after)
         logger.info("Telegram webhook set: %s", settings.telegram_webhook_url)
 
     bot_info = await _bot.me()
@@ -67,7 +78,11 @@ async def shutdown_bot() -> None:
     global _bot, _dp
 
     if _bot is not None:
-        await _bot.delete_webhook(drop_pending_updates=True)
+        try:
+            await _bot.delete_webhook(drop_pending_updates=True)
+        except TelegramRetryAfter as e:
+            await asyncio.sleep(e.retry_after)
+            await _bot.delete_webhook(drop_pending_updates=True)
         await _bot.session.close()
         _bot = None
         logger.info("Telegram bot shut down")
