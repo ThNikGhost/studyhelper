@@ -10,6 +10,11 @@ BACKUP_DIR="${COMPOSE_DIR}/backups"
 RETENTION_DAYS=7
 TIMESTAMP=$(date +%Y-%m-%d_%H%M%S)
 BACKUP_FILE="${BACKUP_DIR}/studyhelper_${TIMESTAMP}.sql.gz"
+LOCK_FILE="/var/lock/studyhelper-backup.lock"
+
+# Prevent concurrent runs
+exec 200>"$LOCK_FILE"
+flock -n 200 || { echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: Backup already running"; exit 1; }
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting backup..."
 
@@ -27,10 +32,16 @@ fi
 
 mkdir -p "$BACKUP_DIR"
 
-# Dump database through Docker container
+# Verify db container is running
 cd "$COMPOSE_DIR"
+if ! docker compose -f docker-compose.prod.yml ps db --format '{{.State}}' | grep -q "running"; then
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: db container is not running"
+  exit 1
+fi
+
+# Dump database through Docker container (--clean adds DROP statements for restore)
 docker compose -f docker-compose.prod.yml exec -T db \
-  pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" \
+  pg_dump -U "$POSTGRES_USER" --clean --if-exists "$POSTGRES_DB" \
   | gzip > "$BACKUP_FILE"
 
 # Verify backup is not empty
@@ -44,7 +55,7 @@ SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup created: $BACKUP_FILE ($SIZE)"
 
 # Rotate old backups
-DELETED=$(find "$BACKUP_DIR" -name "studyhelper_*.sql.gz" -mtime +${RETENTION_DAYS} -delete -print | wc -l)
+DELETED=$(find "$BACKUP_DIR" -name "studyhelper_*.sql.gz" -mtime +${RETENTION_DAYS} -print -delete | wc -l)
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Rotated ${DELETED} backup(s) older than ${RETENTION_DAYS} days"
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup completed successfully"

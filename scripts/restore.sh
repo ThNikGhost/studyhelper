@@ -27,6 +27,17 @@ if [ ! -f "$BACKUP_FILE" ]; then
   exit 1
 fi
 
+if [[ ! "$BACKUP_FILE" =~ \.sql\.gz$ ]]; then
+  echo "ERROR: File must be a .sql.gz backup"
+  exit 1
+fi
+
+# Validate gzip integrity
+if ! gunzip -t "$BACKUP_FILE" 2>/dev/null; then
+  echo "ERROR: Backup file is corrupted"
+  exit 1
+fi
+
 # Load database credentials from .env
 if [ ! -f "${COMPOSE_DIR}/.env" ]; then
   echo "ERROR: .env file not found at ${COMPOSE_DIR}/.env"
@@ -53,6 +64,12 @@ fi
 
 echo "Restoring database..."
 cd "$COMPOSE_DIR"
+
+# Verify db container is running
+if ! docker compose -f docker-compose.prod.yml ps db --format '{{.State}}' | grep -q "running"; then
+  echo "ERROR: db container is not running"
+  exit 1
+fi
 gunzip -c "$BACKUP_FILE" \
   | docker compose -f docker-compose.prod.yml exec -T db \
     psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
