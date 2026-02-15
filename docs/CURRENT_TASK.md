@@ -14,19 +14,19 @@
 - 5 новых тестов в `TestLkImport`, все 471 тест зелёные
 
 ## Следующие шаги (по приоритету)
-1. **B10** — Verification после B9 (re-import на проде)
-3. **B11** — File download JWT fix
-4. **B4** — Schedule scroll indicator
-5. **B8** — GradesPage light theme contrast
-6. **B12** — Nginx healthcheck path
-7. **F1** — PostgreSQL backups
-8. **F2** — Sentry integration
-9. **F5** — Phone widgets
-10. **F3** — Telegram bot
-11. **F4** — Google Calendar sync
+1. **B10** — Verification после B9 (re-import на проде: `POST /api/v1/lk/import`)
+2. **B11** — File download JWT fix
+3. **B4** — Schedule scroll indicator
+4. **B8** — GradesPage light theme contrast
+5. **B12** — Nginx healthcheck path
+6. **F1** — PostgreSQL backups
+7. **F2** — Sentry integration
+8. **F5** — Phone widgets
+9. **F3** — Telegram bot
+10. **F4** — Google Calendar sync
 
 ## Блокеры / Вопросы
-- B10 зависит от B9 (semester dates fix)
+- B10 разблокирована (B9 завершена), требует деплой на прод
 - F2 требует создание аккаунта Sentry
 - F3 требует Telegram Bot Token
 - F4 требует Google Cloud Console проект

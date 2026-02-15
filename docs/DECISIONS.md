@@ -918,3 +918,5 @@ notification_settings — настройки уведомлений
 | 2026-02-14 | Path normalization `/\d+/` → `/{id}/` | Предотвращение cardinality explosion в Prometheus |
 | 2026-02-14 | /metrics без auth + nginx IP restrict | Prometheus scraper не умеет JWT, сетевая изоляция |
 | 2026-02-14 | respx вместо MagicMock для httpx | MagicMock ломал connection pool → deadlock в CI |
+| 2026-02-15 | Текущий семестр из SessionGrade, не из max(disciplines) | SemesterDiscipline содержит весь учебный план (1-11), max=11 для 3 курса — неверно. session_number парсинг + cap by plan |
+| 2026-02-15 | Даты семестров: осень Sep1-Dec30, весна Feb9-Jul7 | Приблизительные, пользователь может изменить вручную. Не перезаписываются при re-import |
