@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-15
+- **Дата обновления**: 2026-02-15 (F4 iCalendar feed)
 
 ## Backend модули
 
@@ -24,6 +24,7 @@
 | Notes | LessonNote | — | upsert | — | 26 |
 | LK | LkCredentials, SessionGrade, SemesterDiscipline | +LkImportResult | +import_to_app | +/import | 51 |
 | Telegram | TelegramLink | Status/LinkCode/Notifications | link/unlink/notifications | webhook+REST | ~40 |
+| Calendar | CalendarFeed | Status/CreateResponse | token CRUD + ICS gen | status/enable/disable/feed | 27 |
 
 ## Frontend
 
@@ -35,13 +36,13 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **URL**: https://studyhelper1.ru (89.110.93.63)
 - **SSL**: Let's Encrypt, certbot auto-renewal (12h)
 - **Контейнеры**: db, redis, backend, nginx, certbot (5 шт.)
-- **Миграции**: 20 применено
+- **Миграции**: 21 применено
 - **Sync**: APScheduler каждые 6ч + Redis distributed lock
 - **Backups**: pg_dump daily cron (3:00 UTC), gzip, 7-day rotation
 
 ## Что в работе
 
-См. `docs/Current_task.md` — все B1-B12 bugfixes завершены, F1-F2 done, осталось F3-F5 features.
+См. `docs/Current_task.md` — все B1-B12 bugfixes завершены, F1-F4 done, осталось F5.
 
 ### Завершено (закоммичено):
 - **B1-B3**: ClassmatesPage mobile fixes (grid, аватарки, кнопка "+")
@@ -57,10 +58,10 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **F2**: Sentry integration — sentry-sdk[fastapi] + @sentry/react, conditional init, user context
 - **F3**: Telegram bot — aiogram 3.25, webhook mode, 9 команд + reply-keyboard, 5 типов уведомлений, SettingsPage integration
 - **F3.1**: Telegram bot simplification — убраны /week /grades /attendance, добавлена ReplyKeyboardMarkup (📚 Расписание на сегодня, ⏭ Следующее занятие)
+- **F4**: iCalendar (.ics) feed — подписка на расписание + дедлайны, icalendar 7.x, per-user token auth, SettingsPage UI, 27 тестов
 
 ### Следующие задачи (приоритет):
 1. **F5** — Phone widgets
-2. **F4** — Google Calendar sync
 
 ## Что отложено
 - httpOnly cookies вместо localStorage
@@ -105,6 +106,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 - **SSL**: Let's Encrypt certbot (webroot), 3 nginx server-blocks, http2, HSTS
 - **Auto-sync**: APScheduler 3.x, IntervalTrigger(6h, jitter=60), Redis lock (TTL 600s)
 - **Telegram**: aiogram 3.25 webhook mode, conditional init (token-gated), 9 commands + reply keyboard, CronTrigger notifications
+- **Calendar Feed**: icalendar 7.x, per-user token URL auth, schedule + deadline events, subgroup/PE filtering, REFRESH-INTERVAL 6h
 - **Observability**: structlog (JSON prod / ConsoleRenderer dev), X-Request-ID, Prometheus metrics (/metrics), Sentry error tracking (optional, DSN-gated)
 - **CI**: GitHub Actions (backend lint+test, frontend lint+build)
 
@@ -112,12 +114,12 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 507 |
+| Backend тестов | 534 |
 | Frontend тестов | 375 |
 | Покрытие | ~80% |
-| API endpoints | ~70 |
-| Моделей | 17 |
-| Миграций | 20 |
+| API endpoints | ~74 |
+| Моделей | 18 |
+| Миграций | 21 |
 | Frontend страниц | 13 |
 | Линтеры | Ruff + ESLint clean |
 | Build | TypeScript + Vite clean |

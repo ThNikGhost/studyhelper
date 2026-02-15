@@ -927,6 +927,65 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 27. iCalendar Feed решения (2026-02-15)
+
+### icalendar 7.x вместо ics или vobject
+
+**Решение:** Использовать `icalendar>=7.0.0` для генерации ICS.
+
+**Обоснование:**
+- Stable release (Feb 2026), активно поддерживается
+- Использует `zoneinfo` (Python 3.9+) — не нужен pytz
+- API совместим с 4.x-6.x, проверенный в production
+- `cal.add_missing_timezones()` автоматически добавляет VTIMEZONE для Asia/Omsk
+- `vDuration` для REFRESH-INTERVAL (RFC 7986)
+
+**Альтернативы рассмотренные:**
+- `ics` — менее зрелая, ограниченная поддержка VALARM
+- `vobject` — устаревшая, нет async-совместимости
+- Ручная генерация ICS — error-prone, edge cases с timezone
+
+### Token-based URL auth для публичного feed
+
+**Решение:** Аутентификация .ics feed по секретному токену в URL, без JWT.
+
+**Обоснование:**
+- Стандарт для calendar feeds (Google Calendar, Apple iCal, Outlook — все используют URL-токены)
+- Calendar клиенты не умеют JWT — невозможно добавить Authorization header
+- `secrets.token_urlsafe(48)` → ~64 символа, 384 бита энтропии
+- Rate limit 30/min на public endpoint через slowapi
+- Регенерация токена инвалидирует старый URL
+
+### base_url в Settings вместо hardcoded domain
+
+**Решение:** Добавить `base_url: str = "https://studyhelper1.ru"` в `config.py`.
+
+**Обоснование:**
+- Feed URL строится как `{base_url}/api/v1/calendar/feed/{token}.ics`
+- Hardcoded домен ломается при смене хоста или в dev-окружении
+- Настраивается через env var `BASE_URL`
+
+### Throttle last_accessed_at (1 раз/час)
+
+**Решение:** Обновлять `last_accessed_at` не чаще раза в час.
+
+**Обоснование:**
+- Calendar клиенты обращаются к feed каждые 6-12 часов
+- Без throttle каждый запрос → write в БД (лишняя нагрузка)
+- `timedelta(hours=1)` — достаточная гранулярность для отображения "последнее обращение"
+
+### VALARM за 24ч и 1ч для дедлайнов
+
+**Решение:** Два напоминания для каждого deadline: за 24 часа и за 1 час.
+
+**Обоснование:**
+- 24ч — время подготовиться к сдаче
+- 1ч — финальное напоминание
+- Schedule entries без VALARM — у них есть `dtstart` в расписании, напоминание не нужно
+- `vDuration(timedelta(hours=-24))` — стандартный trigger для VALARM
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -1026,3 +1085,8 @@ notification_settings — настройки уведомлений
 | 2026-02-15 | Удалены /week /grades /attendance из бота | Дублируют web UI, перегружают меню |
 | 2026-02-15 | ReplyKeyboardMarkup вместо только команд | Кнопки внизу чата — быстрый доступ без набора / |
 | 2026-02-15 | Reply-кнопки делегируют в cmd_today/cmd_next | DRY — единая логика для команд и кнопок |
+| 2026-02-15 | icalendar 7.x для ICS генерации | Зрелая библиотека, zoneinfo, auto VTIMEZONE |
+| 2026-02-15 | Token-based URL auth для feed | Стандарт calendar feeds, клиенты не умеют JWT |
+| 2026-02-15 | base_url в Settings | Конфигурируемый домен вместо hardcode |
+| 2026-02-15 | Throttle last_accessed_at 1 раз/час | Снижение write-нагрузки на БД |
+| 2026-02-15 | VALARM 24ч + 1ч для дедлайнов | Два напоминания: подготовка + финальное |
