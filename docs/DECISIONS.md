@@ -986,6 +986,48 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 28. Phone Widget решения (2026-02-15)
+
+### Shared schedule filter util
+
+**Решение:** Вынести `_filter_entries()` из `calendar_feed.py` → `utils/schedule_filters.py` как `filter_entries_by_user_prefs()`.
+
+**Обоснование:**
+- Widget и Calendar Feed используют одну и ту же логику фильтрации (subgroup + PE teacher)
+- DRY: один модуль, два потребителя
+- Легко тестировать изолированно
+
+### Query param auth для widget endpoint
+
+**Решение:** `GET /next-lesson?api_key=xxx` — токен в query parameter, без JWT.
+
+**Обоснование:**
+- Scriptable (iOS) и HTTP Shortcuts (Android) не умеют JWT
+- Query param — простейший способ передать токен из виджета
+- Rate limit 60/min защищает от abuse
+- Тот же паттерн, что и Calendar Feed (URL-based token auth)
+
+### 7-day lookahead одним запросом
+
+**Решение:** `get_schedule_entries_by_date_range(db, today, today+7)` — один SQL-запрос на все 7 дней.
+
+**Обоснование:**
+- Один запрос вместо цикла по дням → меньше нагрузка на БД
+- Entries отсортированы по (lesson_date, start_time) — итерируем до первого подходящего
+- 7 дней — разумный lookahead: покрывает выходные и праздники
+
+### Nginx healthcheck: 127.0.0.1 вместо localhost
+
+**Решение:** В healthcheck nginx использовать `http://127.0.0.1/health` вместо `http://localhost/health`.
+
+**Обоснование:**
+- Alpine Linux резолвит `localhost` в IPv6 `::1`
+- nginx слушает только на IPv4 `0.0.0.0:80`
+- `wget http://localhost/health` → Connection refused (пытается IPv6)
+- `wget http://127.0.0.1/health` → 200 OK
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -1090,3 +1132,7 @@ notification_settings — настройки уведомлений
 | 2026-02-15 | base_url в Settings | Конфигурируемый домен вместо hardcode |
 | 2026-02-15 | Throttle last_accessed_at 1 раз/час | Снижение write-нагрузки на БД |
 | 2026-02-15 | VALARM 24ч + 1ч для дедлайнов | Два напоминания: подготовка + финальное |
+| 2026-02-15 | Shared schedule filter util | DRY: calendar_feed + widget используют одну фильтрацию |
+| 2026-02-15 | Query param auth для widget | Scriptable/HTTP Shortcuts не умеют JWT |
+| 2026-02-15 | 7-day lookahead одним запросом | Один SQL вместо цикла по дням |
+| 2026-02-15 | 127.0.0.1 вместо localhost в healthcheck | Alpine резолвит localhost в IPv6, nginx слушает IPv4 |

@@ -37,13 +37,13 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **URL**: https://studyhelper1.ru (89.110.93.63)
 - **SSL**: Let's Encrypt, certbot auto-renewal (12h)
 - **Контейнеры**: db, redis, backend, nginx, certbot (5 шт.)
-- **Миграции**: 21 применено
+- **Миграции**: 22 применено
 - **Sync**: APScheduler каждые 6ч + Redis distributed lock
 - **Backups**: pg_dump daily cron (3:00 UTC), gzip, 7-day rotation
 
 ## Что в работе
 
-См. `docs/Current_task.md` — все B1-B12 bugfixes завершены, F1-F4 done, осталось F5.
+Все B1-B12 bugfixes и F1-F5 post-MVP фичи завершены и задеплоены.
 
 ### Завершено (закоммичено):
 - **B1-B3**: ClassmatesPage mobile fixes (grid, аватарки, кнопка "+")
