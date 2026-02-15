@@ -20,21 +20,21 @@ import type { SessionGrade } from '@/types/lk'
 function getGradeColor(result: string): string {
   const lower = result.toLowerCase()
   if (lower.includes('отлично') || lower === '5') {
-    return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+    return 'bg-green-100 text-green-800 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
   }
   if (lower.includes('хорошо') || lower === '4') {
-    return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+    return 'bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800'
   }
   if (lower.includes('удовл') || lower === '3') {
-    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+    return 'bg-yellow-100 text-yellow-800 border border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800'
   }
   if (lower.includes('зачтено') || lower.includes('зачёт')) {
-    return 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400'
+    return 'bg-teal-100 text-teal-800 border border-teal-200 dark:bg-teal-900/30 dark:text-teal-400 dark:border-teal-800'
   }
   if (lower.includes('неуд') || lower.includes('незач') || lower === '2') {
-    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+    return 'bg-red-100 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
   }
-  return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+  return 'bg-gray-100 text-gray-800 border border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'
 }
 
 /** Convert result to numeric value for average calculation. */
