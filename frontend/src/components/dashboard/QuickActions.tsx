@@ -13,7 +13,6 @@ import {
   GraduationCap,
   FolderOpen,
   CheckCircle2,
-  StickyNote,
   BarChart3,
   Settings,
   Award,
@@ -55,13 +54,6 @@ const menuItems = [
     icon: FolderOpen,
     href: '/files',
     color: 'text-amber-500',
-  },
-  {
-    title: 'Заметки',
-    description: 'Заметки к занятиям',
-    icon: StickyNote,
-    href: '/notes',
-    color: 'text-yellow-500',
   },
   {
     title: 'Посещаемость',

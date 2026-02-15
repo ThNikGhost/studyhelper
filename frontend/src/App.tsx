@@ -18,7 +18,6 @@ const WorksPage = lazy(() => import('@/pages/WorksPage'))
 const ClassmatesPage = lazy(() => import('@/pages/ClassmatesPage'))
 const FilesPage = lazy(() => import('@/pages/FilesPage'))
 const AttendancePage = lazy(() => import('@/pages/AttendancePage'))
-const NotesPage = lazy(() => import('@/pages/NotesPage'))
 const TimelinePage = lazy(() => import('@/pages/TimelinePage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const GradesPage = lazy(() => import('@/pages/GradesPage'))
@@ -133,18 +132,6 @@ function App() {
             <AppLayout>
               <Suspense fallback={<PageSkeleton />}>
                 <AttendancePage />
-              </Suspense>
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/notes"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Suspense fallback={<PageSkeleton />}>
-                <NotesPage />
               </Suspense>
             </AppLayout>
           </ProtectedRoute>
