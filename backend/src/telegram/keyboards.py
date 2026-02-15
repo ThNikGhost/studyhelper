@@ -2,7 +2,25 @@
 
 from __future__ import annotations
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+)
+
+
+def main_keyboard() -> ReplyKeyboardMarkup:
+    """Persistent reply keyboard with main actions."""
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="\U0001f4da Расписание на сегодня"),
+                KeyboardButton(text="\u23ed Следующее занятие"),
+            ],
+        ],
+        resize_keyboard=True,
+    )
 
 
 def notifications_keyboard(

@@ -10,6 +10,7 @@ from aiogram.types import Message
 
 from src.database import get_session_maker
 from src.services import telegram as tg_service
+from src.telegram.keyboards import main_keyboard
 
 logger = logging.getLogger(__name__)
 router = Router(name="start")
@@ -28,14 +29,12 @@ async def cmd_start(message: Message) -> None:
         "<b>Команды:</b>\n"
         "/today — расписание на сегодня\n"
         "/tomorrow — расписание на завтра\n"
-        "/week — расписание на неделю\n"
         "/next — следующее занятие\n"
         "/deadlines — ближайшие дедлайны\n"
-        "/grades — оценки\n"
-        "/attendance — посещаемость\n"
         "/notifications — настройки уведомлений\n"
         "/status — статус привязки\n"
-        "/unlink — отвязать аккаунт"
+        "/unlink — отвязать аккаунт",
+        reply_markup=main_keyboard(),
     )
 
 
@@ -78,7 +77,8 @@ async def cmd_link(message: Message) -> None:
     await message.answer(
         "\u2705 <b>Аккаунт привязан!</b>\n\n"
         "Теперь вы будете получать уведомления.\n"
-        "Используйте /notifications для настройки."
+        "Используйте /notifications для настройки.",
+        reply_markup=main_keyboard(),
     )
     logger.info(
         "Telegram linked: tg_id=%d, user_id=%d",

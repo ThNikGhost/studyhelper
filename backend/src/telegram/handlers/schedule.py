@@ -1,4 +1,4 @@
-"""Schedule-related handlers: /today, /tomorrow, /week, /next."""
+"""Schedule-related handlers: /today, /tomorrow, /next + reply-keyboard buttons."""
 
 from __future__ import annotations
 
@@ -6,24 +6,20 @@ import logging
 import zoneinfo
 from datetime import datetime, timedelta
 
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
 from src.config import settings
 from src.database import get_session_maker
 from src.services import telegram as tg_service
-from src.services.schedule import (
-    get_current_lesson,
-    get_today_schedule,
-    get_week_schedule,
-)
+from src.services.schedule import get_current_lesson, get_today_schedule
 from src.telegram.formatters import (
     format_current_lesson,
     format_today_schedule,
     format_tomorrow_schedule,
-    format_week_schedule,
 )
+from src.telegram.keyboards import main_keyboard
 
 logger = logging.getLogger(__name__)
 router = Router(name="schedule")
@@ -55,7 +51,7 @@ async def cmd_today(message: Message) -> None:
     async with session_maker() as db:
         day = await get_today_schedule(db)
 
-    await message.answer(format_today_schedule(day))
+    await message.answer(format_today_schedule(day), reply_markup=main_keyboard())
 
 
 @router.message(Command("tomorrow"))
@@ -72,37 +68,7 @@ async def cmd_tomorrow(message: Message) -> None:
     async with session_maker() as db:
         day = await get_today_schedule(db, target_date=tomorrow)
 
-    await message.answer(format_tomorrow_schedule(day))
-
-
-@router.message(Command("week"))
-async def cmd_week(message: Message) -> None:
-    """Handle /week command."""
-    user_id = await _require_linked(message)
-    if user_id is None:
-        return
-
-    session_maker = get_session_maker()
-    async with session_maker() as db:
-        week = await get_week_schedule(db)
-
-    text = format_week_schedule(week)
-    # Telegram message limit is 4096 chars
-    if len(text) > 4096:
-        # Split by days
-        parts = text.split("\n\n\U0001f4c5")
-        current = parts[0]
-        for part in parts[1:]:
-            chunk = "\U0001f4c5" + part
-            if len(current) + len(chunk) + 2 > 4000:
-                await message.answer(current)
-                current = chunk
-            else:
-                current += "\n\n" + chunk
-        if current:
-            await message.answer(current)
-    else:
-        await message.answer(text)
+    await message.answer(format_tomorrow_schedule(day), reply_markup=main_keyboard())
 
 
 @router.message(Command("next"))
@@ -116,4 +82,16 @@ async def cmd_next(message: Message) -> None:
     async with session_maker() as db:
         data = await get_current_lesson(db)
 
-    await message.answer(format_current_lesson(data))
+    await message.answer(format_current_lesson(data), reply_markup=main_keyboard())
+
+
+@router.message(F.text == "\U0001f4da Расписание на сегодня")
+async def btn_today(message: Message) -> None:
+    """Handle reply-keyboard button for today's schedule."""
+    await cmd_today(message)
+
+
+@router.message(F.text == "\u23ed Следующее занятие")
+async def btn_next(message: Message) -> None:
+    """Handle reply-keyboard button for next lesson."""
+    await cmd_next(message)
