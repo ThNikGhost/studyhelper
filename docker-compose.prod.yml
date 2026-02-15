@@ -87,6 +87,7 @@ services:
       SCHEDULE_URL: ${SCHEDULE_URL:-https://eservice.omsu.ru/schedule/#/schedule/group/5028}
       SCHEDULE_SYNC_ENABLED: ${SCHEDULE_SYNC_ENABLED:-true}
       SCHEDULE_UPDATE_INTERVAL_HOURS: ${SCHEDULE_UPDATE_INTERVAL_HOURS:-6}
+      SENTRY_DSN: ${SENTRY_DSN:-}
     volumes:
       - uploads_data:/app/uploads
     networks:
@@ -111,6 +112,8 @@ services:
     build:
       context: .
       dockerfile: nginx/Dockerfile
+      args:
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
     container_name: studyhelper-nginx
     restart: unless-stopped
     ports:

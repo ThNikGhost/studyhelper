@@ -66,6 +66,42 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Startup
     setup_logging(debug=settings.debug)
+
+    if settings.sentry_dsn:
+        import sentry_sdk
+        from sentry_sdk.scrubber import DEFAULT_DENYLIST, EventScrubber
+
+        custom_denylist = DEFAULT_DENYLIST + [
+            "access_token",
+            "refresh_token",
+            "jwt",
+            "fernet_key",
+            "lk_password",
+            "credentials",
+        ]
+
+        def traces_sampler(sampling_context: dict) -> float:
+            """Sample traces based on transaction name."""
+            name = sampling_context.get("transaction_context", {}).get("name", "")
+            if "/health" in name or "/metrics" in name:
+                return 0
+            if "/auth/" in name:
+                return 1.0
+            if "/schedule" in name:
+                return 1.0
+            return 0.2
+
+        sentry_sdk.init(
+            dsn=settings.sentry_dsn,
+            traces_sampler=traces_sampler,
+            environment=settings.sentry_environment
+            or ("development" if settings.debug else "production"),
+            release="studyhelper-backend@0.1.0",
+            send_default_pii=False,
+            event_scrubber=EventScrubber(denylist=custom_denylist),
+        )
+        logger.info("Sentry initialized")
+
     APP_INFO.labels(version="0.1.0").set(1)
     logger.info("StudyHelper API starting up")
     await start_scheduler()

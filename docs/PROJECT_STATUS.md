@@ -53,10 +53,10 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **B11**: File download JWT fix — blob download с авторизацией
 - **B12**: Nginx healthcheck path — `http://localhost/health` вместо `https://localhost/`
 - **F1**: PostgreSQL backups — pg_dump cron daily, gzip, 7-day rotation, restore script
+- **F2**: Sentry integration — sentry-sdk[fastapi] + @sentry/react, conditional init, user context
 
 ### Следующие задачи (приоритет):
-1. **F2** — Sentry integration
-2. **F5** — Phone widgets
+1. **F5** — Phone widgets
 
 ## Что отложено
 - httpOnly cookies вместо localStorage
@@ -100,7 +100,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 - **Docker**: multi-stage builds (uv backend, node frontend), nginx reverse proxy, ~1.3GB total
 - **SSL**: Let's Encrypt certbot (webroot), 3 nginx server-blocks, http2, HSTS
 - **Auto-sync**: APScheduler 3.x, IntervalTrigger(6h, jitter=60), Redis lock (TTL 600s)
-- **Observability**: structlog (JSON prod / ConsoleRenderer dev), X-Request-ID, Prometheus metrics (/metrics)
+- **Observability**: structlog (JSON prod / ConsoleRenderer dev), X-Request-ID, Prometheus metrics (/metrics), Sentry error tracking (optional, DSN-gated)
 - **CI**: GitHub Actions (backend lint+test, frontend lint+build)
 
 ## Метрики

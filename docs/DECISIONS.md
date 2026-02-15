@@ -869,6 +869,37 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 25. Sentry Integration решения (2026-02-15)
+
+### sentry-sdk[fastapi] с условной инициализацией
+
+**Решение:** `sentry-sdk[fastapi]` на backend, `@sentry/react` на frontend. Инициализация только при наличии DSN.
+
+**Обоснование:**
+- SDK автоматически инструментирует FastAPI (middleware, exception handlers) — не нужно менять код
+- `send_default_pii=False` — не отправлять персональные данные
+- `traces_sample_rate=0.1` — 10% запросов для performance monitoring (Free tier: 5K errors/month)
+- Без DSN приложение работает как раньше — graceful degradation
+
+### VITE_SENTRY_DSN как Docker build arg
+
+**Решение:** Передавать `VITE_SENTRY_DSN` через `build.args` в docker-compose.prod.yml и `ARG`/`ENV` в nginx/Dockerfile.
+
+**Обоснование:**
+- Vite подставляет `import.meta.env.*` при build time, не runtime
+- Backend DSN — env var в контейнере (runtime), frontend DSN — build arg (build time)
+- Пустой DSN → Sentry не инициализируется, нет overhead
+
+### Sentry.setUser для user context
+
+**Решение:** `Sentry.setUser({ id, username })` после login/register/fetchUser, `Sentry.setUser(null)` при logout.
+
+**Обоснование:**
+- Ошибки в Sentry привязаны к конкретному пользователю → проще дебажить
+- Только id и username — без email/PII
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -955,3 +986,12 @@ notification_settings — настройки уведомлений
 | 2026-02-15 | Host-level cron вместо Docker backup | Минимум инфраструктуры, работает если Docker упал |
 | 2026-02-15 | pg_dump --clean --if-exists | DROP перед CREATE для корректного restore |
 | 2026-02-15 | flock в backup.sh | Предотвращение параллельных pg_dump |
+| 2026-02-15 | sentry-sdk[fastapi] + @sentry/react | Error tracking с graceful degradation без DSN |
+| 2026-02-15 | VITE_SENTRY_DSN как build arg | Vite подставляет env при build time |
+| 2026-02-15 | Sentry.setUser для user context | Привязка ошибок к пользователю |
+| 2026-02-15 | setUser только с id, без username | username = email → PII leak в Sentry dashboard |
+| 2026-02-15 | CSP connect-src *.ingest.sentry.io | Без этого frontend SDK не может отправить события |
+| 2026-02-15 | EventScrubber + custom denylist | send_default_pii=False не scrub-ит exception args/locals |
+| 2026-02-15 | traces_sampler вместо flat rate | Drop /health + /metrics, 100% auth/schedule, 20% rest — экономия free tier |
+| 2026-02-15 | reactRouterV7BrowserTracingIntegration | Параметризованные transaction names + Web Vitals для react-router v7 |
+| 2026-02-15 | React 19 onUncaughtError/onCaughtError | Component stack traces для ошибок вне ErrorBoundary |

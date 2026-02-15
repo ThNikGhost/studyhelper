@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react'
 import { toast } from 'sonner'
 
 /**
@@ -24,6 +25,10 @@ export function setupGlobalErrorHandlers(): void {
           ? event.reason
           : 'An unexpected error occurred'
 
+    Sentry.captureException(
+      event.reason instanceof Error ? event.reason : new Error(message),
+    )
+
     // Show user-friendly toast
     toast.error('Something went wrong', {
       description: message,
@@ -37,6 +42,8 @@ export function setupGlobalErrorHandlers(): void {
     if (event.defaultPrevented) return
 
     console.error('Global error:', event.error)
+
+    Sentry.captureException(event.error || new Error(event.message))
 
     toast.error('An error occurred', {
       description: event.message || 'Please try refreshing the page',

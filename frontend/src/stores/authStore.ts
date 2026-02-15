@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react'
 import { create } from 'zustand'
 import api from '@/lib/api'
 import type { AuthState, RegisterRequest, TokenResponse, User } from '@/types/auth'
@@ -23,6 +24,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       // Fetch user after login
       const userResponse = await api.get<User>('/auth/me')
+      Sentry.setUser({ id: String(userResponse.data.id) })
       set({ user: userResponse.data, isAuthenticated: true, isLoading: false })
     } catch (error) {
       set({ isLoading: false })
@@ -50,6 +52,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       // Fetch user after login
       const userResponse = await api.get<User>('/auth/me')
+      Sentry.setUser({ id: String(userResponse.data.id) })
       set({ user: userResponse.data, isAuthenticated: true, isLoading: false })
     } catch (error) {
       set({ isLoading: false })
@@ -65,6 +68,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } finally {
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
+      Sentry.setUser(null)
       set({ user: null, isAuthenticated: false })
     }
   },
@@ -78,6 +82,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true })
     try {
       const response = await api.get<User>('/auth/me')
+      Sentry.setUser({ id: String(response.data.id) })
       set({ user: response.data, isAuthenticated: true, isLoading: false })
     } catch {
       localStorage.removeItem('access_token')

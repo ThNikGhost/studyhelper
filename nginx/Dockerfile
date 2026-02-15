@@ -7,6 +7,10 @@ WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 
+# Sentry DSN (injected at build time for Vite)
+ARG VITE_SENTRY_DSN=""
+ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
+
 # Copy frontend source and build
 COPY frontend/ ./
 RUN npm run build

@@ -1,9 +1,12 @@
 import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import * as Sentry from '@sentry/react'
 import { useAuthStore } from '@/stores/authStore'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AppLayout } from '@/components/AppLayout'
 import { PageSkeleton } from '@/components/PageSkeleton'
+
+const SentryRoutes = Sentry.withSentryReactRouterV7Routing(Routes)
 
 // Eager-load auth pages (needed immediately)
 import LoginPage from '@/pages/LoginPage'
@@ -26,7 +29,7 @@ function App() {
   const { isAuthenticated } = useAuthStore()
 
   return (
-    <Routes>
+    <SentryRoutes>
       <Route
         path="/login"
         element={
@@ -174,7 +177,7 @@ function App() {
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    </SentryRoutes>
   )
 }
 

@@ -76,6 +76,10 @@ class Settings(BaseSettings):
     # Timezone
     timezone: str = "Asia/Omsk"
 
+    # Sentry
+    sentry_dsn: str | None = None
+    sentry_environment: str | None = None
+
     @model_validator(mode="after")
     def validate_secret_key(self) -> "Settings":
         """Ensure secret_key is changed in production."""
