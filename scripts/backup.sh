@@ -2,10 +2,10 @@
 # PostgreSQL backup script for StudyHelper
 # Runs via host cron, dumps DB through Docker container
 # Usage: ./backup.sh
-# Cron:  0 3 * * * /opt/studyhelper/scripts/backup.sh >> /var/log/studyhelper-backup.log 2>&1
+# Cron:  0 3 * * * /opt/repos/studyhelper/scripts/backup.sh >> /var/log/studyhelper-backup.log 2>&1
 set -euo pipefail
 
-COMPOSE_DIR="/opt/studyhelper"
+COMPOSE_DIR="/opt/repos/studyhelper"
 BACKUP_DIR="${COMPOSE_DIR}/backups"
 RETENTION_DAYS=7
 TIMESTAMP=$(date +%Y-%m-%d_%H%M%S)

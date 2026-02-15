@@ -4,7 +4,7 @@
 # Usage: ./restore.sh [backup_file.sql.gz]
 set -euo pipefail
 
-COMPOSE_DIR="/opt/studyhelper"
+COMPOSE_DIR="/opt/repos/studyhelper"
 BACKUP_DIR="${COMPOSE_DIR}/backups"
 
 # Show available backups if no argument provided
