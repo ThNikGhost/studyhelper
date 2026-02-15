@@ -55,7 +55,8 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **B12**: Nginx healthcheck path — `http://localhost/health` вместо `https://localhost/`
 - **F1**: PostgreSQL backups — pg_dump cron daily, gzip, 7-day rotation, restore script
 - **F2**: Sentry integration — sentry-sdk[fastapi] + @sentry/react, conditional init, user context
-- **F3**: Telegram bot — aiogram 3.25, webhook mode, 15 команд, 5 типов уведомлений, SettingsPage integration
+- **F3**: Telegram bot — aiogram 3.25, webhook mode, 9 команд + reply-keyboard, 5 типов уведомлений, SettingsPage integration
+- **F3.1**: Telegram bot simplification — убраны /week /grades /attendance, добавлена ReplyKeyboardMarkup (📚 Расписание на сегодня, ⏭ Следующее занятие)
 
 ### Следующие задачи (приоритет):
 1. **F5** — Phone widgets
@@ -103,7 +104,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 - **Docker**: multi-stage builds (uv backend, node frontend), nginx reverse proxy, ~1.3GB total
 - **SSL**: Let's Encrypt certbot (webroot), 3 nginx server-blocks, http2, HSTS
 - **Auto-sync**: APScheduler 3.x, IntervalTrigger(6h, jitter=60), Redis lock (TTL 600s)
-- **Telegram**: aiogram 3.25 webhook mode, conditional init (token-gated), 15 commands, CronTrigger notifications
+- **Telegram**: aiogram 3.25 webhook mode, conditional init (token-gated), 9 commands + reply keyboard, CronTrigger notifications
 - **Observability**: structlog (JSON prod / ConsoleRenderer dev), X-Request-ID, Prometheus metrics (/metrics), Sentry error tracking (optional, DSN-gated)
 - **CI**: GitHub Actions (backend lint+test, frontend lint+build)
 
@@ -111,7 +112,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 471 |
+| Backend тестов | 507 |
 | Frontend тестов | 375 |
 | Покрытие | ~80% |
 | API endpoints | ~70 |
