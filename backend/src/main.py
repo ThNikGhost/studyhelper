@@ -41,6 +41,7 @@ from src.routers import (
     telegram,
     university,
     uploads,
+    widget,
     works,
 )
 from src.utils.rate_limit import limiter
@@ -241,5 +242,6 @@ api_v1.include_router(notes.router, prefix="/notes", tags=["Notes"])
 api_v1.include_router(lk.router, prefix="/lk", tags=["LK"])
 api_v1.include_router(telegram.router, prefix="/telegram", tags=["Telegram"])
 api_v1.include_router(calendar_feed.router, prefix="/calendar", tags=["Calendar"])
+api_v1.include_router(widget.router, prefix="/widget", tags=["Widget"])
 
 app.include_router(api_v1)

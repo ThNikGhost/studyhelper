@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Settings, Dumbbell, Users, Building2, Check, Loader2, RefreshCw, LogOut, Eye, EyeOff, Sun, Moon, Monitor, MessageCircle, Copy, Bell, BellOff, LinkIcon, Unlink, Calendar, X } from 'lucide-react'
+import { Settings, Dumbbell, Users, Building2, Check, Loader2, RefreshCw, LogOut, Eye, EyeOff, Sun, Moon, Monitor, MessageCircle, Copy, Bell, BellOff, LinkIcon, Unlink, Calendar, X, Smartphone, ChevronDown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
   Card,
@@ -20,6 +20,7 @@ import { scheduleService } from '@/services/scheduleService'
 import { lkService } from '@/services/lkService'
 import { telegramService } from '@/services/telegramService'
 import { calendarFeedService } from '@/services/calendarFeedService'
+import { widgetService } from '@/services/widgetService'
 import { getPeTeachersFromWeek } from '@/lib/peTeacherFilter'
 import { formatDistanceToNow } from '@/lib/dateUtils'
 import type { LkCredentials } from '@/types/lk'
@@ -38,6 +39,10 @@ export default function SettingsPage() {
 
   // Calendar feed state
   const [calDisableModalOpen, setCalDisableModalOpen] = useState(false)
+
+  // Widget state
+  const [widgetDisableModalOpen, setWidgetDisableModalOpen] = useState(false)
+  const [widgetInstructionsOpen, setWidgetInstructionsOpen] = useState(false)
 
   // Telegram state
   const [tgUnlinkModalOpen, setTgUnlinkModalOpen] = useState(false)
@@ -191,10 +196,58 @@ export default function SettingsPage() {
 
   const isCalMutating = calEnableMutation.isPending || calDisableMutation.isPending
 
+  // Widget API key status
+  const { data: widgetStatus, isLoading: widgetStatusLoading } = useQuery({
+    queryKey: ['widget', 'status'],
+    queryFn: ({ signal }) => widgetService.getStatus(signal),
+    staleTime: 1000 * 60,
+  })
+
+  // Widget enable
+  const widgetEnableMutation = useMutation({
+    mutationFn: () => widgetService.enable(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['widget', 'status'] })
+      toast.success('API ключ для виджета создан')
+    },
+    onError: () => {
+      toast.error('Не удалось создать API ключ')
+    },
+  })
+
+  // Widget disable
+  const widgetDisableMutation = useMutation({
+    mutationFn: () => widgetService.disable(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['widget', 'status'] })
+      setWidgetDisableModalOpen(false)
+      toast.success('API ключ для виджета удалён')
+    },
+    onError: () => {
+      toast.error('Не удалось удалить API ключ')
+    },
+  })
+
+  const isWidgetMutating = widgetEnableMutation.isPending || widgetDisableMutation.isPending
+
   const copyFeedUrl = () => {
     if (calStatus?.feed_url) {
       navigator.clipboard.writeText(calStatus.feed_url)
       toast.success('Ссылка скопирована')
+    }
+  }
+
+  const copyWidgetApiKey = () => {
+    if (widgetStatus?.api_key) {
+      navigator.clipboard.writeText(widgetStatus.api_key)
+      toast.success('API ключ скопирован')
+    }
+  }
+
+  const copyWidgetUrl = () => {
+    if (widgetStatus?.widget_url) {
+      navigator.clipboard.writeText(widgetStatus.widget_url)
+      toast.success('URL скопирован')
     }
   }
 
@@ -633,6 +686,159 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Widget Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Smartphone className="h-5 w-5 text-indigo-500" />
+              <CardTitle>Виджеты</CardTitle>
+            </div>
+            <CardDescription>
+              Виджет на домашний экран телефона — показывает следующее занятие. Работает через iOS Scriptable, Widgy или Android HTTP Shortcuts.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {widgetStatusLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : widgetStatus?.is_active ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <Check className="h-5 w-5" />
+                  <span className="font-medium">API ключ активен</span>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">API ключ:</p>
+                  <div className="flex items-center gap-2">
+                    <code className="bg-muted px-3 py-2 rounded text-xs font-mono break-all flex-1">
+                      {widgetStatus.api_key}
+                    </code>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={copyWidgetApiKey}
+                      title="Скопировать API ключ"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">URL для виджета:</p>
+                  <div className="flex items-center gap-2">
+                    <code className="bg-muted px-3 py-2 rounded text-xs font-mono break-all flex-1">
+                      {widgetStatus.widget_url}
+                    </code>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={copyWidgetUrl}
+                      title="Скопировать URL"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {widgetStatus.last_used_at && (
+                  <p className="text-sm text-muted-foreground">
+                    Последнее использование: {formatDistanceToNow(new Date(widgetStatus.last_used_at))}
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => widgetEnableMutation.mutate()}
+                    disabled={isWidgetMutating}
+                    className="gap-2"
+                  >
+                    {widgetEnableMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    Обновить ключ
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setWidgetDisableModalOpen(true)}
+                    disabled={isWidgetMutating}
+                    className="gap-2 text-destructive hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                    Удалить
+                  </Button>
+                </div>
+
+                {/* Instructions toggle */}
+                <button
+                  type="button"
+                  onClick={() => setWidgetInstructionsOpen(!widgetInstructionsOpen)}
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ChevronDown className={`h-4 w-4 transition-transform ${widgetInstructionsOpen ? 'rotate-180' : ''}`} />
+                  Инструкция по настройке
+                </button>
+
+                {widgetInstructionsOpen && (
+                  <div className="space-y-3 text-sm text-muted-foreground border-l-2 border-muted pl-4">
+                    <div>
+                      <p className="font-medium text-foreground">iOS (Scriptable):</p>
+                      <ol className="list-decimal list-inside space-y-1 mt-1">
+                        <li>Установите <a href="https://apps.apple.com/us/app/scriptable/id1405459188" target="_blank" rel="noopener noreferrer" className="underline">Scriptable</a> из App Store</li>
+                        <li>Скачайте скрипт: <code className="bg-muted px-1 rounded">studyhelper1.ru/scriptable-widget.js</code></li>
+                        <li>Откройте файл в Scriptable, при первом запуске введите API ключ</li>
+                        <li>Добавьте виджет Scriptable на домашний экран, выберите скрипт StudyHelper</li>
+                      </ol>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">iOS (Widgy) — без кода:</p>
+                      <ol className="list-decimal list-inside space-y-1 mt-1">
+                        <li>Установите <a href="https://apps.apple.com/us/app/widgy-widgets/id1524540481" target="_blank" rel="noopener noreferrer" className="underline">Widgy</a> из App Store</li>
+                        <li>Создайте виджет, добавьте JSON API data source с URL выше</li>
+                        <li>Настройте отображение полей: subject, time_start, location</li>
+                      </ol>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Android (HTTP Request Shortcuts):</p>
+                      <ol className="list-decimal list-inside space-y-1 mt-1">
+                        <li>Установите <a href="https://play.google.com/store/apps/details?id=ch.rmy.android.http_shortcuts" target="_blank" rel="noopener noreferrer" className="underline">HTTP Request Shortcuts</a></li>
+                        <li>Создайте новый shortcut, метод GET, вставьте URL виджета</li>
+                        <li>В Display Settings выберите &quot;Dialog / Toast&quot; для показа результата</li>
+                        <li>Добавьте ярлык на домашний экран</li>
+                      </ol>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <Button
+                  onClick={() => widgetEnableMutation.mutate()}
+                  disabled={isWidgetMutating}
+                  className="gap-2"
+                >
+                  {widgetEnableMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Smartphone className="h-4 w-4" />
+                  )}
+                  Создать API ключ
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Создаст секретный ключ для виджета домашнего экрана.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* OmSU LK Integration Section */}
         <Card>
           <CardHeader>
@@ -831,6 +1037,38 @@ export default function SettingsPage() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 'Отключить'
+              )}
+            </Button>
+          </div>
+        </Modal>
+
+        {/* Widget disable confirmation modal */}
+        <Modal
+          open={widgetDisableModalOpen}
+          onClose={() => setWidgetDisableModalOpen(false)}
+          title="Удалить API ключ виджета?"
+        >
+          <p className="text-muted-foreground mb-4">
+            Текущий ключ перестанет работать. Виджеты на телефоне покажут ошибку. Вы сможете создать новый ключ в любой момент.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setWidgetDisableModalOpen(false)}
+            >
+              Отмена
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={() => widgetDisableMutation.mutate()}
+              disabled={widgetDisableMutation.isPending}
+            >
+              {widgetDisableMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Удалить'
               )}
             </Button>
           </div>

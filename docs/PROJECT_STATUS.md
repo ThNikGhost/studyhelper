@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-15 (F4 iCalendar feed)
+- **Дата обновления**: 2026-02-15 (F5 Phone Widgets)
 
 ## Backend модули
 
@@ -25,6 +25,7 @@
 | LK | LkCredentials, SessionGrade, SemesterDiscipline | +LkImportResult | +import_to_app | +/import | 51 |
 | Telegram | TelegramLink | Status/LinkCode/Notifications | link/unlink/notifications | webhook+REST | ~40 |
 | Calendar | CalendarFeed | Status/CreateResponse | token CRUD + ICS gen | status/enable/disable/feed | 27 |
+| Widget | WidgetApiKey | Status/Create/NextLesson | token CRUD + next lesson | status/enable/disable/next-lesson | 29 |
 
 ## Frontend
 
@@ -59,9 +60,10 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **F3**: Telegram bot — aiogram 3.25, webhook mode, 9 команд + reply-keyboard, 5 типов уведомлений, SettingsPage integration
 - **F3.1**: Telegram bot simplification — убраны /week /grades /attendance, добавлена ReplyKeyboardMarkup (📚 Расписание на сегодня, ⏭ Следующее занятие)
 - **F4**: iCalendar (.ics) feed — подписка на расписание + дедлайны, icalendar 7.x, per-user token auth, SettingsPage UI, 27 тестов
+- **F5**: Phone Widgets — API ключ + JSON endpoint для виджетов, shared filter refactor, Scriptable JS, SettingsPage UI с инструкциями, 29 тестов
 
 ### Следующие задачи (приоритет):
-1. **F5** — Phone widgets
+- Все post-MVP фичи реализованы
 
 ## Что отложено
 - httpOnly cookies вместо localStorage
@@ -107,6 +109,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 - **Auto-sync**: APScheduler 3.x, IntervalTrigger(6h, jitter=60), Redis lock (TTL 600s)
 - **Telegram**: aiogram 3.25 webhook mode, conditional init (token-gated), 9 commands + reply keyboard, CronTrigger notifications
 - **Calendar Feed**: icalendar 7.x, per-user token URL auth, schedule + deadline events, subgroup/PE filtering, REFRESH-INTERVAL 6h
+- **Widget API**: per-user token query param auth, next lesson JSON endpoint, 7-day lookahead, subgroup/PE filtering, Scriptable JS widget
 - **Observability**: structlog (JSON prod / ConsoleRenderer dev), X-Request-ID, Prometheus metrics (/metrics), Sentry error tracking (optional, DSN-gated)
 - **CI**: GitHub Actions (backend lint+test, frontend lint+build)
 
@@ -114,12 +117,12 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 534 |
+| Backend тестов | 563 |
 | Frontend тестов | 375 |
 | Покрытие | ~80% |
 | API endpoints | ~74 |
-| Моделей | 18 |
-| Миграций | 21 |
+| Моделей | 19 |
+| Миграций | 22 |
 | Frontend страниц | 13 |
 | Линтеры | Ruff + ESLint clean |
 | Build | TypeScript + Vite clean |

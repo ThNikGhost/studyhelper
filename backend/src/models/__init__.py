@@ -14,6 +14,7 @@ from src.models.teacher import Teacher
 from src.models.telegram import TelegramLink
 from src.models.university import Building, Department
 from src.models.user import User
+from src.models.widget_api_key import WidgetApiKey
 from src.models.work import Work, WorkStatus, WorkStatusHistory
 
 __all__ = [
@@ -35,6 +36,7 @@ __all__ = [
     "Teacher",
     "TelegramLink",
     "User",
+    "WidgetApiKey",
     "Work",
     "WorkStatus",
     "WorkStatusHistory",
