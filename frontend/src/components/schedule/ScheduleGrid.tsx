@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { StickyNote } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TIME_SLOTS, LESSON_TYPE_COLORS } from '@/lib/constants'
@@ -61,9 +62,18 @@ export function ScheduleGrid({
   allEntries,
   userSubgroup,
 }: ScheduleGridProps) {
+  const [showScrollHint, setShowScrollHint] = useState(true)
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget
+    const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 10
+    setShowScrollHint(!atEnd)
+  }
+
   return (
-    <div className="overflow-x-auto">
-      <div className="min-w-[700px]">
+    <div className="relative">
+      <div className="overflow-x-auto" onScroll={handleScroll}>
+        <div className="min-w-[700px]">
         {/* Grid container - narrow time column, equal day columns */}
         <div
           className="grid rounded-lg overflow-hidden"
@@ -265,6 +275,10 @@ export function ScheduleGrid({
           ))}
         </div>
       </div>
+      </div>
+      {showScrollHint && (
+        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none sm:hidden" />
+      )}
     </div>
   )
 }
