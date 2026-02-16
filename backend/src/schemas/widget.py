@@ -59,5 +59,7 @@ class TodayScheduleResponse(BaseModel):
     lessons: list[TodayLessonItem]  # All today's lessons (sorted by time)
     next_lesson_from_future: TodayLessonItem | None = None
     next_lesson_date: str | None = None  # "YYYY-MM-DD" for next_lesson_from_future
-    next_day_remaining: list[TodayLessonItem] = []  # Up to 3 lessons after next_lesson_from_future
+    next_day_remaining: list[
+        TodayLessonItem
+    ] = []  # Up to 3 lessons after next_lesson_from_future
     cached_at: str  # "YYYY-MM-DDTHH:MM:SS"
