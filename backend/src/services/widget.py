@@ -180,13 +180,20 @@ async def get_next_lesson_by_token(
 
 
 def _build_location(entry: ScheduleEntry) -> str | None:
-    """Build location string from room and building."""
-    parts = []
+    """Build location string from room and building.
+
+    Strips 'Корпус ' prefix for compact format: '1-101' instead of 'Корпус 1-101'.
+    """
+    building = entry.building
+    if building:
+        building = building.removeprefix("Корпус ").removeprefix("корпус ")
+    if building and entry.room:
+        return f"{building}-{entry.room}"
     if entry.room:
-        parts.append(f"ауд. {entry.room}")
-    if entry.building:
-        parts.append(entry.building)
-    return ", ".join(parts) if parts else None
+        return entry.room
+    if building:
+        return building
+    return None
 
 
 async def get_next_lesson(

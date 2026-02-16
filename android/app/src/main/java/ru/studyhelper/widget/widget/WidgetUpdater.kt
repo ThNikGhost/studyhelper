@@ -36,17 +36,18 @@ object WidgetUpdater {
 
     /**
      * Determine widget size from AppWidgetOptions bundle.
-     * Uses MAX_WIDTH/HEIGHT with fallback to MIN_WIDTH/HEIGHT.
+     * Uses MIN_WIDTH/HEIGHT which are reliable across Android versions.
+     * Thresholds based on Android cell formula (73n - 16):
+     *   4-cell = 276dp, 3-cell = 203dp, 2-cell = 130dp.
+     * w >= 200 captures 3+ columns as LARGE, 2 columns as MEDIUM.
      */
     private fun determineSize(options: Bundle?): WidgetSize {
         if (options == null) return WidgetSize.LARGE
-        val maxW = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 0)
-        val maxH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
-        val w = if (maxW > 0) maxW else options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250)
-        val h = if (maxH > 0) maxH else options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110)
-        Log.d(TAG, "Widget dimensions: w=$w, h=$h (maxW=$maxW, maxH=$maxH)")
+        val w = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250)
+        val h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110)
+        Log.d(TAG, "Widget dimensions: minW=$w, minH=$h")
         return when {
-            w >= 250 && h >= 100 -> WidgetSize.LARGE
+            w >= 200 && h >= 100 -> WidgetSize.LARGE
             h >= 100 -> WidgetSize.MEDIUM
             else -> WidgetSize.SMALL
         }
@@ -125,7 +126,8 @@ object WidgetUpdater {
             is WidgetDisplayData.Lesson -> {
                 views.setTextViewText(R.id.textSubject, data.subject)
                 views.setTextColor(R.id.textSubject, color(context, R.color.widget_subject))
-                views.setTextViewText(R.id.textLocation, data.location ?: "")
+                val typeLoc = listOfNotNull(data.lessonType, data.location).joinToString(" · ")
+                views.setTextViewText(R.id.textLocation, typeLoc)
                 views.setTextViewText(R.id.textTimeCompact, data.timeStart)
             }
         }

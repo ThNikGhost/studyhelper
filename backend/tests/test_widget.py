@@ -333,11 +333,9 @@ class TestNextLessonLogic:
         semester: Semester,
         schedule_entries: list[ScheduleEntry],
     ) -> None:
-        """Should include location with room and building."""
+        """Should include location with building-room format."""
         result = await widget_service.get_next_lesson(db_session, user)
-        assert result.location is not None
-        assert "101" in result.location
-        assert "Корпус 1" in result.location
+        assert result.location == "1-101"
 
     async def test_next_lesson_teacher(
         self,

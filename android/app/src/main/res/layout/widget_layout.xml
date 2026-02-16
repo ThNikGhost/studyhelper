@@ -21,7 +21,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/widget_header"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             android:textColor="@color/widget_header"
             android:textAllCaps="true"
@@ -32,7 +32,7 @@
             android:id="@+id/textSubject"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="16sp"
+            android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@color/widget_subject"
             android:maxLines="2"
@@ -44,7 +44,7 @@
             android:id="@+id/textType"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="11sp"
+            android:textSize="13sp"
             android:textStyle="bold"
             android:layout_marginTop="2dp" />
 
@@ -53,17 +53,17 @@
             android:id="@+id/textTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@color/widget_time"
             android:layout_marginTop="4dp" />
 
-        <!-- Location: "ауд. 203, 4" -->
+        <!-- Location: "1-203" -->
         <TextView
             android:id="@+id/textLocation"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="12sp"
+            android:textSize="14sp"
             android:textColor="@color/widget_location"
             android:maxLines="1"
             android:ellipsize="end"
@@ -74,7 +74,7 @@
             android:id="@+id/textCountdown"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="12sp"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:layout_marginTop="4dp" />
 
@@ -105,7 +105,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/widget_remaining_header"
-            android:textSize="10sp"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:textColor="@color/widget_header"
             android:textAllCaps="true"
@@ -116,7 +116,7 @@
             android:id="@+id/slot1Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="11sp"
+            android:textSize="13sp"
             android:textColor="@color/widget_remaining_subject"
             android:maxLines="1"
             android:ellipsize="end"
@@ -128,7 +128,7 @@
             android:id="@+id/slot2Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="11sp"
+            android:textSize="13sp"
             android:textColor="@color/widget_remaining_subject"
             android:maxLines="1"
             android:ellipsize="end"
@@ -140,7 +140,7 @@
             android:id="@+id/slot3Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="11sp"
+            android:textSize="13sp"
             android:textColor="@color/widget_remaining_subject"
             android:maxLines="1"
             android:ellipsize="end"
