@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">StudyHelper</string>
+    <string name="widget_description">Следующая пара на домашнем экране</string>
+    <string name="widget_header">СЛЕДУЮЩАЯ ПАРА</string>
+    <string name="widget_no_key">API ключ не задан</string>
+    <string name="widget_tap_to_setup">Нажмите для настройки</string>
+    <string name="widget_no_data">Нет данных</string>
+    <string name="widget_no_lessons">Нет пар</string>
+    <string name="widget_no_lessons_sub">в ближайшую неделю</string>
+    <string name="config_description">Введите API ключ из настроек StudyHelper\n(Настройки → Виджеты → Включить → Скопировать ключ)</string>
+    <string name="config_hint">API ключ</string>
+    <string name="config_save">Сохранить</string>
+    <string name="config_error_empty">Введите API ключ</string>
+    <string name="config_loading">Загрузка данных…</string>
+    <string name="config_success">Готово!</string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_bg">#1a1a2e</color>
+    <color name="widget_header">#8b8ba7</color>
+    <color name="widget_subject">#FFFFFF</color>
+    <color name="widget_time">#6c9eff</color>
+    <color name="widget_location">#c0c0d0</color>
+    <color name="widget_countdown_today">#4ade80</color>
+    <color name="widget_countdown_future">#fbbf24</color>
+    <color name="type_lecture">#6c9eff</color>
+    <color name="type_practice">#4ade80</color>
+    <color name="type_lab">#c084fc</color>
+    <color name="type_other">#fbbf24</color>
+    <color name="config_bg">#0f0f1a</color>
+    <color name="config_accent">#6c9eff</color>
+</resources>
