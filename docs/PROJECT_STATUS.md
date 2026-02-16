@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-16 (F5.1 Widget /today endpoint)
+- **Дата обновления**: 2026-02-16 (F5.2 Android Widget App)
 
 ## Backend модули
 
@@ -62,6 +62,7 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **F4**: iCalendar (.ics) feed — подписка на расписание + дедлайны, icalendar 7.x, per-user token auth, SettingsPage UI, 27 тестов
 - **F5**: Phone Widgets — API ключ + JSON endpoint для виджетов, shared filter refactor, Scriptable JS, SettingsPage UI с инструкциями, 29 тестов
 - **F5.1**: Widget /today endpoint — полное расписание на день + первая будущая пара, offline кеш с локальным minutes_until, 24h cache TTL, shared auth refactor, текстовые фиксы виджета, 14 новых тестов
+- **F5.2**: Android Widget App — нативный APK (4×2 виджет), AGP 9.0.0 + built-in Kotlin, RemoteViews, WorkManager 30min refresh, SharedPreferences cache, GitHub Actions CI → GitHub Releases
 
 ### Следующие задачи (приоритет):
 - Все post-MVP фичи реализованы
@@ -112,7 +113,8 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 - **Calendar Feed**: icalendar 7.x, per-user token URL auth, schedule + deadline events, subgroup/PE filtering, REFRESH-INTERVAL 6h
 - **Widget API**: per-user token query param auth, next lesson + today schedule JSON endpoints, 7-day lookahead, subgroup/PE filtering, Scriptable JS widget with offline cache
 - **Observability**: structlog (JSON prod / ConsoleRenderer dev), X-Request-ID, Prometheus metrics (/metrics), Sentry error tracking (optional, DSN-gated)
-- **CI**: GitHub Actions (backend lint+test, frontend lint+build)
+- **CI**: GitHub Actions (backend lint+test, frontend lint+build, Android APK build on tag)
+- **Android Widget**: Native APK (AGP 9.0.0, Kotlin built-in, Gradle 9.3.1), 4×2 AppWidgetProvider + RemoteViews, WorkManager 30min refresh, HttpURLConnection + org.json (no external deps), SharedPreferences (API key + 24h JSON cache), debug APK via GitHub Releases (`android/v*` tags)
 
 ## Метрики
 
@@ -127,3 +129,4 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 | Frontend страниц | 13 |
 | Линтеры | Ruff + ESLint clean |
 | Build | TypeScript + Vite clean |
+| Android APK | ~3.8 MB (debug) |

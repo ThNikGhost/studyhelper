@@ -1028,6 +1028,69 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 29. Android Widget App решения (2026-02-16)
+
+### AGP 9.0.0 с built-in Kotlin
+
+**Решение:** Использовать AGP 9.0.0 без отдельного `org.jetbrains.kotlin.android` плагина.
+
+**Обоснование:**
+- AGP 9.0 (Jan 2026) включает Kotlin compiler по умолчанию
+- Не нужен `id("org.jetbrains.kotlin.android")` — меньше boilerplate
+- Kotlin версия управляется AGP, не вручную
+- Gradle 9.3.1 — минимум для AGP 9.0
+
+### RemoteViews вместо Jetpack Glance
+
+**Решение:** Использовать классический `AppWidgetProvider` + `RemoteViews` вместо Jetpack Glance 1.1.0.
+
+**Обоснование:**
+- Виджет содержит 5 текстовых полей — Compose UI избыточен
+- Glance тянет Compose runtime (+5-8 MB к APK)
+- RemoteViews — проверенный API, работает на всех Android 8.0+
+- Итоговый APK ~3.8 MB (debug) vs ~10+ MB с Glance
+
+### SharedPreferences вместо EncryptedSharedPreferences
+
+**Решение:** Обычные SharedPreferences для хранения API ключа и кеша.
+
+**Обоснование:**
+- EncryptedSharedPreferences deprecated в alpha07 (Apr 2025)
+- Замена — DataStore + Tink, избыточно для API ключа расписания
+- API ключ — не пароль, пользователь сам копирует из браузера
+
+### Debug APK без release signing
+
+**Решение:** CI собирает debug APK, release signing — на будущее.
+
+**Обоснование:**
+- Personal use — не нужна подпись для Google Play
+- Release signing требует keystore + GitHub Secrets setup
+- Debug APK устанавливается через "неизвестные источники"
+- Структура для release signing уже заложена в app/build.gradle.kts (env vars)
+
+### HttpURLConnection + org.json (built-in)
+
+**Решение:** Использовать встроенные HttpURLConnection и org.json вместо OkHttp + Gson.
+
+**Обоснование:**
+- Минимальный APK — без внешних HTTP/JSON зависимостей
+- Один GET-запрос — OkHttp interceptors/connection pooling не нужны
+- `org.json.JSONObject` достаточен для парсинга простого JSON ответа
+- Только `core-ktx`, `appcompat`, `work-runtime-ktx` как зависимости
+
+### GitHub Actions CI для Android
+
+**Решение:** Отдельный workflow `.github/workflows/android.yml` по тегу `android/v*`.
+
+**Обоснование:**
+- Не блокирует основной CI (backend/frontend)
+- Tag-based trigger — сборка только при явном релизе
+- `softprops/action-gh-release@v2` публикует APK в GitHub Releases
+- `permissions: contents: write` — необходимо для создания release
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -1140,3 +1203,8 @@ notification_settings — настройки уведомлений
 | 2026-02-16 | Локальный minutes_until в виджете | Сервер не знает точное время рендера виджета; локальное вычисление актуальнее |
 | 2026-02-16 | 24h TTL на кеш виджета | Баланс: offline работает сутки, но не показывает недельной давности данные |
 | 2026-02-16 | Shared _authenticate_by_token helper | DRY: next_lesson_by_token + today_schedule_by_token используют одну auth-логику |
+| 2026-02-16 | AGP 9.0.0 с built-in Kotlin | Не нужен отдельный kotlin-android плагин, меньше boilerplate |
+| 2026-02-16 | RemoteViews вместо Jetpack Glance | Glance тянет Compose runtime (+5-8 MB), для 5 текстовых полей избыточно |
+| 2026-02-16 | SharedPreferences вместо EncryptedSharedPreferences | ESP deprecated (alpha07, Apr 2025), API ключ — не пароль |
+| 2026-02-16 | Debug APK через GitHub Releases | Release signing требует keystore setup, debug достаточно для personal use |
+| 2026-02-16 | HttpURLConnection + org.json (built-in) | Минимальный APK (~3.8 MB), без OkHttp/Gson зависимостей |

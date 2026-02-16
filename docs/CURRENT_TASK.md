@@ -1,29 +1,38 @@
 # Текущая задача
 
 ## Статус
-**F5.1 Widget /today endpoint задеплоен на прод. Все post-MVP фичи реализованы.**
+**F5.2 Android Widget App завершён. Все post-MVP фичи реализованы.**
 
-## Последняя сессия: F5.1 Widget /today endpoint — 2026-02-16
+## Последняя сессия: F5.2 Android Widget App — 2026-02-16
 
 ### Сделано
-- **Новый endpoint**: `GET /api/v1/widget/today?api_key=xxx` — возвращает все пары на сегодня + первую будущую пару
-- **Schemas**: `TodayLessonItem`, `TodayScheduleResponse` (date, lessons[], next_lesson_from_future, next_lesson_date, cached_at)
-- **Сервис**: `_build_lesson_item()`, `get_today_schedule()`, `get_today_schedule_by_token()`
-- **Auth refactor**: вынесен `_authenticate_by_token()` — shared helper для обоих `*_by_token` функций
-- **Scriptable JS**: переписан на `/today`, локальный `minutes_until`, 24h cache TTL, текстовые фиксы
-- **Текстовые фиксы**: "Следующее занятие" → "Следующая пара", "Нет занятий" → "Нет пар", пробелы в "через X ч Y мин"
-- **Edge cases**: `formatMinutesUntil(<=0)` → "Сейчас", future lesson показывает дату "Пн, 17 фев"
-- **Тесты**: 14 новых (TestTodayScheduleLogic: 10, TestTodayScheduleAPI: 4), итого 43 widget тестов
+- **Android проект**: полный Gradle-проект в `android/` (~30 файлов)
+- **AGP 9.0.0**: built-in Kotlin (без отдельного kotlin-android плагина), Gradle 9.3.1
+- **Виджет 4×2**: AppWidgetProvider + RemoteViews, тёмная тема (#1a1a2e), 4 состояния (NoKey, NoData, NoLessons, Lesson)
+- **Data layer**: ApiClient (HttpURLConnection), PrefsManager (SharedPreferences, 24h cache TTL), WidgetRepository (fetch → cache → findNextLesson)
+- **ConfigActivity**: ввод API ключа, save → first update → schedule WorkManager → RESULT_OK
+- **WorkManager**: PeriodicWorkRequest 30 мин, NetworkType.CONNECTED constraint
+- **CI pipeline**: `.github/workflows/android.yml` — debug APK build по тегу `android/v*`, publish в GitHub Releases
+- **APK**: ~3.8 MB debug, опубликован в GitHub Releases (android/v1.0.0)
+- **kwgt-setup.html**: добавлена рекомендация нативного APK
+
+### CI исправления (5 итераций)
+1. YAML parse error с secrets в `if` → упрощён до debug build
+2. gradlew Permission denied → `git update-index --chmod=+x`
+3. Gradle 9.2 не существует → 9.3.1
+4. GitHub Release 403 → `permissions: contents: write`
+5. Успешная сборка и публикация
+
+### Файлы созданы
+- `android/` — полный Android-проект (~30 файлов: build scripts, Kotlin source, XML resources)
+- `.github/workflows/android.yml` — CI workflow
 
 ### Файлы изменены
-- `backend/src/schemas/widget.py` — добавлены TodayLessonItem, TodayScheduleResponse
-- `backend/src/services/widget.py` — _authenticate_by_token, _build_lesson_item, get_today_schedule, get_today_schedule_by_token
-- `backend/src/routers/widget.py` — GET /today endpoint
-- `backend/tests/test_widget.py` — 14 новых тестов + фикстуры today_schedule_entries, _today()
-- `frontend/public/scriptable-widget.js` — полный переписан на /today с offline кешем
+- `frontend/public/kwgt-setup.html` — добавлен блок с рекомендацией нативного APK
 
 ## Следующие шаги (по приоритету)
 - Все post-MVP фичи реализованы
+- (Будущее) Release signing: keystore + GitHub Secrets для signed APK
 
 ## Блокеры / Вопросы
 - Нет
