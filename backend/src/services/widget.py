@@ -24,6 +24,7 @@ from src.schemas.widget import (
     TodayScheduleResponse,
 )
 from src.services.schedule import get_schedule_entries_by_date_range
+from src.utils.location import format_location
 from src.utils.schedule_filters import filter_entries_by_user_prefs
 
 logger = logging.getLogger(__name__)
@@ -180,20 +181,8 @@ async def get_next_lesson_by_token(
 
 
 def _build_location(entry: ScheduleEntry) -> str | None:
-    """Build location string from room and building.
-
-    Strips 'Корпус ' prefix for compact format: '1-101' instead of 'Корпус 1-101'.
-    """
-    building = entry.building
-    if building:
-        building = building.removeprefix("Корпус ").removeprefix("корпус ")
-    if building and entry.room:
-        return f"{building}-{entry.room}"
-    if entry.room:
-        return entry.room
-    if building:
-        return building
-    return None
+    """Build location string from room and building."""
+    return format_location(entry.building, entry.room)
 
 
 async def get_next_lesson(
@@ -335,15 +324,23 @@ async def get_today_schedule(
     # First future lesson (entries are already sorted by date/time)
     next_future: TodayLessonItem | None = None
     next_future_date: str | None = None
+    next_day_remaining: list[TodayLessonItem] = []
     if future_entries:
         next_future = _build_lesson_item(future_entries[0])
         next_future_date = future_entries[0].lesson_date.isoformat()
+        # Up to 3 remaining lessons on the same day as the next future lesson
+        next_day_remaining = [
+            _build_lesson_item(e)
+            for e in future_entries[1:4]
+            if e.lesson_date == future_entries[0].lesson_date
+        ]
 
     return TodayScheduleResponse(
         date=today.isoformat(),
         lessons=today_lessons,
         next_lesson_from_future=next_future,
         next_lesson_date=next_future_date,
+        next_day_remaining=next_day_remaining,
         cached_at=cached_at,
     )
 

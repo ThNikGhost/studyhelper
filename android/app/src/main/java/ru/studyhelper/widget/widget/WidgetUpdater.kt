@@ -287,6 +287,8 @@ object WidgetUpdater {
 
         // Right panel — remaining lessons
         if (data.remainingLessons.isNotEmpty()) {
+            val headerText = if (data.isToday) "ДАЛЕЕ СЕГОДНЯ" else "ДАЛЕЕ"
+            views.setTextViewText(R.id.remainingHeader, headerText)
             views.setViewVisibility(R.id.divider, View.VISIBLE)
             views.setViewVisibility(R.id.rightPanel, View.VISIBLE)
             fillRemainingSlots(views, data.remainingLessons)

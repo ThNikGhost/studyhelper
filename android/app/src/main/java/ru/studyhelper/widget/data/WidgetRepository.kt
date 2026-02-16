@@ -102,6 +102,9 @@ object WidgetRepository {
         // All today's lessons passed or different date — show future lesson
         val futureLes = data.nextLessonFromFuture
         if (futureLes != null) {
+            val remaining = data.nextDayRemaining
+                .take(3)
+                .map { LessonBrief(it.subject, it.timeStart, it.location, it.lessonType) }
             return WidgetDisplayData.Lesson(
                 subject = futureLes.subject,
                 timeStart = futureLes.timeStart,
@@ -112,6 +115,7 @@ object WidgetRepository {
                 minutesUntil = null,
                 isToday = false,
                 futureDate = data.nextLessonDate,
+                remainingLessons = remaining,
             )
         }
 

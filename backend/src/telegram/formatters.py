@@ -10,6 +10,7 @@ from src.schemas.schedule import (
     ScheduleEntryResponse,
     WeekScheduleResponse,
 )
+from src.utils.location import format_location
 
 DAY_NAMES_RU = {
     1: "Понедельник",
@@ -47,8 +48,9 @@ def _format_entry(entry: ScheduleEntryResponse) -> str:
     if entry.teacher_name:
         parts.append(f"  \U0001f468\u200d\U0001f3eb {entry.teacher_name}")
     if entry.room or entry.building:
-        location = ", ".join(filter(None, [entry.room, entry.building]))
-        parts.append(f"  \U0001f4cd {location}")
+        location = format_location(entry.building, entry.room)
+        if location:
+            parts.append(f"  \U0001f4cd {location}")
     if entry.subgroup:
         parts.append(f"  \U0001f465 Подгруппа {entry.subgroup}")
     return "\n".join(parts)

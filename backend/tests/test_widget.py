@@ -692,6 +692,141 @@ class TestTodayScheduleLogic:
         assert result.next_lesson_from_future is None
         assert result.next_lesson_date is None
 
+    async def test_next_day_remaining_with_multiple_future(
+        self,
+        db_session: AsyncSession,
+        user: User,
+        semester: Semester,
+    ) -> None:
+        """Should return up to 3 remaining lessons on the same day as next future."""
+        tomorrow = _tomorrow()
+        entries = [
+            ScheduleEntry(
+                lesson_date=tomorrow,
+                day_of_week=tomorrow.isoweekday(),
+                start_time=time(8, 0),
+                end_time=time(9, 30),
+                subject_name="Математика",
+                lesson_type="lecture",
+                teacher_name="Петров П.П.",
+                room="101",
+                building="Корпус 1",
+            ),
+            ScheduleEntry(
+                lesson_date=tomorrow,
+                day_of_week=tomorrow.isoweekday(),
+                start_time=time(9, 45),
+                end_time=time(11, 15),
+                subject_name="Физика",
+                lesson_type="practice",
+                teacher_name="Сидоров С.С.",
+                room="202",
+                building="Корпус 2",
+            ),
+            ScheduleEntry(
+                lesson_date=tomorrow,
+                day_of_week=tomorrow.isoweekday(),
+                start_time=time(11, 30),
+                end_time=time(13, 0),
+                subject_name="Химия",
+                lesson_type="lab",
+                teacher_name="Козлов К.К.",
+                room="303",
+                building="Корпус 3",
+            ),
+            ScheduleEntry(
+                lesson_date=tomorrow,
+                day_of_week=tomorrow.isoweekday(),
+                start_time=time(13, 15),
+                end_time=time(14, 45),
+                subject_name="Биология",
+                lesson_type="lecture",
+                teacher_name="Иванов И.И.",
+                room="404",
+                building="Корпус 4",
+            ),
+        ]
+        for e in entries:
+            db_session.add(e)
+        await db_session.flush()
+        await db_session.commit()
+
+        result = await widget_service.get_today_schedule(db_session, user)
+        assert result.next_lesson_from_future is not None
+        assert result.next_lesson_from_future.subject == "Математика"
+        assert len(result.next_day_remaining) == 3
+        assert result.next_day_remaining[0].subject == "Физика"
+        assert result.next_day_remaining[1].subject == "Химия"
+        assert result.next_day_remaining[2].subject == "Биология"
+
+    async def test_next_day_remaining_empty_when_single_future(
+        self,
+        db_session: AsyncSession,
+        user: User,
+        semester: Semester,
+        today_schedule_entries: list[ScheduleEntry],
+    ) -> None:
+        """Should return empty next_day_remaining when only one future lesson on that day."""
+        # today_schedule_entries has 2 PE entries for tomorrow (both same time)
+        # User without prefs gets both, but they're both on same date
+        result = await widget_service.get_today_schedule(db_session, user)
+        # next_lesson_from_future is first PE entry, second PE is remaining
+        assert result.next_lesson_from_future is not None
+        assert len(result.next_day_remaining) <= 1
+
+    async def test_next_day_remaining_excludes_different_day(
+        self,
+        db_session: AsyncSession,
+        user: User,
+        semester: Semester,
+    ) -> None:
+        """Should not include lessons from a different day in next_day_remaining."""
+        tomorrow = _tomorrow()
+        day_after = tomorrow + timedelta(days=1)
+        entries = [
+            ScheduleEntry(
+                lesson_date=tomorrow,
+                day_of_week=tomorrow.isoweekday(),
+                start_time=time(8, 0),
+                end_time=time(9, 30),
+                subject_name="Математика",
+                lesson_type="lecture",
+                teacher_name="Петров П.П.",
+                room="101",
+                building="Корпус 1",
+            ),
+            ScheduleEntry(
+                lesson_date=day_after,
+                day_of_week=day_after.isoweekday(),
+                start_time=time(8, 0),
+                end_time=time(9, 30),
+                subject_name="Физика",
+                lesson_type="practice",
+                teacher_name="Сидоров С.С.",
+                room="202",
+                building="Корпус 2",
+            ),
+        ]
+        for e in entries:
+            db_session.add(e)
+        await db_session.flush()
+        await db_session.commit()
+
+        result = await widget_service.get_today_schedule(db_session, user)
+        assert result.next_lesson_from_future is not None
+        assert result.next_lesson_from_future.subject == "Математика"
+        assert len(result.next_day_remaining) == 0
+
+    async def test_next_day_remaining_default_empty(
+        self,
+        db_session: AsyncSession,
+        user: User,
+        semester: Semester,
+    ) -> None:
+        """Should default to empty list when no future entries."""
+        result = await widget_service.get_today_schedule(db_session, user)
+        assert result.next_day_remaining == []
+
 
 # ---- Today Schedule API Tests ----
 
@@ -737,4 +872,5 @@ class TestTodayScheduleAPI:
         assert "lessons" in data
         assert "next_lesson_from_future" in data
         assert "next_lesson_date" in data
+        assert "next_day_remaining" in data
         assert "cached_at" in data

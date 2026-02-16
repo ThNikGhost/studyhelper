@@ -21,6 +21,7 @@ from src.models.schedule import ScheduleEntry
 from src.models.semester import Semester
 from src.models.user import User
 from src.models.work import Work
+from src.utils.location import format_location
 from src.utils.schedule_filters import filter_entries_by_user_prefs
 
 logger = logging.getLogger(__name__)
@@ -236,13 +237,9 @@ def _schedule_entry_to_event(entry: ScheduleEntry) -> Event:
         event.add("dtend", dtend)
 
     # Location
-    location_parts = []
-    if entry.room:
-        location_parts.append(f"ауд. {entry.room}")
-    if entry.building:
-        location_parts.append(entry.building)
-    if location_parts:
-        event.add("location", ", ".join(location_parts))
+    location = format_location(entry.building, entry.room)
+    if location:
+        event.add("location", location)
 
     # Description
     desc_parts = []

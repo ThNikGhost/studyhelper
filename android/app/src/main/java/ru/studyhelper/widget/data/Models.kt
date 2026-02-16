@@ -40,6 +40,7 @@ data class TodayScheduleResponse(
     val lessons: List<TodayLessonItem>,
     val nextLessonFromFuture: TodayLessonItem?,
     val nextLessonDate: String?,
+    val nextDayRemaining: List<TodayLessonItem>,
     val cachedAt: String,
 ) {
     companion object {
@@ -55,11 +56,19 @@ data class TodayScheduleResponse(
                 null
             }
 
+            val nextDayRemaining = if (json.has("next_day_remaining")) {
+                val arr = json.getJSONArray("next_day_remaining")
+                (0 until arr.length()).map { TodayLessonItem.fromJson(arr.getJSONObject(it)) }
+            } else {
+                emptyList()
+            }
+
             return TodayScheduleResponse(
                 date = json.getString("date"),
                 lessons = lessons,
                 nextLessonFromFuture = futureLesson,
                 nextLessonDate = json.optStringOrNull("next_lesson_date"),
+                nextDayRemaining = nextDayRemaining,
                 cachedAt = json.getString("cached_at"),
             )
         }
@@ -92,7 +101,7 @@ sealed class WidgetDisplayData {
     /**
      * Next lesson to display.
      *
-     * @property remainingLessons Up to 3 lessons AFTER the next one (only for today, empty for future).
+     * @property remainingLessons Up to 3 lessons AFTER the next one (for today and future days).
      */
     data class Lesson(
         val subject: String,
