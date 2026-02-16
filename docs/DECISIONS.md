@@ -1136,3 +1136,7 @@ notification_settings — настройки уведомлений
 | 2026-02-15 | Query param auth для widget | Scriptable/HTTP Shortcuts не умеют JWT |
 | 2026-02-15 | 7-day lookahead одним запросом | Один SQL вместо цикла по дням |
 | 2026-02-15 | 127.0.0.1 вместо localhost в healthcheck | Alpine резолвит localhost в IPv6, nginx слушает IPv4 |
+| 2026-02-16 | /today endpoint вместо расширения /next-lesson | Отдельный endpoint для обратной совместимости; весь день + future = offline кеш |
+| 2026-02-16 | Локальный minutes_until в виджете | Сервер не знает точное время рендера виджета; локальное вычисление актуальнее |
+| 2026-02-16 | 24h TTL на кеш виджета | Баланс: offline работает сутки, но не показывает недельной давности данные |
+| 2026-02-16 | Shared _authenticate_by_token helper | DRY: next_lesson_by_token + today_schedule_by_token используют одну auth-логику |
