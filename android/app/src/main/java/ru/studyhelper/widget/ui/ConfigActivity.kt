@@ -8,9 +8,9 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import ru.studyhelper.widget.R
 import ru.studyhelper.widget.data.PrefsManager
-import ru.studyhelper.widget.widget.ScheduleWidgetProvider
 import ru.studyhelper.widget.widget.WidgetRefreshWorker
 import ru.studyhelper.widget.widget.WidgetUpdater
 import java.util.concurrent.Executors
@@ -51,7 +51,7 @@ class ConfigActivity : AppCompatActivity() {
             val apiKey = editApiKey.text.toString().trim()
             if (apiKey.isEmpty()) {
                 textStatus.text = getString(R.string.config_error_empty)
-                textStatus.setTextColor(0xFFFF6B6B.toInt())
+                textStatus.setTextColor(ContextCompat.getColor(this, R.color.config_error))
                 textStatus.visibility = View.VISIBLE
                 return@setOnClickListener
             }
@@ -62,7 +62,9 @@ class ConfigActivity : AppCompatActivity() {
             // Show loading state
             btnSave.isEnabled = false
             textStatus.text = getString(R.string.config_loading)
-            textStatus.setTextColor(0xFF8b8ba7.toInt())
+            textStatus.setTextColor(
+                ContextCompat.getColor(this, R.color.config_text_secondary),
+            )
             textStatus.visibility = View.VISIBLE
 
             // Fetch data and update widget in background
@@ -75,7 +77,9 @@ class ConfigActivity : AppCompatActivity() {
                     WidgetRefreshWorker.enqueue(context)
 
                     textStatus.text = getString(R.string.config_success)
-                    textStatus.setTextColor(0xFF4ade80.toInt())
+                    textStatus.setTextColor(
+                        ContextCompat.getColor(this, R.color.widget_countdown_today),
+                    )
 
                     // If launched from widget config, return OK
                     if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {

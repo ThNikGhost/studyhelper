@@ -31,7 +31,10 @@ object ApiClient {
             connection.connectTimeout = TIMEOUT_MS
             connection.readTimeout = TIMEOUT_MS
             connection.setRequestProperty("Accept", "application/json")
-            connection.setRequestProperty("User-Agent", "StudyHelper-Android/1.0")
+            connection.setRequestProperty(
+                "User-Agent",
+                "StudyHelper-Android/${ru.studyhelper.widget.BuildConfig.VERSION_NAME}",
+            )
 
             if (connection.responseCode != 200) {
                 Log.w(TAG, "API returned ${connection.responseCode}")

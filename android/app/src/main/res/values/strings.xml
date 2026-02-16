@@ -14,4 +14,5 @@
     <string name="config_error_empty">Введите API ключ</string>
     <string name="config_loading">Загрузка данных…</string>
     <string name="config_success">Готово!</string>
+    <string name="widget_remaining_header">ДАЛЕЕ СЕГОДНЯ</string>
 </resources>

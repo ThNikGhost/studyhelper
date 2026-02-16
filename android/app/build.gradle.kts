@@ -10,8 +10,8 @@ android {
         applicationId = "ru.studyhelper.widget"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
     }
 
     signingConfigs {
@@ -38,6 +38,10 @@ android {
                 signingConfig = it
             }
         }
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     compileOptions {

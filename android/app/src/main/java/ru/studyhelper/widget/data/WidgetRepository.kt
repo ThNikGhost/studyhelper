@@ -56,9 +56,14 @@ object WidgetRepository {
 
         // If data date is today, find the next upcoming lesson
         if (data.date == todayStr && data.lessons.isNotEmpty()) {
-            for (lesson in data.lessons) {
+            for ((index, lesson) in data.lessons.withIndex()) {
                 val lessonMinutes = parseTime(lesson.timeStart)
+                if (lessonMinutes < 0) continue // skip unparseable time
                 if (lessonMinutes > currentMinutes) {
+                    val remaining = data.lessons
+                        .drop(index + 1)
+                        .take(3)
+                        .map { LessonBrief(it.subject, it.timeStart, it.location, it.lessonType) }
                     return WidgetDisplayData.Lesson(
                         subject = lesson.subject,
                         timeStart = lesson.timeStart,
@@ -69,6 +74,7 @@ object WidgetRepository {
                         minutesUntil = lessonMinutes - currentMinutes,
                         isToday = true,
                         futureDate = null,
+                        remainingLessons = remaining,
                     )
                 }
             }
@@ -95,9 +101,16 @@ object WidgetRepository {
 
     /**
      * Parse "HH:MM" time string to minutes since midnight.
+     *
+     * @return Minutes since midnight, or -1 if parsing fails.
      */
     private fun parseTime(time: String): Int {
-        val parts = time.split(":")
-        return parts[0].toInt() * 60 + parts[1].toInt()
+        return try {
+            val parts = time.split(":")
+            parts[0].toInt() * 60 + parts[1].toInt()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to parse time: $time", e)
+            -1
+        }
     }
 }

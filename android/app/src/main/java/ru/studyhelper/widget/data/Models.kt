@@ -67,6 +67,16 @@ data class TodayScheduleResponse(
 }
 
 /**
+ * Brief lesson info for the "remaining lessons" panel in large widget.
+ */
+data class LessonBrief(
+    val subject: String,
+    val timeStart: String,
+    val location: String?,
+    val lessonType: String,
+)
+
+/**
  * What the widget should display. Sealed class for exhaustive when().
  */
 sealed class WidgetDisplayData {
@@ -79,7 +89,11 @@ sealed class WidgetDisplayData {
     /** No upcoming lessons in the next 7 days. */
     data object NoLessons : WidgetDisplayData()
 
-    /** Next lesson to display. */
+    /**
+     * Next lesson to display.
+     *
+     * @property remainingLessons Up to 3 lessons AFTER the next one (only for today, empty for future).
+     */
     data class Lesson(
         val subject: String,
         val timeStart: String,
@@ -90,5 +104,6 @@ sealed class WidgetDisplayData {
         val minutesUntil: Int?,
         val isToday: Boolean,
         val futureDate: String?,
+        val remainingLessons: List<LessonBrief> = emptyList(),
     ) : WidgetDisplayData()
 }

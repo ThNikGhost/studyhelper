@@ -3,11 +3,12 @@ package ru.studyhelper.widget.widget
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.os.Bundle
 import java.util.concurrent.Executors
 
 /**
  * AppWidgetProvider for the schedule widget.
- * Handles widget lifecycle events.
+ * Handles widget lifecycle events and size changes.
  */
 class ScheduleWidgetProvider : AppWidgetProvider() {
 
@@ -18,7 +19,6 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray,
     ) {
-        // Update each widget instance on a background thread (network call)
         val appContext = context.applicationContext
         executor.execute {
             for (appWidgetId in appWidgetIds) {
@@ -27,13 +27,25 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle,
+    ) {
+        // Widget was resized — rebuild with new layout
+        val appContext = context.applicationContext
+        executor.execute {
+            WidgetUpdater.update(appContext, appWidgetId)
+        }
+    }
+
     override fun onEnabled(context: Context) {
-        // First widget added — schedule periodic refresh
         WidgetRefreshWorker.enqueue(context)
     }
 
     override fun onDisabled(context: Context) {
-        // Last widget removed — cancel periodic refresh
         WidgetRefreshWorker.cancel(context)
+        executor.shutdown()
     }
 }

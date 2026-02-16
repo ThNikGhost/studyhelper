@@ -1,16 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="widget_bg">#1a1a2e</color>
-    <color name="widget_header">#8b8ba7</color>
-    <color name="widget_subject">#FFFFFF</color>
-    <color name="widget_time">#6c9eff</color>
-    <color name="widget_location">#c0c0d0</color>
-    <color name="widget_countdown_today">#4ade80</color>
-    <color name="widget_countdown_future">#fbbf24</color>
-    <color name="type_lecture">#6c9eff</color>
-    <color name="type_practice">#4ade80</color>
-    <color name="type_lab">#c084fc</color>
-    <color name="type_other">#fbbf24</color>
-    <color name="config_bg">#0f0f1a</color>
+    <!-- Widget colors (light theme) -->
+    <color name="widget_bg">#F0F2F5</color>
+    <color name="widget_header">#6B7280</color>
+    <color name="widget_subject">#111827</color>
+    <color name="widget_time">#3B6DD9</color>
+    <color name="widget_location">#4B5563</color>
+    <color name="widget_muted">#9CA3AF</color>
+    <color name="widget_countdown_today">#16A34A</color>
+    <color name="widget_countdown_future">#D97706</color>
+    <color name="type_lecture">#3B6DD9</color>
+    <color name="type_practice">#16A34A</color>
+    <color name="type_lab">#9333EA</color>
+    <color name="type_other">#D97706</color>
+    <color name="widget_divider">#D1D5DB</color>
+    <color name="widget_remaining_subject">#374151</color>
+    <color name="widget_remaining_time">#6B7280</color>
+
+    <!-- Config screen colors (light theme) -->
+    <color name="config_bg">#F8FAFC</color>
+    <color name="config_text">#111827</color>
+    <color name="config_text_secondary">#6B7280</color>
+    <color name="config_input_bg">#E5E7EB</color>
+    <color name="config_input_border">#D1D5DB</color>
+    <color name="config_input_text">#111827</color>
+    <color name="config_input_hint">#9CA3AF</color>
     <color name="config_accent">#6c9eff</color>
+    <color name="config_error">#DC2626</color>
 </resources>

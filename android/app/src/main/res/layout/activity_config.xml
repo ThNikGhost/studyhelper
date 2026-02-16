@@ -6,13 +6,13 @@
     android:orientation="vertical"
     android:gravity="center"
     android:padding="32dp"
-    android:background="#0f0f1a">
+    android:background="@color/config_bg">
 
     <!-- App icon placeholder -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="📚"
+        android:text="\uD83D\uDCDA"
         android:textSize="48sp"
         android:layout_marginBottom="16dp" />
 
@@ -22,7 +22,7 @@
         android:text="@string/app_name"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/config_text"
         android:layout_marginBottom="8dp" />
 
     <TextView
@@ -30,7 +30,7 @@
         android:layout_height="wrap_content"
         android:text="@string/config_description"
         android:textSize="14sp"
-        android:textColor="#8b8ba7"
+        android:textColor="@color/config_text_secondary"
         android:gravity="center"
         android:layout_marginBottom="32dp" />
 
@@ -40,8 +40,8 @@
         android:layout_height="52dp"
         android:background="@drawable/input_background"
         android:hint="@string/config_hint"
-        android:textColor="#FFFFFF"
-        android:textColorHint="#6b6b80"
+        android:textColor="@color/config_input_text"
+        android:textColorHint="@color/config_input_hint"
         android:textSize="15sp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
@@ -58,14 +58,14 @@
         android:textSize="16sp"
         android:textStyle="bold"
         android:textColor="#FFFFFF"
-        android:backgroundTint="#6c9eff" />
+        android:backgroundTint="@color/config_accent" />
 
     <TextView
         android:id="@+id/textStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="13sp"
-        android:textColor="#8b8ba7"
+        android:textColor="@color/config_text_secondary"
         android:layout_marginTop="16dp"
         android:visibility="gone" />
 
