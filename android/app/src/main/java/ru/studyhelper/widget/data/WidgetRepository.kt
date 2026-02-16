@@ -19,23 +19,42 @@ object WidgetRepository {
      */
     fun getNextLesson(context: Context): WidgetDisplayData {
         val apiKey = PrefsManager.getApiKey(context)
-            ?: return WidgetDisplayData.NoKey
+        if (apiKey == null) {
+            FileLogger.log(context, TAG, "getNextLesson: no API key")
+            return WidgetDisplayData.NoKey
+        }
 
         // Try network fetch
-        val json = ApiClient.fetchTodaySchedule(apiKey)
+        FileLogger.log(context, TAG, "getNextLesson: fetching from API")
+        val json = ApiClient.fetchTodaySchedule(context, apiKey)
         if (json != null) {
             PrefsManager.saveCache(context, json)
+            FileLogger.log(context, TAG, "getNextLesson: API success, cached ${json.length} chars")
+        } else {
+            FileLogger.warn(context, TAG, "getNextLesson: API returned null, using cache")
         }
 
         // Use fresh data or cached
         val rawJson = json ?: PrefsManager.getCache(context)
-            ?: return WidgetDisplayData.NoData
+        if (rawJson == null) {
+            FileLogger.warn(context, TAG, "getNextLesson: no data (API failed + no cache)")
+            return WidgetDisplayData.NoData
+        }
 
         return try {
             val response = TodayScheduleResponse.fromJson(JSONObject(rawJson))
-            findNextLesson(response)
+            FileLogger.log(
+                context, TAG,
+                "getNextLesson: parsed response date=${response.date}, " +
+                    "lessons=${response.lessons.size}, " +
+                    "nextDate=${response.nextLessonDate}",
+            )
+            val result = findNextLesson(response)
+            FileLogger.log(context, TAG, "getNextLesson: result=${result.javaClass.simpleName}")
+            result
         } catch (e: Exception) {
             Log.w(TAG, "Failed to parse schedule JSON", e)
+            FileLogger.error(context, TAG, "getNextLesson: JSON parse failed", e)
             WidgetDisplayData.NoData
         }
     }

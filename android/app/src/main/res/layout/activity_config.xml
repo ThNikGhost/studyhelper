@@ -69,4 +69,16 @@
         android:layout_marginTop="16dp"
         android:visibility="gone" />
 
+    <TextView
+        android:id="@+id/textShareLogs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/config_share_logs"
+        android:textSize="12sp"
+        android:textColor="@color/config_text_secondary"
+        android:layout_marginTop="24dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="8dp" />
+
 </LinearLayout>

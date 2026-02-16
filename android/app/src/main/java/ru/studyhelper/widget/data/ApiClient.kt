@@ -1,5 +1,6 @@
 package ru.studyhelper.widget.data
 
+import android.content.Context
 import android.util.Log
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -19,13 +20,15 @@ object ApiClient {
     /**
      * Fetch today schedule JSON from the API.
      *
+     * @param context Application context for file logging.
      * @param apiKey Widget API key.
      * @return Raw JSON string, or null on failure.
      */
-    fun fetchTodaySchedule(apiKey: String): String? {
+    fun fetchTodaySchedule(context: Context, apiKey: String): String? {
         var connection: HttpURLConnection? = null
         return try {
             val url = URI("$BASE_URL?api_key=$apiKey").toURL()
+            FileLogger.log(context, TAG, "fetchTodaySchedule: GET $BASE_URL")
             connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = TIMEOUT_MS
@@ -36,16 +39,22 @@ object ApiClient {
                 "StudyHelper-Android/${ru.studyhelper.widget.BuildConfig.VERSION_NAME}",
             )
 
-            if (connection.responseCode != 200) {
-                Log.w(TAG, "API returned ${connection.responseCode}")
+            val code = connection.responseCode
+            FileLogger.log(context, TAG, "fetchTodaySchedule: HTTP $code")
+            if (code != 200) {
+                Log.w(TAG, "API returned $code")
+                FileLogger.warn(context, TAG, "fetchTodaySchedule: non-200 response: $code")
                 return null
             }
 
-            BufferedReader(InputStreamReader(connection.inputStream)).use { reader ->
+            val body = BufferedReader(InputStreamReader(connection.inputStream)).use { reader ->
                 reader.readText()
             }
+            FileLogger.log(context, TAG, "fetchTodaySchedule: received ${body.length} chars")
+            body
         } catch (e: Exception) {
             Log.w(TAG, "Failed to fetch schedule", e)
+            FileLogger.error(context, TAG, "fetchTodaySchedule: failed", e)
             null
         } finally {
             connection?.disconnect()

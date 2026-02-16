@@ -8,6 +8,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import ru.studyhelper.widget.data.FileLogger
 import java.util.concurrent.TimeUnit
 
 /**
@@ -19,17 +20,26 @@ class WidgetRefreshWorker(
 ) : Worker(context, params) {
 
     override fun doWork(): Result {
-        WidgetUpdater.updateAll(applicationContext)
-        return Result.success()
+        FileLogger.log(applicationContext, TAG, "doWork start")
+        return try {
+            WidgetUpdater.updateAll(applicationContext)
+            FileLogger.log(applicationContext, TAG, "doWork success")
+            Result.success()
+        } catch (e: Exception) {
+            FileLogger.error(applicationContext, TAG, "doWork failed", e)
+            Result.retry()
+        }
     }
 
     companion object {
+        private const val TAG = "RefreshWorker"
         private const val WORK_NAME = "studyhelper_widget_refresh"
 
         /**
          * Schedule periodic refresh every 30 minutes.
          */
         fun enqueue(context: Context) {
+            FileLogger.log(context.applicationContext, TAG, "enqueue: scheduling periodic refresh")
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
@@ -51,6 +61,7 @@ class WidgetRefreshWorker(
          * Cancel periodic refresh (when all widgets removed).
          */
         fun cancel(context: Context) {
+            FileLogger.log(context.applicationContext, TAG, "cancel: stopping periodic refresh")
             WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
         }
     }

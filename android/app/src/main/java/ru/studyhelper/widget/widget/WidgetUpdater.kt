@@ -11,6 +11,7 @@ import android.view.View
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import ru.studyhelper.widget.R
+import ru.studyhelper.widget.data.FileLogger
 import ru.studyhelper.widget.data.LessonBrief
 import ru.studyhelper.widget.data.WidgetDisplayData
 import ru.studyhelper.widget.data.WidgetRepository
@@ -55,10 +56,13 @@ object WidgetUpdater {
      * Update a single widget by ID.
      */
     fun update(context: Context, appWidgetId: Int) {
+        FileLogger.log(context, TAG, "update($appWidgetId) start")
         val manager = AppWidgetManager.getInstance(context)
         val options = manager.getAppWidgetOptions(appWidgetId)
         val size = determineSize(options)
+        FileLogger.log(context, TAG, "update($appWidgetId) size=$size")
         val data = WidgetRepository.getNextLesson(context)
+        FileLogger.log(context, TAG, "update($appWidgetId) data=${data.javaClass.simpleName}")
 
         val views = when (size) {
             WidgetSize.SMALL -> buildSmallViews(context, data)
@@ -79,6 +83,7 @@ object WidgetUpdater {
         views.setContentDescription(R.id.widgetRoot, description)
 
         manager.updateAppWidget(appWidgetId, views)
+        FileLogger.log(context, TAG, "update($appWidgetId) done")
     }
 
     /**
@@ -88,6 +93,7 @@ object WidgetUpdater {
         val manager = AppWidgetManager.getInstance(context)
         val component = ComponentName(context, ScheduleWidgetProvider::class.java)
         val ids = manager.getAppWidgetIds(component)
+        FileLogger.log(context, TAG, "updateAll: ${ids.size} widget(s) found: ${ids.toList()}")
         for (id in ids) {
             update(context, id)
         }
