@@ -210,9 +210,9 @@ object WidgetUpdater {
         // Hide right panel by default
         views.setViewVisibility(R.id.divider, View.GONE)
         views.setViewVisibility(R.id.rightPanel, View.GONE)
-        views.setViewVisibility(R.id.slot1Container, View.GONE)
-        views.setViewVisibility(R.id.slot2Container, View.GONE)
-        views.setViewVisibility(R.id.slot3Container, View.GONE)
+        views.setViewVisibility(R.id.slot1Text, View.GONE)
+        views.setViewVisibility(R.id.slot2Text, View.GONE)
+        views.setViewVisibility(R.id.slot3Text, View.GONE)
 
         when (data) {
             is WidgetDisplayData.NoKey -> {
@@ -293,18 +293,13 @@ object WidgetUpdater {
 
     /** Fill up to 3 remaining lesson slots in the large layout. */
     private fun fillRemainingSlots(views: RemoteViews, lessons: List<LessonBrief>) {
-        val slots = listOf(
-            Triple(R.id.slot1Container, R.id.slot1Subject, Pair(R.id.slot1Time, R.id.slot1Location)),
-            Triple(R.id.slot2Container, R.id.slot2Subject, Pair(R.id.slot2Time, R.id.slot2Location)),
-            Triple(R.id.slot3Container, R.id.slot3Subject, Pair(R.id.slot3Time, R.id.slot3Location)),
-        )
+        val slotIds = listOf(R.id.slot1Text, R.id.slot2Text, R.id.slot3Text)
         for ((index, lesson) in lessons.withIndex()) {
-            if (index >= slots.size) break
-            val (container, subjectId, timeLocPair) = slots[index]
-            views.setViewVisibility(container, View.VISIBLE)
-            views.setTextViewText(subjectId, lesson.subject)
-            views.setTextViewText(timeLocPair.first, lesson.timeStart)
-            views.setTextViewText(timeLocPair.second, lesson.location ?: "")
+            if (index >= slotIds.size) break
+            val slotId = slotIds[index]
+            val text = "${lesson.timeStart}  ${lesson.subject}"
+            views.setTextViewText(slotId, text)
+            views.setViewVisibility(slotId, View.VISIBLE)
         }
     }
 

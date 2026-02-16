@@ -80,8 +80,8 @@
 
     </LinearLayout>
 
-    <!-- Divider -->
-    <View
+    <!-- Divider: FrameLayout instead of View (View is not supported in RemoteViews) -->
+    <FrameLayout
         android:id="@+id/divider"
         android:layout_width="1dp"
         android:layout_height="match_parent"
@@ -111,140 +111,41 @@
             android:textAllCaps="true"
             android:letterSpacing="0.05" />
 
-        <!-- Slot 1 -->
-        <LinearLayout
-            android:id="@+id/slot1Container"
+        <!-- Slot 1: single TextView "09:00  SubjectName" -->
+        <TextView
+            android:id="@+id/slot1Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:textSize="11sp"
+            android:textColor="@color/widget_remaining_subject"
+            android:maxLines="1"
+            android:ellipsize="end"
             android:layout_marginTop="6dp"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/slot1Subject"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_remaining_subject"
-                android:maxLines="1"
-                android:ellipsize="end" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/slot1Time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="10sp"
-                    android:textColor="@color/widget_remaining_time" />
-
-                <TextView
-                    android:id="@+id/slot1Location"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="10sp"
-                    android:textColor="@color/widget_location"
-                    android:layout_marginStart="6dp"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-
-            </LinearLayout>
-
-        </LinearLayout>
+            android:visibility="gone" />
 
         <!-- Slot 2 -->
-        <LinearLayout
-            android:id="@+id/slot2Container"
+        <TextView
+            android:id="@+id/slot2Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:textSize="11sp"
+            android:textColor="@color/widget_remaining_subject"
+            android:maxLines="1"
+            android:ellipsize="end"
             android:layout_marginTop="4dp"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/slot2Subject"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_remaining_subject"
-                android:maxLines="1"
-                android:ellipsize="end" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/slot2Time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="10sp"
-                    android:textColor="@color/widget_remaining_time" />
-
-                <TextView
-                    android:id="@+id/slot2Location"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="10sp"
-                    android:textColor="@color/widget_location"
-                    android:layout_marginStart="6dp"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-
-            </LinearLayout>
-
-        </LinearLayout>
+            android:visibility="gone" />
 
         <!-- Slot 3 -->
-        <LinearLayout
-            android:id="@+id/slot3Container"
+        <TextView
+            android:id="@+id/slot3Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:textSize="11sp"
+            android:textColor="@color/widget_remaining_subject"
+            android:maxLines="1"
+            android:ellipsize="end"
             android:layout_marginTop="4dp"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/slot3Subject"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="@color/widget_remaining_subject"
-                android:maxLines="1"
-                android:ellipsize="end" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/slot3Time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="10sp"
-                    android:textColor="@color/widget_remaining_time" />
-
-                <TextView
-                    android:id="@+id/slot3Location"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="10sp"
-                    android:textColor="@color/widget_location"
-                    android:layout_marginStart="6dp"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-
-            </LinearLayout>
-
-        </LinearLayout>
+            android:visibility="gone" />
 
     </LinearLayout>
 
