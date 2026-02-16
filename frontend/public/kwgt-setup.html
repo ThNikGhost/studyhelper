@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyHelper — KWGT Widget Setup</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f0f0f;
+    color: #e5e5e5;
+    line-height: 1.6;
+    padding: 0 0 60px;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    padding: 40px 20px 32px;
+    text-align: center;
+    border-bottom: 1px solid #2a2a2a;
+  }
+
+  .header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+
+  .header p {
+    font-size: 14px;
+    color: #8e8e93;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #0a84ff;
+    text-decoration: none;
+  }
+
+  .back-link:hover { text-decoration: underline; }
+
+  .content {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 24px 20px;
+  }
+
+  .prereq {
+    background: #1c1c1e;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 28px;
+  }
+
+  .prereq h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #ff9f0a;
+    margin-bottom: 8px;
+  }
+
+  .prereq ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .prereq li {
+    font-size: 14px;
+    color: #ebebf5cc;
+    padding: 4px 0;
+    padding-left: 20px;
+    position: relative;
+  }
+
+  .prereq li::before {
+    content: '•';
+    position: absolute;
+    left: 4px;
+    color: #8e8e93;
+  }
+
+  .step {
+    background: #1c1c1e;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #0a84ff;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .step h3 {
+    font-size: 17px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+
+  .step p {
+    font-size: 14px;
+    color: #ebebf5cc;
+    margin-bottom: 8px;
+  }
+
+  .step p:last-child {
+    margin-bottom: 0;
+  }
+
+  .step .sub-steps {
+    list-style: none;
+    padding: 0;
+    margin-top: 12px;
+  }
+
+  .step .sub-steps li {
+    font-size: 14px;
+    color: #ebebf5cc;
+    padding: 6px 0 6px 24px;
+    position: relative;
+    border-top: 1px solid #2a2a2a;
+  }
+
+  .step .sub-steps li:first-child {
+    border-top: none;
+  }
+
+  .step .sub-steps li::before {
+    content: attr(data-n);
+    position: absolute;
+    left: 0;
+    color: #8e8e93;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  code {
+    background: #2c2c2e;
+    color: #ff9f0a;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    word-break: break-all;
+  }
+
+  .code-block {
+    background: #2c2c2e;
+    border: 1px solid #3a3a3c;
+    border-radius: 8px;
+    padding: 14px;
+    margin: 12px 0;
+    overflow-x: auto;
+    position: relative;
+  }
+
+  .code-block code {
+    background: none;
+    padding: 0;
+    color: #e5e5e5;
+    font-size: 12px;
+    white-space: pre;
+    display: block;
+    line-height: 1.5;
+  }
+
+  .code-block .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #3a3a3c;
+    border: none;
+    color: #8e8e93;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .code-block .copy-btn:active {
+    background: #0a84ff;
+    color: #fff;
+  }
+
+  .formulas-section {
+    margin-top: 28px;
+  }
+
+  .formulas-section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 16px;
+  }
+
+  .formula-card {
+    background: #1c1c1e;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  .formula-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #8e8e93;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .formula-value {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+    color: #30d158;
+    overflow-wrap: break-word;
+    line-height: 1.4;
+    user-select: all;
+  }
+
+  .preview {
+    background: #2c2c2e;
+    border-radius: 16px;
+    padding: 18px;
+    margin: 24px 0;
+    border: 1px solid #3a3a3c;
+  }
+
+  .preview-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #8e8e93;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+
+  .preview-widget {
+    background: #1c1c1e;
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .pw-subject {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .pw-type {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: #0a84ff33;
+    color: #0a84ff;
+    margin-bottom: 10px;
+  }
+
+  .pw-row {
+    font-size: 13px;
+    color: #ebebf5cc;
+    padding: 3px 0;
+  }
+
+  .pw-badge {
+    margin-top: 10px;
+    text-align: center;
+    padding: 7px;
+    background: #3a3a3c;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0a84ff;
+  }
+
+  .tip {
+    background: #1a2a1a;
+    border: 1px solid #2a3a2a;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin: 12px 0;
+    font-size: 13px;
+    color: #30d158;
+  }
+
+  .tip strong {
+    color: #30d158;
+  }
+
+  .warning {
+    background: #2a1a0a;
+    border: 1px solid #3a2a1a;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin: 12px 0;
+    font-size: 13px;
+    color: #ff9f0a;
+  }
+
+  .section-divider {
+    border: none;
+    border-top: 1px solid #2a2a2a;
+    margin: 28px 0;
+  }
+
+  a {
+    color: #0a84ff;
+    text-decoration: none;
+  }
+
+  a:hover { text-decoration: underline; }
+
+  .layout-section {
+    margin-top: 28px;
+  }
+
+  .layout-section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 16px;
+  }
+
+  .layout-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+
+  .layout-table th {
+    text-align: left;
+    padding: 8px 10px;
+    background: #2c2c2e;
+    color: #8e8e93;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .layout-table td {
+    padding: 8px 10px;
+    border-top: 1px solid #2a2a2a;
+    color: #ebebf5cc;
+  }
+
+  .layout-table td:first-child {
+    color: #fff;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="/widget.html" class="back-link">&larr; Web-виджет</a>
+  <h1>KWGT Widget Setup</h1>
+  <p>Виджет следующей пары на домашнем экране Android через KWGT Pro</p>
+</div>
+
+<div class="content">
+
+  <!-- Prerequisites -->
+  <div class="prereq">
+    <h2>Что понадобится</h2>
+    <ul>
+      <li><strong>KWGT Kustom Widget Maker Pro</strong> — из Google Play (~$5)</li>
+      <li><strong>API ключ</strong> — включите в <a href="https://studyhelper1.ru/settings">Настройках</a> раздел «Виджет» и скопируйте ключ</li>
+      <li>Android 8.0+</li>
+    </ul>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="step">
+    <div class="step-number">1</div>
+    <h3>Установите KWGT Pro</h3>
+    <p>Откройте Google Play и установите <strong>KWGT Kustom Widget Maker</strong> (бесплатная версия) и <strong>KWGT Pro Key</strong> (разблокирует сохранение).</p>
+    <div class="warning"><strong>Важно:</strong> Без Pro Key вы не сможете сохранить виджет. Бесплатная версия позволяет только смотреть.</div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step">
+    <div class="step-number">2</div>
+    <h3>Добавьте виджет на рабочий стол</h3>
+    <ul class="sub-steps">
+      <li data-n="a)">Долгое нажатие на рабочем столе → «Виджеты»</li>
+      <li data-n="b)">Найдите <strong>KWGT</strong> в списке</li>
+      <li data-n="c)">Выберите размер <strong>4×2</strong> и перетащите на рабочий стол</li>
+      <li data-n="d)">Нажмите на виджет — откроется редактор KWGT</li>
+    </ul>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step">
+    <div class="step-number">3</div>
+    <h3>Создайте Flow для загрузки данных</h3>
+    <p>Flow — это автоматизация, которая загружает данные с сервера по расписанию.</p>
+    <ul class="sub-steps">
+      <li data-n="a)">В редакторе виджета нажмите вкладку <strong>«Flow»</strong> (значок молнии)</li>
+      <li data-n="b)">Нажмите <strong>«+»</strong> для добавления нового потока</li>
+      <li data-n="c)">Добавьте триггер: <strong>Cron</strong> → <code>*/30 * * * *</code> (каждые 30 мин)</li>
+      <li data-n="d)">Добавьте ещё один триггер: <strong>On Load</strong> (при загрузке виджета)</li>
+    </ul>
+    <div class="tip"><strong>Совет:</strong> 30 минут — оптимальный интервал. Более частые запросы разряжают батарею, но не дают пользы, т.к. расписание не меняется каждую минуту.</div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step">
+    <div class="step-number">4</div>
+    <h3>Добавьте WebGet action</h3>
+    <p>Эта команда загружает JSON с данными о следующей паре.</p>
+    <ul class="sub-steps">
+      <li data-n="a)">В Flow нажмите <strong>«+ Action»</strong></li>
+      <li data-n="b)">Выберите <strong>«WebGet»</strong></li>
+      <li data-n="c)">В поле URL вставьте:</li>
+    </ul>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+      <code>https://studyhelper1.ru/api/v1/widget/next-lesson?api_key=YOUR_KEY</code>
+    </div>
+    <p>Замените <code>YOUR_KEY</code> на ваш API ключ из настроек.</p>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="step">
+    <div class="step-number">5</div>
+    <h3>Сохраните в глобальную переменную</h3>
+    <ul class="sub-steps">
+      <li data-n="a)">В настройках WebGet action найдите <strong>«Store to»</strong></li>
+      <li data-n="b)">Выберите <strong>«Global Variable»</strong></li>
+      <li data-n="c)">Имя переменной: <code>data</code></li>
+      <li data-n="d)">Mode: <strong>Text</strong></li>
+    </ul>
+    <div class="tip"><strong>Совет:</strong> Глобальная переменная <code>gv(data)</code> будет содержать весь JSON-ответ. Формулы ниже будут извлекать нужные поля.</div>
+  </div>
+
+  <!-- Step 6 -->
+  <div class="step">
+    <div class="step-number">6</div>
+    <h3>Настройте элементы виджета</h3>
+    <p>Вернитесь на вкладку <strong>«Items»</strong> и добавьте текстовые элементы. Для каждого задайте формулу из раздела ниже.</p>
+    <ul class="sub-steps">
+      <li data-n="a)">Нажмите <strong>«+»</strong> → <strong>«Text»</strong></li>
+      <li data-n="b)">В поле «Text» вставьте нужную формулу</li>
+      <li data-n="c)">Настройте шрифт, размер и цвет по вкусу</li>
+      <li data-n="d)">Повторите для всех элементов</li>
+    </ul>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- Formulas -->
+  <div class="formulas-section">
+    <h2>Формулы KWGT</h2>
+    <p style="font-size:14px;color:#8e8e93;margin-bottom:16px;">Нажмите на формулу, чтобы выделить. Вставьте в текстовый элемент KWGT.</p>
+
+    <div class="formula-card">
+      <div class="formula-label">Предмет</div>
+      <div class="formula-value">$wg(gv(data), json, .subject)$</div>
+    </div>
+
+    <div class="formula-card">
+      <div class="formula-label">Время</div>
+      <div class="formula-value">$wg(gv(data), json, .time_start)$ – $wg(gv(data), json, .time_end)$</div>
+    </div>
+
+    <div class="formula-card">
+      <div class="formula-label">Аудитория</div>
+      <div class="formula-value">$wg(gv(data), json, .location)$</div>
+    </div>
+
+    <div class="formula-card">
+      <div class="formula-label">Тип пары</div>
+      <div class="formula-value">$wg(gv(data), json, .lesson_type)$</div>
+    </div>
+
+    <div class="formula-card">
+      <div class="formula-label">Преподаватель</div>
+      <div class="formula-value">$wg(gv(data), json, .teacher)$</div>
+    </div>
+
+    <div class="formula-card">
+      <div class="formula-label">Обратный отсчёт</div>
+      <div class="formula-value">$if(wg(gv(data), json, .no_more_lessons) = true, Нет пар, Через wg(gv(data), json, .minutes_until) мин)$</div>
+    </div>
+
+    <div class="formula-card">
+      <div class="formula-label">Сегодня / дата (если пара в другой день)</div>
+      <div class="formula-value">$if(wg(gv(data), json, .is_today) = true, Сегодня, wg(gv(data), json, .date))$</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- Preview -->
+  <div class="layout-section">
+    <h2>Пример раскладки 4x2</h2>
+
+    <div class="preview">
+      <div class="preview-title">Результат</div>
+      <div class="preview-widget">
+        <div class="pw-subject">Операционные системы</div>
+        <div class="pw-type">Лекция</div>
+        <div class="pw-row">&#x1F550; 14:30 – 16:05</div>
+        <div class="pw-row">&#x1F4CD; ауд. 203, 4</div>
+        <div class="pw-badge">Через 45 мин</div>
+      </div>
+    </div>
+
+    <table class="layout-table">
+      <thead>
+        <tr>
+          <th>Элемент</th>
+          <th>Размер</th>
+          <th>Стиль</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Предмет</td>
+          <td>18–20sp</td>
+          <td>Bold, белый</td>
+        </tr>
+        <tr>
+          <td>Тип пары</td>
+          <td>12sp</td>
+          <td>Цветной бейдж</td>
+        </tr>
+        <tr>
+          <td>Время</td>
+          <td>14sp</td>
+          <td>Обычный, серый</td>
+        </tr>
+        <tr>
+          <td>Аудитория</td>
+          <td>14sp</td>
+          <td>Обычный, серый</td>
+        </tr>
+        <tr>
+          <td>Обратный отсчёт</td>
+          <td>14sp</td>
+          <td>Bold, акцентный</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- Tips -->
+  <div class="layout-section">
+    <h2>Полезные советы</h2>
+
+    <div class="step" style="margin-bottom:12px;">
+      <h3>Обновление по расписанию</h3>
+      <p>Flow с триггером <code>*/30 * * * *</code> обновляет данные каждые 30 минут. Это оптимальный баланс между актуальностью и расходом батареи.</p>
+    </div>
+
+    <div class="step" style="margin-bottom:12px;">
+      <h3>Тёмная/светлая тема</h3>
+      <p>Для тёмного фона виджета используйте <strong>Shape → Rectangle</strong> с цветом <code>#1c1c1e</code> и скруглением углов 20dp.</p>
+    </div>
+
+    <div class="step" style="margin-bottom:12px;">
+      <h3>Нажатие на виджет</h3>
+      <p>В настройках виджета → <strong>«Touch»</strong> → <strong>«Open URL»</strong> → <code>https://studyhelper1.ru/schedule</code>. По нажатию откроется страница расписания.</p>
+    </div>
+
+    <div class="step" style="margin-bottom:12px;">
+      <h3>Нет данных?</h3>
+      <p>Используйте условие для пустого состояния:</p>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+        <code>$if(wg(gv(data), json, .no_more_lessons) = true, "&#x1F389; Нет пар — свободный день!", wg(gv(data), json, .subject))$</code>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- API format -->
+  <div class="layout-section">
+    <h2>Формат API ответа</h2>
+    <p style="font-size:14px;color:#8e8e93;margin-bottom:12px;">Endpoint: <code>GET /api/v1/widget/next-lesson?api_key=KEY</code></p>
+    <div class="code-block">
+      <button class="copy-btn" onclick="copyCode(this)" aria-label="Copy code">Copy</button>
+      <code>{
+  "subject": "Операционные системы",
+  "time_start": "14:30",
+  "time_end": "16:05",
+  "location": "ауд. 203, 4",
+  "teacher": "Гусс Святослав Владимирович",
+  "minutes_until": 45,
+  "lesson_type": "Лекция",
+  "is_today": true,
+  "no_more_lessons": false,
+  "cached_at": "2026-02-16T15:33:27"
+}</code>
+    </div>
+
+    <table class="layout-table">
+      <thead>
+        <tr>
+          <th>Поле</th>
+          <th>Тип</th>
+          <th>Описание</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>subject</td><td>string</td><td>Название предмета</td></tr>
+        <tr><td>time_start</td><td>string</td><td>Время начала (HH:MM)</td></tr>
+        <tr><td>time_end</td><td>string</td><td>Время конца (HH:MM)</td></tr>
+        <tr><td>location</td><td>string?</td><td>Аудитория</td></tr>
+        <tr><td>teacher</td><td>string?</td><td>Преподаватель</td></tr>
+        <tr><td>minutes_until</td><td>int</td><td>Минут до начала</td></tr>
+        <tr><td>lesson_type</td><td>string?</td><td>Тип (Лекция, Практика, ...)</td></tr>
+        <tr><td>is_today</td><td>bool</td><td>Пара сегодня?</td></tr>
+        <tr><td>no_more_lessons</td><td>bool</td><td>Пар больше нет (7 дней)</td></tr>
+        <tr><td>cached_at</td><td>string</td><td>Время кеширования</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+function copyCode(btn) {
+  var code = btn.parentElement.querySelector('code');
+  var text = code.textContent || code.innerText;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = 'Copied!';
+      setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
+    });
+  } else {
+    var range = document.createRange();
+    range.selectNode(code);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
+  }
+}
+</script>
+</body>
+</html>
