@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>StudyHelper Widget</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #1c1c1e;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .widget {
+    width: 100%;
+    max-width: 360px;
+    background: #2c2c2e;
+    border-radius: 20px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .widget-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .widget-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #8e8e93;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .widget-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #30d158;
+  }
+
+  .widget-dot.future { background: #ff9f0a; }
+  .widget-dot.empty { background: #8e8e93; }
+  .widget-dot.error { background: #ff453a; }
+
+  .lesson-subject {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+
+  .lesson-type {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+
+  .lesson-type.lecture { background: #0a84ff33; color: #0a84ff; }
+  .lesson-type.practice { background: #30d15833; color: #30d158; }
+  .lesson-type.lab { background: #bf5af233; color: #bf5af2; }
+  .lesson-type.default { background: #ff9f0a33; color: #ff9f0a; }
+
+  .lesson-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #ebebf5cc;
+  }
+
+  .detail-icon {
+    width: 16px;
+    text-align: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .time-badge {
+    margin-top: 14px;
+    padding: 8px 12px;
+    background: #3a3a3c;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0a84ff;
+  }
+
+  .time-badge.soon { color: #ff9f0a; }
+  .time-badge.now { color: #30d158; }
+
+  .empty-state {
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .empty-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+
+  .empty-text {
+    font-size: 17px;
+    font-weight: 600;
+    color: #ebebf5cc;
+    margin-bottom: 4px;
+  }
+
+  .empty-sub {
+    font-size: 13px;
+    color: #8e8e93;
+  }
+
+  .error-state {
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .error-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+
+  .error-text {
+    font-size: 15px;
+    color: #ff453a;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .error-sub {
+    font-size: 13px;
+    color: #8e8e93;
+  }
+
+  .future-label {
+    font-size: 12px;
+    color: #ff9f0a;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .today-list {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #3a3a3c;
+  }
+
+  .today-list-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #8e8e93;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+
+  .mini-lesson {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+  }
+
+  .mini-lesson + .mini-lesson {
+    border-top: 1px solid #3a3a3c44;
+  }
+
+  .mini-time {
+    font-size: 13px;
+    font-weight: 600;
+    color: #8e8e93;
+    min-width: 42px;
+    flex-shrink: 0;
+  }
+
+  .mini-bar {
+    width: 3px;
+    height: 28px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .mini-bar.lecture { background: #0a84ff; }
+  .mini-bar.practice { background: #30d158; }
+  .mini-bar.lab { background: #bf5af2; }
+  .mini-bar.default { background: #ff9f0a; }
+  .mini-bar.past { opacity: 0.35; }
+
+  .mini-info {
+    min-width: 0;
+  }
+
+  .mini-subject {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mini-location {
+    font-size: 12px;
+    color: #8e8e93;
+  }
+
+  .mini-lesson.past .mini-subject { color: #8e8e93; }
+</style>
+</head>
+<body>
+<div class="widget" id="widget">
+  <div style="text-align:center;color:#8e8e93;padding:20px 0;">Загрузка...</div>
+</div>
+
+<script>
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const apiKey = params.get('key');
+  const widget = document.getElementById('widget');
+
+  if (!apiKey) {
+    widget.innerHTML = renderError('Нет API ключа', 'Добавьте ?key=YOUR_KEY в URL');
+    return;
+  }
+
+  const apiBase = window.location.origin;
+
+  fetch(apiBase + '/api/v1/widget/today?api_key=' + encodeURIComponent(apiKey))
+    .then(function(r) {
+      if (!r.ok) throw new Error(r.status === 401 ? 'Неверный API ключ' : 'Ошибка ' + r.status);
+      return r.json();
+    })
+    .then(function(data) { widget.innerHTML = renderWidget(data); })
+    .catch(function(e) { widget.innerHTML = renderError('Ошибка загрузки', e.message); });
+
+  function renderWidget(data) {
+    var now = new Date();
+    var nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+    // Find next upcoming lesson today
+    var nextLesson = null;
+    var nextIdx = -1;
+    for (var i = 0; i < data.lessons.length; i++) {
+      var start = parseTime(data.lessons[i].time_start);
+      if (start > nowMinutes) { nextLesson = data.lessons[i]; nextIdx = i; break; }
+      var end = parseTime(data.lessons[i].time_end);
+      if (nowMinutes >= start && nowMinutes < end) { nextLesson = data.lessons[i]; nextIdx = i; break; }
+    }
+
+    var html = '';
+
+    if (nextLesson) {
+      var startMin = parseTime(nextLesson.time_start);
+      var endMin = parseTime(nextLesson.time_end);
+      var isNow = nowMinutes >= startMin && nowMinutes < endMin;
+      var diff = startMin - nowMinutes;
+
+      html += renderHeader('Следующая пара', isNow ? 'now' : '');
+      html += renderLessonCard(nextLesson, isNow, diff);
+    } else if (data.next_lesson_from_future) {
+      html += renderHeader('Следующая пара', 'future');
+      html += '<div class="future-label">' + formatFutureDate(data.next_lesson_date) + '</div>';
+      html += renderLessonCard(data.next_lesson_from_future, false, -1);
+    } else {
+      html += renderHeader('Расписание', 'empty');
+      html += renderEmpty();
+    }
+
+    // Today's lessons list
+    if (data.lessons.length > 0) {
+      html += '<div class="today-list">';
+      html += '<div class="today-list-title">Сегодня — ' + data.lessons.length + ' ' + pluralize(data.lessons.length) + '</div>';
+      for (var j = 0; j < data.lessons.length; j++) {
+        var l = data.lessons[j];
+        var lEnd = parseTime(l.time_end);
+        var isPast = nowMinutes >= lEnd;
+        html += renderMiniLesson(l, isPast, j === nextIdx);
+      }
+      html += '</div>';
+    }
+
+    return html;
+  }
+
+  function renderHeader(title, dotClass) {
+    return '<div class="widget-header">' +
+      '<span class="widget-title">' + title + '</span>' +
+      '<span class="widget-dot ' + (dotClass || '') + '"></span></div>';
+  }
+
+  function renderLessonCard(lesson, isNow, diff) {
+    var typeClass = getLessonTypeClass(lesson.lesson_type);
+    var html = '';
+    html += '<div class="lesson-subject">' + esc(lesson.subject) + '</div>';
+    html += '<span class="lesson-type ' + typeClass + '">' + esc(lesson.lesson_type) + '</span>';
+    html += '<div class="lesson-details">';
+    html += '<div class="detail-row"><span class="detail-icon">🕐</span>' + lesson.time_start + ' – ' + lesson.time_end + '</div>';
+    if (lesson.location) html += '<div class="detail-row"><span class="detail-icon">📍</span>' + esc(lesson.location) + '</div>';
+    if (lesson.teacher) html += '<div class="detail-row"><span class="detail-icon">👤</span>' + esc(lesson.teacher) + '</div>';
+    html += '</div>';
+
+    if (isNow) {
+      html += '<div class="time-badge now">Сейчас идёт</div>';
+    } else if (diff > 0 && diff <= 90) {
+      html += '<div class="time-badge' + (diff <= 15 ? ' soon' : '') + '">Через ' + formatDiff(diff) + '</div>';
+    }
+
+    return html;
+  }
+
+  function renderMiniLesson(lesson, isPast, isNext) {
+    var typeClass = getLessonTypeClass(lesson.lesson_type);
+    var cls = 'mini-lesson' + (isPast ? ' past' : '');
+    return '<div class="' + cls + '">' +
+      '<span class="mini-time">' + lesson.time_start + '</span>' +
+      '<div class="mini-bar ' + typeClass + (isPast ? ' past' : '') + '"></div>' +
+      '<div class="mini-info">' +
+        '<div class="mini-subject">' + (isNext ? '→ ' : '') + esc(lesson.subject) + '</div>' +
+        (lesson.location ? '<div class="mini-location">' + esc(lesson.location) + '</div>' : '') +
+      '</div></div>';
+  }
+
+  function renderEmpty() {
+    return '<div class="empty-state">' +
+      '<div class="empty-icon">🎉</div>' +
+      '<div class="empty-text">Нет пар</div>' +
+      '<div class="empty-sub">Свободный день!</div></div>';
+  }
+
+  function renderError(title, sub) {
+    return '<div class="widget-header"><span class="widget-title">StudyHelper</span>' +
+      '<span class="widget-dot error"></span></div>' +
+      '<div class="error-state"><div class="error-icon">⚠️</div>' +
+      '<div class="error-text">' + esc(title) + '</div>' +
+      '<div class="error-sub">' + esc(sub) + '</div></div>';
+  }
+
+  function parseTime(t) {
+    var p = t.split(':');
+    return parseInt(p[0]) * 60 + parseInt(p[1]);
+  }
+
+  function formatDiff(m) {
+    if (m < 60) return m + ' мин';
+    var h = Math.floor(m / 60);
+    var r = m % 60;
+    return r > 0 ? h + ' ч ' + r + ' мин' : h + ' ч';
+  }
+
+  function formatFutureDate(dateStr) {
+    if (!dateStr) return '';
+    var days = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+    var months = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    var d = new Date(dateStr + 'T00:00:00');
+    return days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()];
+  }
+
+  function getLessonTypeClass(type) {
+    if (!type) return 'default';
+    var t = type.toLowerCase();
+    if (t.indexOf('лекц') !== -1) return 'lecture';
+    if (t.indexOf('практ') !== -1 || t.indexOf('семин') !== -1) return 'practice';
+    if (t.indexOf('лаб') !== -1) return 'lab';
+    return 'default';
+  }
+
+  function pluralize(n) {
+    var m = n % 10;
+    var h = n % 100;
+    if (m === 1 && h !== 11) return 'пара';
+    if (m >= 2 && m <= 4 && (h < 12 || h > 14)) return 'пары';
+    return 'пар';
+  }
+
+  function esc(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+})();
+</script>
+</body>
+</html>
