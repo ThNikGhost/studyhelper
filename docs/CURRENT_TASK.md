@@ -1,39 +1,26 @@
 # Текущая задача
 
 ## Статус
-**F5 Phone Widgets задеплоен на прод. Все post-MVP фичи реализованы.**
+**F5.1 Widget /today endpoint задеплоен на прод. Все post-MVP фичи реализованы.**
 
-## Последняя сессия: F5 Phone Widgets — 2026-02-15
+## Последняя сессия: F5.1 Widget /today endpoint — 2026-02-16
 
 ### Сделано
-- **Рефакторинг**: вынесена `filter_entries_by_user_prefs()` из `calendar_feed.py` → `utils/schedule_filters.py` (shared)
-- **Модель WidgetApiKey**: per-user token (secrets.token_urlsafe(48)), unique indexes на token и user_id
-- **Миграция**: `02665a1d4d94_add_widget_api_keys_table` (down_revision: d01120901766)
-- **Schemas**: WidgetApiKeyStatusResponse, WidgetApiKeyCreateResponse, NextLessonResponse
-- **Сервис**: Token CRUD (create/regenerate/revoke/update_last_used) + get_next_lesson (lookahead 7 дней, фильтрация по подгруппе/физкультуре)
-- **Роутер**: 4 endpoints — GET /status (JWT), POST /enable (JWT), DELETE /disable (JWT), GET /next-lesson?api_key=xxx (public, rate limit 60/min)
-- **Frontend**: SettingsPage секция "Виджеты" (Smartphone icon, indigo) с API ключом, URL, Copy, инструкции iOS/Android
-- **Scriptable JS**: `frontend/public/scriptable-widget.js` — виджет для iOS (Keychain, offline cache, ListWidget)
-- **Тесты**: 29 backend тестов (Token CRUD: 7, Next Lesson Logic: 11, API: 11)
-
-### Файлы созданы
-- `backend/src/utils/schedule_filters.py` — shared фильтр расписания
-- `backend/src/models/widget_api_key.py` — модель WidgetApiKey
-- `backend/src/schemas/widget.py` — Pydantic schemas
-- `backend/src/services/widget.py` — сервис (CRUD + next lesson)
-- `backend/src/routers/widget.py` — 4 endpoint-а
-- `backend/alembic/versions/02665a1d4d94_add_widget_api_keys_table.py` — миграция
-- `backend/tests/test_widget.py` — 29 тестов
-- `frontend/src/types/widget.ts` — TypeScript типы
-- `frontend/src/services/widgetService.ts` — API сервис
-- `frontend/public/scriptable-widget.js` — Scriptable виджет для iOS
+- **Новый endpoint**: `GET /api/v1/widget/today?api_key=xxx` — возвращает все пары на сегодня + первую будущую пару
+- **Schemas**: `TodayLessonItem`, `TodayScheduleResponse` (date, lessons[], next_lesson_from_future, next_lesson_date, cached_at)
+- **Сервис**: `_build_lesson_item()`, `get_today_schedule()`, `get_today_schedule_by_token()`
+- **Auth refactor**: вынесен `_authenticate_by_token()` — shared helper для обоих `*_by_token` функций
+- **Scriptable JS**: переписан на `/today`, локальный `minutes_until`, 24h cache TTL, текстовые фиксы
+- **Текстовые фиксы**: "Следующее занятие" → "Следующая пара", "Нет занятий" → "Нет пар", пробелы в "через X ч Y мин"
+- **Edge cases**: `formatMinutesUntil(<=0)` → "Сейчас", future lesson показывает дату "Пн, 17 фев"
+- **Тесты**: 14 новых (TestTodayScheduleLogic: 10, TestTodayScheduleAPI: 4), итого 43 widget тестов
 
 ### Файлы изменены
-- `backend/src/services/calendar_feed.py` — import shared filter, удалён _filter_entries
-- `backend/src/models/user.py` — relationship widget_api_key
-- `backend/src/models/__init__.py` — регистрация WidgetApiKey
-- `backend/src/main.py` — подключение widget router
-- `frontend/src/pages/SettingsPage.tsx` — секция "Виджеты" + модальное окно удаления
+- `backend/src/schemas/widget.py` — добавлены TodayLessonItem, TodayScheduleResponse
+- `backend/src/services/widget.py` — _authenticate_by_token, _build_lesson_item, get_today_schedule, get_today_schedule_by_token
+- `backend/src/routers/widget.py` — GET /today endpoint
+- `backend/tests/test_widget.py` — 14 новых тестов + фикстуры today_schedule_entries, _today()
+- `frontend/public/scriptable-widget.js` — полный переписан на /today с offline кешем
 
 ## Следующие шаги (по приоритету)
 - Все post-MVP фичи реализованы
