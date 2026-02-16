@@ -39,3 +39,24 @@ class NextLessonResponse(BaseModel):
     is_today: bool = False
     no_more_lessons: bool = False
     cached_at: str | None = None
+
+
+class TodayLessonItem(BaseModel):
+    """Single lesson item for today schedule widget."""
+
+    subject: str
+    time_start: str  # "HH:MM"
+    time_end: str  # "HH:MM"
+    location: str | None = None
+    teacher: str | None = None
+    lesson_type: str  # "Лекция", "Практика", etc.
+
+
+class TodayScheduleResponse(BaseModel):
+    """Full today schedule for phone widgets with offline support."""
+
+    date: str  # "YYYY-MM-DD"
+    lessons: list[TodayLessonItem]  # All today's lessons (sorted by time)
+    next_lesson_from_future: TodayLessonItem | None = None
+    next_lesson_date: str | None = None  # "YYYY-MM-DD" for next_lesson_from_future
+    cached_at: str  # "YYYY-MM-DDTHH:MM:SS"

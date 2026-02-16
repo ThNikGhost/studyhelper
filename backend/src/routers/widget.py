@@ -16,6 +16,7 @@ from src.dependencies import get_current_user
 from src.models.user import User
 from src.schemas.widget import (
     NextLessonResponse,
+    TodayScheduleResponse,
     WidgetApiKeyCreateResponse,
     WidgetApiKeyStatusResponse,
 )
@@ -83,6 +84,21 @@ async def get_next_lesson(
 ) -> NextLessonResponse:
     """Public next lesson endpoint. Authenticated by API key in query parameter."""
     result = await widget_service.get_next_lesson_by_token(db, api_key)
+    if result is None:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    return result
+
+
+@router.get("/today", response_model=TodayScheduleResponse)
+@limiter.limit("60/minute")
+async def get_today_schedule(
+    request: Request,
+    api_key: str = Query(..., description="Widget API key"),
+    db: AsyncSession = Depends(get_db),
+) -> TodayScheduleResponse:
+    """Public today schedule endpoint. Returns all lessons for today + first future lesson."""
+    result = await widget_service.get_today_schedule_by_token(db, api_key)
     if result is None:
         raise HTTPException(status_code=401, detail="Invalid API key")
 

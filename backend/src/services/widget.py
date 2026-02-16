@@ -18,7 +18,11 @@ from src.models.schedule import ScheduleEntry
 from src.models.semester import Semester
 from src.models.user import User
 from src.models.widget_api_key import WidgetApiKey
-from src.schemas.widget import NextLessonResponse
+from src.schemas.widget import (
+    NextLessonResponse,
+    TodayLessonItem,
+    TodayScheduleResponse,
+)
 from src.services.schedule import get_schedule_entries_by_date_range
 from src.utils.schedule_filters import filter_entries_by_user_prefs
 
@@ -122,7 +126,35 @@ async def update_last_used(
     await db.commit()
 
 
-# --- Next Lesson by Token ---
+# --- Token Authentication ---
+
+
+async def _authenticate_by_token(
+    db: AsyncSession,
+    token: str,
+) -> User | None:
+    """Authenticate by widget API token and return the associated user.
+
+    Looks up the token, validates the user, and updates last_used timestamp.
+
+    Args:
+        db: Database session.
+        token: Widget API key token.
+
+    Returns:
+        User if token is valid, None otherwise.
+    """
+    key = await get_key_by_token(db, token)
+    if key is None:
+        return None
+
+    result = await db.execute(select(User).where(User.id == key.user_id))
+    user = result.scalar_one_or_none()
+    if user is None:
+        return None
+
+    await update_last_used(db, key)
+    return user
 
 
 async def get_next_lesson_by_token(
@@ -138,16 +170,9 @@ async def get_next_lesson_by_token(
     Returns:
         NextLessonResponse if token is valid, None otherwise.
     """
-    key = await get_key_by_token(db, token)
-    if key is None:
-        return None
-
-    result = await db.execute(select(User).where(User.id == key.user_id))
-    user = result.scalar_one_or_none()
+    user = await _authenticate_by_token(db, token)
     if user is None:
         return None
-
-    await update_last_used(db, key)
     return await get_next_lesson(db, user)
 
 
@@ -234,3 +259,102 @@ async def get_next_lesson(
         )
 
     return NextLessonResponse(no_more_lessons=True, cached_at=cached_at)
+
+
+# --- Today Schedule ---
+
+
+def _build_lesson_item(entry: ScheduleEntry) -> TodayLessonItem:
+    """Convert a ScheduleEntry into a TodayLessonItem."""
+    return TodayLessonItem(
+        subject=entry.subject_name,
+        time_start=entry.start_time.strftime("%H:%M"),
+        time_end=entry.end_time.strftime("%H:%M"),
+        location=_build_location(entry),
+        teacher=entry.teacher_name,
+        lesson_type=LESSON_TYPE_NAMES.get(entry.lesson_type, entry.lesson_type),
+    )
+
+
+async def get_today_schedule(
+    db: AsyncSession,
+    user: User,
+) -> TodayScheduleResponse:
+    """Get all today's lessons plus first future lesson for offline widget.
+
+    Args:
+        db: Database session.
+        user: User whose preferences to apply.
+
+    Returns:
+        TodayScheduleResponse with all today's lessons and optional future lesson.
+    """
+    now = datetime.now(OMSK_TZ)
+    today = now.date()
+    end_date = today + timedelta(days=LOOKAHEAD_DAYS)
+    cached_at = now.strftime("%Y-%m-%dT%H:%M:%S")
+
+    empty_response = TodayScheduleResponse(
+        date=today.isoformat(),
+        lessons=[],
+        cached_at=cached_at,
+    )
+
+    # Check for current semester
+    result = await db.execute(
+        select(Semester).where(Semester.is_current.is_(True)).limit(1)
+    )
+    semester = result.scalar_one_or_none()
+    if semester is None:
+        return empty_response
+
+    # Load all entries for the lookahead range
+    entries = await get_schedule_entries_by_date_range(db, today, end_date)
+
+    # Filter by user preferences (subgroup, PE teacher)
+    filtered = filter_entries_by_user_prefs(entries, user)
+
+    if not filtered:
+        return empty_response
+
+    # Split into today and future
+    today_entries = [e for e in filtered if e.lesson_date == today]
+    future_entries = [
+        e for e in filtered if e.lesson_date is not None and e.lesson_date > today
+    ]
+
+    today_lessons = [_build_lesson_item(e) for e in today_entries]
+
+    # First future lesson (entries are already sorted by date/time)
+    next_future: TodayLessonItem | None = None
+    next_future_date: str | None = None
+    if future_entries:
+        next_future = _build_lesson_item(future_entries[0])
+        next_future_date = future_entries[0].lesson_date.isoformat()
+
+    return TodayScheduleResponse(
+        date=today.isoformat(),
+        lessons=today_lessons,
+        next_lesson_from_future=next_future,
+        next_lesson_date=next_future_date,
+        cached_at=cached_at,
+    )
+
+
+async def get_today_schedule_by_token(
+    db: AsyncSession,
+    token: str,
+) -> TodayScheduleResponse | None:
+    """Authenticate by token, update last_used, and return today schedule.
+
+    Args:
+        db: Database session.
+        token: Widget API key token.
+
+    Returns:
+        TodayScheduleResponse if token is valid, None otherwise.
+    """
+    user = await _authenticate_by_token(db, token)
+    if user is None:
+        return None
+    return await get_today_schedule(db, user)

@@ -63,6 +63,16 @@ async def semester(db_session: AsyncSession) -> Semester:
     return sem
 
 
+def _today() -> date:
+    """Get today's date in configured timezone."""
+    from zoneinfo import ZoneInfo
+
+    from src.config import settings
+
+    tz = ZoneInfo(settings.timezone)
+    return datetime.now(tz).date()
+
+
 def _tomorrow() -> date:
     """Get tomorrow's date for consistent test data."""
     from zoneinfo import ZoneInfo
@@ -131,6 +141,93 @@ async def schedule_entries(
         ScheduleEntry(
             lesson_date=day_after,
             day_of_week=day_after.isoweekday(),
+            start_time=time(8, 0),
+            end_time=time(9, 30),
+            subject_name="Физическая культура",
+            lesson_type="practice",
+            teacher_name="Смирнов С.С.",
+            room="Зал 2",
+            building="Спортзал",
+        ),
+    ]
+    for e in entries:
+        db_session.add(e)
+    await db_session.flush()
+    await db_session.commit()
+    for e in entries:
+        await db_session.refresh(e)
+    return entries
+
+
+@pytest.fixture
+async def today_schedule_entries(
+    db_session: AsyncSession, semester: Semester
+) -> list[ScheduleEntry]:
+    """Create sample schedule entries for today and tomorrow."""
+    today = _today()
+    tomorrow = today + timedelta(days=1)
+
+    entries = [
+        ScheduleEntry(
+            lesson_date=today,
+            day_of_week=today.isoweekday(),
+            start_time=time(8, 0),
+            end_time=time(9, 30),
+            subject_name="Математика",
+            lesson_type="lecture",
+            teacher_name="Петров П.П.",
+            room="101",
+            building="Корпус 1",
+        ),
+        ScheduleEntry(
+            lesson_date=today,
+            day_of_week=today.isoweekday(),
+            start_time=time(9, 45),
+            end_time=time(11, 15),
+            subject_name="Физика",
+            lesson_type="practice",
+            teacher_name="Сидоров С.С.",
+            room="202",
+            building="Корпус 2",
+            subgroup=1,
+        ),
+        ScheduleEntry(
+            lesson_date=today,
+            day_of_week=today.isoweekday(),
+            start_time=time(9, 45),
+            end_time=time(11, 15),
+            subject_name="Физика",
+            lesson_type="practice",
+            teacher_name="Козлов К.К.",
+            room="203",
+            building="Корпус 2",
+            subgroup=2,
+        ),
+        ScheduleEntry(
+            lesson_date=today,
+            day_of_week=today.isoweekday(),
+            start_time=time(23, 50),
+            end_time=time(23, 59),
+            subject_name="Программирование",
+            lesson_type="lab",
+            teacher_name="Кузнецов К.К.",
+            room="301",
+            building="Корпус 3",
+        ),
+        ScheduleEntry(
+            lesson_date=tomorrow,
+            day_of_week=tomorrow.isoweekday(),
+            start_time=time(8, 0),
+            end_time=time(9, 30),
+            subject_name="Физическая культура",
+            lesson_type="practice",
+            teacher_name="Иванов И.И.",
+            room="Зал 1",
+            building="Спортзал",
+        ),
+        ScheduleEntry(
+            lesson_date=tomorrow,
+            day_of_week=tomorrow.isoweekday(),
             start_time=time(8, 0),
             end_time=time(9, 30),
             subject_name="Физическая культура",
@@ -447,3 +544,199 @@ class TestWidgetAPI:
         """Should require auth for enable endpoint."""
         response = await client.post("/api/v1/widget/enable")
         assert response.status_code == 401
+
+
+# ---- Today Schedule Logic Tests ----
+
+
+class TestTodayScheduleLogic:
+    """Tests for today schedule lookup logic."""
+
+    async def test_returns_all_today_lessons(
+        self,
+        db_session: AsyncSession,
+        user: User,
+        semester: Semester,
+        today_schedule_entries: list[ScheduleEntry],
+    ) -> None:
+        """Should return all lessons for today including past ones."""
+        result = await widget_service.get_today_schedule(db_session, user)
+        # 4 today entries, but 2 are subgroup-specific and user has no preference
+        # so all 4 should be returned (no subgroup filter for user without prefs)
+        assert len(result.lessons) == 4
+
+    async def test_lessons_sorted_by_time(
+        self,
+        db_session: AsyncSession,
+        user: User,
+        semester: Semester,
+        today_schedule_entries: list[ScheduleEntry],
+    ) -> None:
+        """Should return lessons sorted by start time."""
+        result = await widget_service.get_today_schedule(db_session, user)
+        times = [lesson.time_start for lesson in result.lessons]
+        assert times == sorted(times)
+
+    async def test_date_is_today(
+        self,
+        db_session: AsyncSession,
+        user: User,
+        semester: Semester,
+        today_schedule_entries: list[ScheduleEntry],
+    ) -> None:
+        """Should set date to today's date."""
+        result = await widget_service.get_today_schedule(db_session, user)
+        assert result.date == _today().isoformat()
+
+    async def test_cached_at_present(
+        self,
+        db_session: AsyncSession,
+        user: User,
+        semester: Semester,
+        today_schedule_entries: list[ScheduleEntry],
+    ) -> None:
+        """Should include cached_at timestamp."""
+        result = await widget_service.get_today_schedule(db_session, user)
+        assert result.cached_at is not None
+        assert "T" in result.cached_at
+
+    async def test_empty_without_entries(
+        self,
+        db_session: AsyncSession,
+        user: User,
+        semester: Semester,
+    ) -> None:
+        """Should return empty lessons list when no entries exist."""
+        result = await widget_service.get_today_schedule(db_session, user)
+        assert result.lessons == []
+        assert result.next_lesson_from_future is None
+
+    async def test_empty_without_semester(
+        self,
+        db_session: AsyncSession,
+        user: User,
+    ) -> None:
+        """Should return empty response when no current semester."""
+        result = await widget_service.get_today_schedule(db_session, user)
+        assert result.lessons == []
+        assert result.next_lesson_from_future is None
+
+    async def test_subgroup_filter(
+        self,
+        db_session: AsyncSession,
+        user_with_prefs: User,
+        semester: Semester,
+        today_schedule_entries: list[ScheduleEntry],
+    ) -> None:
+        """Should filter entries by user's subgroup preference."""
+        result = await widget_service.get_today_schedule(db_session, user_with_prefs)
+        subjects = [item.subject for item in result.lessons]
+        # subgroup=1 user: Математика (no subgroup), Физика subgroup=1, Программирование (no subgroup)
+        assert "Математика" in subjects
+        assert "Программирование" in subjects
+        # Should have Физика from subgroup 1 (Сидоров), not subgroup 2 (Козлов)
+        physics_lessons = [item for item in result.lessons if item.subject == "Физика"]
+        assert len(physics_lessons) == 1
+        assert physics_lessons[0].teacher == "Сидоров С.С."
+
+    async def test_pe_filter(
+        self,
+        db_session: AsyncSession,
+        user_with_prefs: User,
+        semester: Semester,
+        today_schedule_entries: list[ScheduleEntry],
+    ) -> None:
+        """Should filter PE entries by preferred teacher in future lessons."""
+        result = await widget_service.get_today_schedule(db_session, user_with_prefs)
+        # Future lesson should be PE with preferred teacher Иванов
+        if result.next_lesson_from_future:
+            assert result.next_lesson_from_future.teacher == "Иванов И.И."
+
+    async def test_next_lesson_from_future_present(
+        self,
+        db_session: AsyncSession,
+        user: User,
+        semester: Semester,
+        today_schedule_entries: list[ScheduleEntry],
+    ) -> None:
+        """Should include first future lesson when available."""
+        result = await widget_service.get_today_schedule(db_session, user)
+        assert result.next_lesson_from_future is not None
+        assert result.next_lesson_date is not None
+        tomorrow = _today() + timedelta(days=1)
+        assert result.next_lesson_date == tomorrow.isoformat()
+
+    async def test_next_lesson_from_future_none_without_future(
+        self,
+        db_session: AsyncSession,
+        user: User,
+        semester: Semester,
+    ) -> None:
+        """Should set next_lesson_from_future to None when no future entries."""
+        # Create only today entries
+        today = _today()
+        entry = ScheduleEntry(
+            lesson_date=today,
+            day_of_week=today.isoweekday(),
+            start_time=time(8, 0),
+            end_time=time(9, 30),
+            subject_name="Математика",
+            lesson_type="lecture",
+            teacher_name="Петров П.П.",
+            room="101",
+            building="Корпус 1",
+        )
+        db_session.add(entry)
+        await db_session.flush()
+        await db_session.commit()
+
+        result = await widget_service.get_today_schedule(db_session, user)
+        assert result.next_lesson_from_future is None
+        assert result.next_lesson_date is None
+
+
+# ---- Today Schedule API Tests ----
+
+
+class TestTodayScheduleAPI:
+    """Tests for /today API endpoint."""
+
+    async def test_today_valid_key(
+        self, client: AsyncClient, auth_headers: dict
+    ) -> None:
+        """Should return 200 with today schedule for valid API key."""
+        enable_resp = await client.post("/api/v1/widget/enable", headers=auth_headers)
+        api_key = enable_resp.json()["api_key"]
+
+        response = await client.get(f"/api/v1/widget/today?api_key={api_key}")
+        assert response.status_code == 200
+        data = response.json()
+        assert "date" in data
+        assert "lessons" in data
+        assert "cached_at" in data
+        assert isinstance(data["lessons"], list)
+
+    async def test_today_invalid_key(self, client: AsyncClient) -> None:
+        """Should return 401 for invalid API key."""
+        response = await client.get("/api/v1/widget/today?api_key=nonexistent")
+        assert response.status_code == 401
+
+    async def test_today_missing_key(self, client: AsyncClient) -> None:
+        """Should return 422 when api_key parameter is missing."""
+        response = await client.get("/api/v1/widget/today")
+        assert response.status_code == 422
+
+    async def test_today_response_structure(
+        self, client: AsyncClient, auth_headers: dict
+    ) -> None:
+        """Should return properly structured response."""
+        enable_resp = await client.post("/api/v1/widget/enable", headers=auth_headers)
+        api_key = enable_resp.json()["api_key"]
+
+        response = await client.get(f"/api/v1/widget/today?api_key={api_key}")
+        data = response.json()
+        assert "date" in data
+        assert "lessons" in data
+        assert "next_lesson_from_future" in data
+        assert "next_lesson_date" in data
+        assert "cached_at" in data
