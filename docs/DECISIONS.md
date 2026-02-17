@@ -1091,6 +1091,33 @@ notification_settings — настройки уведомлений
 
 ---
 
+## 30. "ауд." location parsing решения (2026-02-17)
+
+### Strip "ауд." до dash-split в _parse_audit_corps
+
+**Решение:** Стрипать `"ауд."/"аудитория"` prefix в начале `_parse_audit_corps`, до `split("-", 1)`.
+
+**Обоснование:**
+- API OmSU возвращает `"ауд. 114) Спортивный зал, 6("` для физкультуры
+- Без strip: dash-split на `"ауд. 4-101"` даёт building=`"ауд. 4"` (некорректно)
+- С strip: `"ауд. 4-101"` → `"4-101"` → dash-split корректен
+- Для нового формата без dash: `num_match` извлекает room из начала, `bld_match` — building после запятой
+
+**Альтернативы рассмотренные:**
+- `aud_match` regex после dash-split — не защищает от `"ауд. 4-101"` формата
+- Strip "ауд." только в `_clean_building` — слишком поздно, building уже содержит "ауд. 4"
+
+### Defense-in-depth: "ауд." strip в _clean_room и frontend
+
+**Решение:** `_clean_room` и frontend `formatLocation` тоже стрипают "ауд." prefix.
+
+**Обоснование:**
+- Parser — первая линия защиты, location utils — вторая
+- Если другой источник данных передаст room как `"ауд. 301"`, utils обработают корректно
+- Минимальный overhead — один regex sub
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -1208,3 +1235,5 @@ notification_settings — настройки уведомлений
 | 2026-02-16 | SharedPreferences вместо EncryptedSharedPreferences | ESP deprecated (alpha07, Apr 2025), API ключ — не пароль |
 | 2026-02-16 | Debug APK через GitHub Releases | Release signing требует keystore setup, debug достаточно для personal use |
 | 2026-02-16 | HttpURLConnection + org.json (built-in) | Минимальный APK (~3.8 MB), без OkHttp/Gson зависимостей |
+| 2026-02-17 | Strip "ауд." до dash-split | "ауд. 4-101" не ломает dash-split, "ауд. 114... 6(" парсится корректно |
+| 2026-02-17 | Defense-in-depth "ауд." в _clean_room/frontend | Вторая линия защиты для room из любого источника |

@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-17 (Android Chronometer + unified location format)
+- **Дата обновления**: 2026-02-17 (fix "ауд." location parsing)
 
 ## Backend модули
 
@@ -17,7 +17,7 @@
 | University | Department, Building | — | — | — | 28 |
 | Classmates | — | — | — | — | 20 |
 | Schedule | ScheduleEntry, ScheduleSnapshot | — | — | — | 35 |
-| Parser | +subgroup parsing | — | — | CLI | 82 |
+| Parser | +subgroup parsing, +ауд. prefix | — | — | CLI | 84 |
 | Uploads | — | — | — | — | 11 |
 | Files | File | — | — | — | 21 |
 | Attendance | Absence | +total_planned/completed | semester filter | — | 29 |
@@ -64,6 +64,7 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **F5.1**: Widget /today endpoint — полное расписание на день + первая будущая пара, offline кеш с локальным minutes_until, 24h cache TTL, shared auth refactor, текстовые фиксы виджета, 14 новых тестов
 - **F5.2**: Android Widget App — нативный APK (4×2 виджет), AGP 9.0.0 + built-in Kotlin, RemoteViews, WorkManager 30min refresh, SharedPreferences cache, GitHub Actions CI → GitHub Releases
 - **F5.3**: Android Chronometer + unified location — real-time countdown (system Chronometer вместо static text), парсер/бэкенд/фронтенд нормализация "Корпус"/"корп." в location, timeline building field
+- **B13**: Fix "ауд." location parsing — `_parse_audit_corps` обрабатывает `"ауд. 114) Спортивный зал, 6("` → `("6", "114")`, defense-in-depth в `_clean_room` и frontend `formatLocation`
 
 ### Следующие задачи (приоритет):
 - Все post-MVP фичи реализованы
