@@ -76,6 +76,7 @@ async def update_settings(
     Settings are synced across all user's devices.
     """
     update_data = settings.model_dump(exclude_unset=True)
+    # Must match UserSettingsUpdate schema fields
     allowed_fields = {"preferred_subgroup", "preferred_pe_teacher", "theme_mode"}
     for key, value in update_data.items():
         if key in allowed_fields:

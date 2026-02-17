@@ -1123,6 +1123,38 @@ widget_api_keys      — API-ключи для виджетов (per user)
 
 ---
 
+## 31. Code Review Fix решения (2026-02-17)
+
+### _METRICS_ALLOWED_NETWORKS как модульная константа
+
+**Решение:** Вынести `import ipaddress` и allowed_networks из тела функции на уровень модуля.
+
+**Обоснование:**
+- `import ipaddress` и создание `ip_network()` при каждом запросе — лишний overhead
+- Модульная константа создаётся один раз при импорте
+- Добавлена `192.168.0.0/16` — полное покрытие RFC 1918 частных сетей
+- Fallback `403` при отсутствии `client_ip` — defense-in-depth (раньше пропускал запрос)
+
+### REDISCLI_AUTH вместо redis-cli -a
+
+**Решение:** `REDISCLI_AUTH=$REDIS_PASSWORD redis-cli ping` вместо `redis-cli -a $REDIS_PASSWORD ping`.
+
+**Обоснование:**
+- `-a` выводит warning "Using a password on the command line interface is not safe" в stderr
+- Warning засоряет Docker healthcheck логи
+- `REDISCLI_AUTH` env var — официальный способ подавления (Redis docs)
+
+### GPG --passphrase-fd 0 вместо --passphrase
+
+**Решение:** `printf '%s' "$KEY" | gpg --passphrase-fd 0 ...` вместо `gpg --passphrase "$KEY" ...`.
+
+**Обоснование:**
+- `--passphrase` CLI arg виден в `ps aux` как аргумент процесса
+- `--passphrase-fd 0` читает passphrase из stdin — не виден в process list
+- GnuPG документация рекомендует `--passphrase-fd` для scripted use
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -1242,3 +1274,6 @@ widget_api_keys      — API-ключи для виджетов (per user)
 | 2026-02-16 | HttpURLConnection + org.json (built-in) | Минимальный APK (~3.8 MB), без OkHttp/Gson зависимостей |
 | 2026-02-17 | Strip "ауд." до dash-split | "ауд. 4-101" не ломает dash-split, "ауд. 114... 6(" парсится корректно |
 | 2026-02-17 | Defense-in-depth "ауд." в _clean_room/frontend | Вторая линия защиты для room из любого источника |
+| 2026-02-17 | _METRICS_ALLOWED_NETWORKS константа | import + ip_network при каждом запросе → модульная константа |
+| 2026-02-17 | REDISCLI_AUTH вместо -a | Подавление password warning в healthcheck логах |
+| 2026-02-17 | GPG --passphrase-fd 0 | Passphrase не виден в ps aux |

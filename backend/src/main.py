@@ -1,5 +1,6 @@
 """FastAPI application entry point."""
 
+import ipaddress
 import logging
 import sys
 
@@ -47,6 +48,13 @@ from src.routers import (
 from src.utils.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
+
+_METRICS_ALLOWED_NETWORKS = [
+    ipaddress.ip_network("127.0.0.0/8"),
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+]
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -189,23 +197,18 @@ async def metrics(request: Request) -> Response:
 
     Defense-in-depth: nginx restricts by IP, but we also check here.
     """
-    import ipaddress
-
     client_ip = request.headers.get("X-Real-IP") or (
         request.client.host if request.client else None
     )
     if client_ip:
         try:
             addr = ipaddress.ip_address(client_ip)
-            allowed_networks = [
-                ipaddress.ip_network("172.16.0.0/12"),
-                ipaddress.ip_network("10.0.0.0/8"),
-                ipaddress.ip_network("127.0.0.0/8"),
-            ]
-            if not any(addr in net for net in allowed_networks):
+            if not any(addr in net for net in _METRICS_ALLOWED_NETWORKS):
                 return Response(status_code=403, content="Forbidden")
         except ValueError:
             return Response(status_code=403, content="Forbidden")
+    else:
+        return Response(status_code=403, content="Forbidden")
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 

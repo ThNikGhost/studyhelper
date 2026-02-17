@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-17 (security audit Phase 1+2)
+- **Дата обновления**: 2026-02-17 (code review fixes)
 
 ## Backend модули
 
@@ -66,6 +66,8 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **F5.3**: Android Chronometer + unified location — real-time countdown (system Chronometer вместо static text), парсер/бэкенд/фронтенд нормализация "Корпус"/"корп." в location, timeline building field
 - **B13**: Fix "ауд." location parsing — `_parse_audit_corps` обрабатывает `"ауд. 114) Спортивный зал, 6("` → `("6", "114")`, defense-in-depth в `_clean_room` и frontend `formatLocation`
 - **SEC-1**: Security Audit Phase 1+2 — rate limit /refresh, Telegram strict secret, file ownership check, VK URL sanitization, mass-assignment fix, Permissions-Policy, server_tokens off, CI permissions + SHA-pinning, /metrics IP check, passlib removal, LkSyncError generic messages, backup encryption, Docker pinning, dev-compose hardening
+- **Cleanup**: Removed dead Celery module (backend/src/tasks/, 160 lines), celery optional dep, .gitignore Celery section, completed plan files
+- **SEC-1.1**: Code review fixes — /metrics constants+fallback, REDISCLI_AUTH healthcheck, GPG passphrase-fd, allowed_fields comment, .env.example update, docker-compose comment
 
 ### Следующие задачи (приоритет):
 - (Фаза 3) httpOnly cookies, JWT blacklist

@@ -62,8 +62,8 @@ fi
 
 # Encrypt backup if BACKUP_ENCRYPTION_KEY is set (gpg symmetric)
 if [ -n "${BACKUP_ENCRYPTION_KEY:-}" ]; then
-  gpg --batch --yes --symmetric --cipher-algo AES256 \
-    --passphrase "$BACKUP_ENCRYPTION_KEY" "$BACKUP_FILE"
+  printf '%s' "$BACKUP_ENCRYPTION_KEY" | \
+    gpg --batch --yes --symmetric --cipher-algo AES256 --passphrase-fd 0 "$BACKUP_FILE"
   rm -f "$BACKUP_FILE"
   BACKUP_FILE="${BACKUP_FILE}.gpg"
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup encrypted with AES-256"
