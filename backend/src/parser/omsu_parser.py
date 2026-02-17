@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
@@ -330,6 +331,9 @@ class OmsuScheduleParser:
     def _parse_audit_corps(audit_corps: str) -> tuple[str | None, str | None]:
         """Parse auditCorps string into building and room.
 
+        Cleans parentheses and extracts room numbers from "зал" variants.
+        E.g. "(6-113) Спортивный зал" → ("6", "113").
+
         Args:
             audit_corps: String like "4-101" (building-room).
 
@@ -339,9 +343,18 @@ class OmsuScheduleParser:
         if not audit_corps:
             return None, None
 
-        parts = audit_corps.split("-", 1)
+        # Strip parentheses: "(6-113) Спортивный зал" → "6-113 Спортивный зал"
+        cleaned = audit_corps.replace("(", "").replace(")", "").strip()
+
+        parts = cleaned.split("-", 1)
         if len(parts) == 2:
-            return parts[0], parts[1]
+            building = parts[0].strip() or None
+            room = parts[1].strip() or None
+            # Room may contain "зал" suffix: "113 Спортивный зал" → "113"
+            if room and re.search(r"зал", room, re.IGNORECASE):
+                m = re.match(r"^(\d+)", room)
+                room = m.group(1) if m else room
+            return building, room
 
         # If no dash, treat as room only
-        return None, audit_corps
+        return None, cleaned

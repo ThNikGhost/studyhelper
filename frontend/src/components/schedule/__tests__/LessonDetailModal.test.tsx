@@ -85,7 +85,7 @@ describe('LessonDetailModal', () => {
   it('displays location as building-room', () => {
     renderModal({ entry: fullEntry, open: true })
 
-    expect(screen.getByText('Корпус 2-201')).toBeInTheDocument()
+    expect(screen.getByText('2-201')).toBeInTheDocument()
   })
 
   it('displays teacher name', () => {

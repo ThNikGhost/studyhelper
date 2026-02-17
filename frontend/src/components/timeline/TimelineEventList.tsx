@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Clock, BookOpen } from 'lucide-react'
-import { formatTime } from '@/lib/dateUtils'
+import { formatTime, formatLocation } from '@/lib/dateUtils'
 import { workTypeLabels } from '@/types/work'
 import type { WorkType } from '@/types/work'
 import type { TimelineDeadline, TimelineExam } from '@/types/timeline'
@@ -44,13 +44,14 @@ export function TimelineEventList({ deadlines, exams, limit = 10 }: TimelineEven
     }
 
     for (const e of exams) {
+      const loc = formatLocation(e.building, e.room)
       all.push({
         id: `e-${e.schedule_entry_id}`,
         date: new Date(e.lesson_date),
         type: 'exam',
         title: `Экзамен: ${e.subject_name}`,
         subject: e.subject_name,
-        detail: `${formatTime(e.start_time)}${e.room ? ` · ауд. ${e.room}` : ''}`,
+        detail: `${formatTime(e.start_time)}${loc ? ` · ${loc}` : ''}`,
         color: 'text-purple-500',
       })
     }

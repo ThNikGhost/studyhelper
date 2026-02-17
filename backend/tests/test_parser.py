@@ -251,6 +251,52 @@ class TestDataMapperRoomAndBuilding:
         assert building is None
 
 
+class TestParseAuditCorps:
+    """Tests for OmsuScheduleParser._parse_audit_corps."""
+
+    @staticmethod
+    def _parse(audit_corps: str) -> tuple[str | None, str | None]:
+        from src.parser import OmsuScheduleParser
+
+        return OmsuScheduleParser._parse_audit_corps(audit_corps)
+
+    def test_standard_format(self):
+        """Parse '4-101' format."""
+        building, room = self._parse("4-101")
+        assert building == "4"
+        assert room == "101"
+
+    def test_with_parentheses(self):
+        """Parse '(6-113) Спортивный зал'."""
+        building, room = self._parse("(6-113) Спортивный зал")
+        assert building == "6"
+        assert room == "113"
+
+    def test_parentheses_no_zal(self):
+        """Parse '(4-320)'."""
+        building, room = self._parse("(4-320)")
+        assert building == "4"
+        assert room == "320"
+
+    def test_room_only(self):
+        """Parse room-only string."""
+        building, room = self._parse("315")
+        assert building is None
+        assert room == "315"
+
+    def test_zal_without_number(self):
+        """Parse '(5-Спортивный зал)' — room stays as-is when no number."""
+        building, room = self._parse("(5-Спортивный зал)")
+        assert building == "5"
+        assert room == "Спортивный зал"
+
+    def test_empty_string(self):
+        """Empty input returns (None, None)."""
+        building, room = self._parse("")
+        assert building is None
+        assert room is None
+
+
 class TestDataMapperSubgroup:
     """Tests for DataMapper.parse_subgroup."""
 

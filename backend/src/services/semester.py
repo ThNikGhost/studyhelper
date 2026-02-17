@@ -175,6 +175,7 @@ async def get_semester_timeline(
             start_time=e.start_time,
             end_time=e.end_time,
             room=e.room,
+            building=e.building,
             teacher_name=e.teacher_name,
         )
         for e in exam_entries

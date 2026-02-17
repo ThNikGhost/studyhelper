@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
@@ -150,6 +151,7 @@ object WidgetUpdater {
                 views.setViewVisibility(R.id.textType, View.GONE)
                 views.setViewVisibility(R.id.textTime, View.GONE)
                 views.setViewVisibility(R.id.textLocation, View.GONE)
+                views.setViewVisibility(R.id.chronometerCountdown, View.GONE)
                 views.setTextViewText(R.id.textCountdown, context.getString(R.string.widget_tap_to_setup))
                 views.setTextColor(R.id.textCountdown, color(context, R.color.widget_time))
                 views.setViewVisibility(R.id.textCountdown, View.VISIBLE)
@@ -161,6 +163,7 @@ object WidgetUpdater {
                 views.setViewVisibility(R.id.textType, View.GONE)
                 views.setViewVisibility(R.id.textTime, View.GONE)
                 views.setViewVisibility(R.id.textLocation, View.GONE)
+                views.setViewVisibility(R.id.chronometerCountdown, View.GONE)
                 views.setViewVisibility(R.id.textCountdown, View.GONE)
             }
             is WidgetDisplayData.NoLessons -> {
@@ -170,6 +173,7 @@ object WidgetUpdater {
                 views.setViewVisibility(R.id.textType, View.GONE)
                 views.setViewVisibility(R.id.textTime, View.GONE)
                 views.setViewVisibility(R.id.textLocation, View.GONE)
+                views.setViewVisibility(R.id.chronometerCountdown, View.GONE)
                 views.setTextViewText(R.id.textCountdown, context.getString(R.string.widget_no_lessons_sub))
                 views.setTextColor(R.id.textCountdown, color(context, R.color.widget_muted))
                 views.setViewVisibility(R.id.textCountdown, View.VISIBLE)
@@ -213,12 +217,13 @@ object WidgetUpdater {
     private fun buildLargeViews(context: Context, data: WidgetDisplayData): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_layout)
 
-        // Hide right panel by default
+        // Hide right panel and chronometer by default
         views.setViewVisibility(R.id.divider, View.GONE)
         views.setViewVisibility(R.id.rightPanel, View.GONE)
         views.setViewVisibility(R.id.slot1Container, View.GONE)
         views.setViewVisibility(R.id.slot2Container, View.GONE)
         views.setViewVisibility(R.id.slot3Container, View.GONE)
+        views.setViewVisibility(R.id.chronometerCountdown, View.GONE)
 
         when (data) {
             is WidgetDisplayData.NoKey -> {
@@ -322,22 +327,42 @@ object WidgetUpdater {
 
     // ── Shared helpers ─────────────────────────────────────────────────
 
-    /** Apply countdown or future date to textCountdown view. */
+    /**
+     * Apply countdown using system Chronometer (today) or static text (future).
+     *
+     * Chronometer (API 24+, minSdk 26) renders the countdown natively with
+     * per-second ticks at ~0% battery cost. Format: "через MM:SS" or "через H:MM:SS".
+     *
+     * When minutesUntil <= 0 the lesson has already started — show static "Сейчас"
+     * instead of Chronometer (which would tick into negative values).
+     */
     private fun applyCountdown(
         context: Context,
         views: RemoteViews,
         data: WidgetDisplayData.Lesson,
     ) {
-        if (data.isToday && data.minutesUntil != null) {
-            views.setTextViewText(R.id.textCountdown, formatMinutesUntil(data.minutesUntil))
+        if (data.isToday && data.minutesUntil != null && data.minutesUntil > 0) {
+            // Real-time countdown using system Chronometer
+            views.setViewVisibility(R.id.textCountdown, View.GONE)
+            val base = SystemClock.elapsedRealtime() + (data.minutesUntil * 60 * 1000L)
+            views.setChronometerCountDown(R.id.chronometerCountdown, true)
+            views.setChronometer(R.id.chronometerCountdown, base, "через %s", true)
+            views.setViewVisibility(R.id.chronometerCountdown, View.VISIBLE)
+        } else if (data.isToday && data.minutesUntil != null) {
+            // Lesson already started — static "Сейчас"
+            views.setViewVisibility(R.id.chronometerCountdown, View.GONE)
+            views.setTextViewText(R.id.textCountdown, "Сейчас")
             views.setTextColor(R.id.textCountdown, color(context, R.color.widget_countdown_today))
             views.setViewVisibility(R.id.textCountdown, View.VISIBLE)
         } else if (data.futureDate != null) {
+            // Static future date text
+            views.setViewVisibility(R.id.chronometerCountdown, View.GONE)
             views.setTextViewText(R.id.textCountdown, formatDateShort(data.futureDate))
             views.setTextColor(R.id.textCountdown, color(context, R.color.widget_countdown_future))
             views.setViewVisibility(R.id.textCountdown, View.VISIBLE)
         } else {
             views.setViewVisibility(R.id.textCountdown, View.GONE)
+            views.setViewVisibility(R.id.chronometerCountdown, View.GONE)
         }
     }
 
@@ -363,14 +388,6 @@ object WidgetUpdater {
                 "${data.subject}, ${data.timeStart} – ${data.timeEnd}$loc"
             }
         }
-
-    private fun formatMinutesUntil(minutes: Int): String {
-        if (minutes <= 0) return "Сейчас"
-        if (minutes < 60) return "через $minutes мин"
-        val hours = minutes / 60
-        val mins = minutes % 60
-        return if (mins > 0) "через $hours ч $mins мин" else "через $hours ч"
-    }
 
     private fun formatDateShort(dateStr: String): String {
         return try {

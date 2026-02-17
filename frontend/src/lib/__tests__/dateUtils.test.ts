@@ -215,4 +215,19 @@ describe('formatLocation', () => {
   it('handles real API format "(6" + "113) Спортивный зал"', () => {
     expect(formatLocation('(6', '113) Спортивный зал')).toBe('6-113')
   })
+
+  it('strips "Корпус" prefix from building', () => {
+    expect(formatLocation('Корпус 2', '201')).toBe('2-201')
+    expect(formatLocation('Корпус 1', '301')).toBe('1-301')
+    expect(formatLocation('корпус 3', '101')).toBe('3-101')
+  })
+
+  it('strips "корпус" suffix from building', () => {
+    expect(formatLocation('1 корпус', '301')).toBe('1-301')
+  })
+
+  it('strips "корп." abbreviation from building', () => {
+    expect(formatLocation('корп. 2', '215')).toBe('2-215')
+    expect(formatLocation('корп 3', '101')).toBe('3-101')
+  })
 })

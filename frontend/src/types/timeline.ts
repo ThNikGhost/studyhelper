@@ -17,6 +17,7 @@ export interface TimelineExam {
   start_time: string
   end_time: string
   room: string | null
+  building: string | null
   teacher_name: string | null
 }
 

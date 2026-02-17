@@ -104,8 +104,13 @@ export function formatLocation(
   building: string | null | undefined,
   room: string | null | undefined
 ): string | null {
-  // Clean building: remove parentheses "(6" or "6)" → "6"
-  const cleanBuilding = building?.replace(/[()]/g, '').trim() || null
+  // Clean building: remove parentheses and "Корпус"/"корп."/"корпус" prefix/suffix
+  // "Корпус 2" → "2", "1 корпус" → "1", "корп. 3" → "3", "(6" → "6"
+  const cleanBuilding =
+    building
+      ?.replace(/[()]/g, '')
+      .replace(/(?:корпус|корп)\.?\s*/gi, '')
+      .trim() || null
 
   // Clean room: extract room number if contains "зал"
   // e.g., "113) Спортивный зал" → "113", "Спортивный зал" → null

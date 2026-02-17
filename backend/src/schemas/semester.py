@@ -82,6 +82,7 @@ class TimelineExam(BaseModel):
     start_time: time
     end_time: time
     room: str | None = None
+    building: str | None = None
     teacher_name: str | None = None
 
 

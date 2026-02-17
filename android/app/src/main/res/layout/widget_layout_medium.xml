@@ -62,13 +62,25 @@
         android:ellipsize="end"
         android:layout_marginTop="1dp" />
 
-    <!-- Countdown / date -->
+    <!-- Countdown / date (static, for future days) -->
     <TextView
         android:id="@+id/textCountdown"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="13sp"
         android:textStyle="bold"
+        android:layout_marginTop="2dp" />
+
+    <!-- Real-time countdown (today only, ticks every second) -->
+    <Chronometer
+        android:id="@+id/chronometerCountdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="@color/widget_countdown_today"
+        android:countDown="true"
+        android:visibility="gone"
         android:layout_marginTop="2dp" />
 
 </LinearLayout>

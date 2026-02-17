@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { getPositionPercent, getMonthLabels, getSemesterProgress, getMarkerColor, getExamMarkerColor } from '@/lib/timelineUtils'
 import { TimelineMarker } from './TimelineMarker'
 import type { TimelineDeadline, TimelineExam } from '@/types/timeline'
-import { formatTime } from '@/lib/dateUtils'
+import { formatTime, formatLocation } from '@/lib/dateUtils'
 
 interface TimelineBarProps {
   startDate: string
@@ -81,13 +81,14 @@ export function TimelineBar({
         {/* Exam markers */}
         {filteredExams.map((e) => {
           const percent = getPositionPercent(e.lesson_date, startDate, endDate)
+          const loc = formatLocation(e.building, e.room)
           return (
             <TimelineMarker
               key={`e-${e.schedule_entry_id}`}
               percent={percent}
               color={getExamMarkerColor()}
               label={`Экзамен: ${e.subject_name}`}
-              sublabel={`${new Date(e.lesson_date).toLocaleDateString('ru-RU')} · ${formatTime(e.start_time)}${e.room ? ` · ${e.room}` : ''}`}
+              sublabel={`${new Date(e.lesson_date).toLocaleDateString('ru-RU')} · ${formatTime(e.start_time)}${loc ? ` · ${loc}` : ''}`}
               variant="diamond"
               onClick={() => onMarkerClick?.('exam', e.schedule_entry_id)}
             />

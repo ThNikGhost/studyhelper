@@ -33,7 +33,7 @@ describe('LessonCard', () => {
   it('renders location as building-room', () => {
     render(<LessonCard entry={entry} />)
 
-    expect(screen.getByText('Корпус 1-301')).toBeInTheDocument()
+    expect(screen.getByText('1-301')).toBeInTheDocument()
   })
 
   it('calls onClick when clicked', () => {
