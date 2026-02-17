@@ -230,4 +230,13 @@ describe('formatLocation', () => {
     expect(formatLocation('корп. 2', '215')).toBe('2-215')
     expect(formatLocation('корп 3', '101')).toBe('3-101')
   })
+
+  it('strips "ауд." prefix from room', () => {
+    expect(formatLocation(null, 'ауд. 301')).toBe('301')
+    expect(formatLocation('6', 'ауд. 114')).toBe('6-114')
+  })
+
+  it('strips "ауд." prefix from room with "зал"', () => {
+    expect(formatLocation(null, 'ауд. 114 Спортивный зал')).toBe('114')
+  })
 })

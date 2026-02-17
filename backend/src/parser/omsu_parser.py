@@ -331,11 +331,16 @@ class OmsuScheduleParser:
     def _parse_audit_corps(audit_corps: str) -> tuple[str | None, str | None]:
         """Parse auditCorps string into building and room.
 
-        Cleans parentheses and extracts room numbers from "зал" variants.
-        E.g. "(6-113) Спортивный зал" → ("6", "113").
+        Cleans parentheses, "ауд." prefix and extracts room numbers
+        from "зал" variants.
+
+        Examples:
+            "4-101" → ("4", "101")
+            "(6-113) Спортивный зал" → ("6", "113")
+            "ауд. 114) Спортивный зал, 6(" → ("6", "114")
 
         Args:
-            audit_corps: String like "4-101" (building-room).
+            audit_corps: Raw auditCorps string from API.
 
         Returns:
             Tuple of (building, room).
@@ -345,6 +350,12 @@ class OmsuScheduleParser:
 
         # Strip parentheses: "(6-113) Спортивный зал" → "6-113 Спортивный зал"
         cleaned = audit_corps.replace("(", "").replace(")", "").strip()
+
+        # Strip "ауд."/"аудитория" prefix before dash-split
+        # so "ауд. 4-101" becomes "4-101" and splits correctly
+        cleaned = re.sub(
+            r"^ауд(?:итория)?\.?\s*", "", cleaned, flags=re.IGNORECASE
+        ).strip()
 
         parts = cleaned.split("-", 1)
         if len(parts) == 2:
@@ -356,5 +367,16 @@ class OmsuScheduleParser:
                 room = m.group(1) if m else room
             return building, room
 
-        # If no dash, treat as room only
+        # Try "ROOM ..., BUILDING" pattern
+        # e.g. "114 Спортивный зал, 6" (after "ауд." was stripped above)
+        num_match = re.match(r"(\d+\w*)", cleaned)
+        if num_match:
+            room = num_match.group(1)
+            bld_match = re.search(
+                r",\s*(?:корп(?:ус)?\.?\s*)?(\d+)\s*$", cleaned, re.IGNORECASE
+            )
+            building = bld_match.group(1) if bld_match else None
+            return building, room
+
+        # If no pattern matched, treat as room only
         return None, cleaned

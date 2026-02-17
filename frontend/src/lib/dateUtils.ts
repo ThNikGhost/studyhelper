@@ -112,17 +112,18 @@ export function formatLocation(
       .replace(/(?:корпус|корп)\.?\s*/gi, '')
       .trim() || null
 
-  // Clean room: extract room number if contains "зал"
-  // e.g., "113) Спортивный зал" → "113", "Спортивный зал" → null
+  // Clean room: strip "ауд."/"аудитория" prefix, extract room number if contains "зал"
+  // e.g., "113) Спортивный зал" → "113", "Спортивный зал" → null, "ауд. 301" → "301"
   let cleanRoom: string | null = null
   if (room) {
-    if (/зал/i.test(room)) {
+    const stripped = room.replace(/ауд(?:итория)?\.?\s*/gi, '').trim()
+    if (/зал/i.test(stripped)) {
       // Extract number before ")" or space
-      const match = room.match(/^(\d+)/)
+      const match = stripped.match(/^(\d+)/)
       cleanRoom = match ? match[1] : null
     } else {
       // No "зал" — use room as-is, just clean parentheses
-      cleanRoom = room.replace(/[()]/g, '').trim() || null
+      cleanRoom = stripped.replace(/[()]/g, '').trim() || null
     }
   }
 

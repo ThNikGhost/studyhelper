@@ -58,6 +58,11 @@ class TestCleanRoom:
         assert _clean_room(None) is None
         assert _clean_room("") is None
 
+    def test_strips_aud_prefix(self) -> None:
+        assert _clean_room("ауд. 114 Спортивный зал") == "114"
+        assert _clean_room("ауд. 301") == "301"
+        assert _clean_room("аудитория 215") == "215"
+
 
 class TestFormatLocation:
     """Tests for format_location."""
@@ -96,6 +101,7 @@ class TestFormatLocation:
             ("4", "320", "4-320"),
             (None, "301", "301"),
             ("Спортзал", None, "Спортзал"),
+            (None, "ауд. 301", "301"),
             (None, None, None),
         ],
     )

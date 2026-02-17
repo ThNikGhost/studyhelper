@@ -27,9 +27,9 @@ def _clean_building(building: str | None) -> str | None:
 
 
 def _clean_room(room: str | None) -> str | None:
-    """Extract room number, handling "зал" variants.
+    """Extract room number, handling "зал" and "ауд." variants.
 
-    Handles: "113", "113) Спортивный зал", "Спортивный зал".
+    Handles: "113", "113) Спортивный зал", "Спортивный зал", "ауд. 114 Спортивный зал".
 
     Args:
         room: Raw room string.
@@ -41,6 +41,7 @@ def _clean_room(room: str | None) -> str | None:
         return None
     r = room.strip()
     r = r.replace("(", "").replace(")", "")
+    r = re.sub(r"ауд(?:итория)?\.?\s*", "", r, flags=re.IGNORECASE).strip()
     if re.search(r"зал", r, re.IGNORECASE):
         m = re.match(r"^(\d+)", r)
         return m.group(1) if m else None

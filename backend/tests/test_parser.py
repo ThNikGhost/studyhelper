@@ -296,6 +296,30 @@ class TestParseAuditCorps:
         assert building is None
         assert room is None
 
+    def test_aud_prefix_with_building(self):
+        """Parse 'ауд. 114) Спортивный зал, 6(' → building=6, room=114."""
+        building, room = self._parse("ауд. 114) Спортивный зал, 6(")
+        assert building == "6"
+        assert room == "114"
+
+    def test_aud_prefix_room_only(self):
+        """Parse 'ауд. 301' → building=None, room=301."""
+        building, room = self._parse("ауд. 301")
+        assert building is None
+        assert room == "301"
+
+    def test_aud_prefix_no_comma(self):
+        """Parse 'ауд. 114 Спортивный зал 6' without comma → building=None."""
+        building, room = self._parse("ауд. 114 Спортивный зал 6")
+        assert building is None
+        assert room == "114"
+
+    def test_aud_prefix_with_dash(self):
+        """Parse 'ауд. 4-101' → building=4, room=101 (ауд. stripped before dash-split)."""
+        building, room = self._parse("ауд. 4-101")
+        assert building == "4"
+        assert room == "101"
+
 
 class TestDataMapperSubgroup:
     """Tests for DataMapper.parse_subgroup."""
