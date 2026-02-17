@@ -89,11 +89,17 @@ class Settings(BaseSettings):
     telegram_webhook_secret: str | None = None
 
     @model_validator(mode="after")
-    def validate_secret_key(self) -> "Settings":
-        """Ensure secret_key is changed in production."""
+    def validate_settings(self) -> "Settings":
+        """Validate critical settings for production safety."""
         if not self.debug and self.secret_key == "change-me-in-production":
             raise ValueError(
                 "secret_key must be changed from default in production (debug=False)"
+            )
+        if not self.debug and len(self.secret_key) < 32:
+            raise ValueError("secret_key must be at least 32 characters in production")
+        if self.telegram_bot_token and not self.telegram_webhook_secret:
+            raise ValueError(
+                "TELEGRAM_WEBHOOK_SECRET is required when TELEGRAM_BOT_TOKEN is set"
             )
         return self
 

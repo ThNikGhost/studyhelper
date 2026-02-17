@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-17 (fix "ауд." location parsing)
+- **Дата обновления**: 2026-02-17 (security audit Phase 1+2)
 
 ## Backend модули
 
@@ -65,13 +65,16 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **F5.2**: Android Widget App — нативный APK (4×2 виджет), AGP 9.0.0 + built-in Kotlin, RemoteViews, WorkManager 30min refresh, SharedPreferences cache, GitHub Actions CI → GitHub Releases
 - **F5.3**: Android Chronometer + unified location — real-time countdown (system Chronometer вместо static text), парсер/бэкенд/фронтенд нормализация "Корпус"/"корп." в location, timeline building field
 - **B13**: Fix "ауд." location parsing — `_parse_audit_corps` обрабатывает `"ауд. 114) Спортивный зал, 6("` → `("6", "114")`, defense-in-depth в `_clean_room` и frontend `formatLocation`
+- **SEC-1**: Security Audit Phase 1+2 — rate limit /refresh, Telegram strict secret, file ownership check, VK URL sanitization, mass-assignment fix, Permissions-Policy, server_tokens off, CI permissions + SHA-pinning, /metrics IP check, passlib removal, LkSyncError generic messages, backup encryption, Docker pinning, dev-compose hardening
 
 ### Следующие задачи (приоритет):
-- Все post-MVP фичи реализованы
+- (Фаза 3) httpOnly cookies, JWT blacklist
+- (Будущее) CSP unsafe-inline removal
 
 ## Что отложено
-- httpOnly cookies вместо localStorage
-- Механизм отзыва JWT
+- httpOnly cookies вместо localStorage (Security Audit Phase 3)
+- JWT blacklist через Redis (Security Audit Phase 3)
+- CSP: убрать unsafe-inline (hash-based или vite-csp-guard)
 
 ## Известные проблемы
 
@@ -122,7 +125,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 577 |
+| Backend тестов | 619 |
 | Frontend тестов | 375 |
 | Покрытие | ~80% |
 | API endpoints | ~75 |

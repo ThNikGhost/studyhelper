@@ -30,6 +30,22 @@ function sanitizeTelegram(value: string): string {
   return value.replace('@', '').replace(/[^a-zA-Z0-9_]/g, '')
 }
 
+// Sanitize URL to only allow http/https protocols (prevent javascript: injection)
+function sanitizeUrl(url: string): string {
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return url
+    }
+  } catch {
+    // If URL is relative (e.g. "vk.com/user"), prepend https://
+    if (/^[a-zA-Z0-9]/.test(url) && !url.includes(':')) {
+      return `https://${url}`
+    }
+  }
+  return '#'
+}
+
 // Avatar component
 function Avatar({
   src,
@@ -438,7 +454,7 @@ export function ClassmatesPage() {
                 )}
                 {viewingClassmate.vk && (
                   <a
-                    href={viewingClassmate.vk}
+                    href={sanitizeUrl(viewingClassmate.vk)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors"

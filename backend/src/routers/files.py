@@ -239,4 +239,10 @@ async def remove_file(
             detail="File not found",
         )
 
+    if file_record.uploaded_by != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only delete your own files",
+        )
+
     await delete_file(db, file_record)

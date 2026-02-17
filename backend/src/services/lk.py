@@ -140,10 +140,14 @@ async def sync_from_lk(db: AsyncSession, user_id: int) -> tuple[int, int]:
                 raise LkSyncError("Authentication failed - check credentials")
 
             data = await parser.fetch_student_data()
+    except LkSyncError:
+        raise
     except LkAuthError as e:
-        raise LkSyncError(f"Authentication error: {e}") from e
+        logger.exception("LK auth error for user %d", user_id)
+        raise LkSyncError("Authentication error - check credentials") from e
     except Exception as e:
-        raise LkSyncError(f"Failed to fetch data: {e}") from e
+        logger.exception("LK fetch error for user %d", user_id)
+        raise LkSyncError("Failed to fetch data from LK") from e
 
     # Log raw data for debugging
     logger.debug(
@@ -156,15 +160,15 @@ async def sync_from_lk(db: AsyncSession, user_id: int) -> tuple[int, int]:
     try:
         grades_count = await _sync_grades(db, user_id, data)
     except Exception as e:
-        logger.exception("Failed to sync grades: %s", e)
-        raise LkSyncError(f"Failed to sync grades: {e}") from e
+        logger.exception("Failed to sync grades for user %d", user_id)
+        raise LkSyncError("Failed to sync grades") from e
 
     # Sync disciplines
     try:
         disciplines_count = await _sync_disciplines(db, user_id, data)
     except Exception as e:
-        logger.exception("Failed to sync disciplines: %s", e)
-        raise LkSyncError(f"Failed to sync disciplines: {e}") from e
+        logger.exception("Failed to sync disciplines for user %d", user_id)
+        raise LkSyncError("Failed to sync disciplines") from e
 
     # Update last_sync_at
     creds.last_sync_at = datetime.now(UTC)

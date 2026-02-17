@@ -45,7 +45,9 @@ async def login(
 
 
 @router.post("/refresh", response_model=AccessTokenResponse)
+@limiter.limit("10/minute")
 async def refresh(
+    request: Request,
     request_data: RefreshRequest,
     db: AsyncSession = Depends(get_db),
 ) -> AccessTokenResponse:
@@ -74,8 +76,10 @@ async def update_settings(
     Settings are synced across all user's devices.
     """
     update_data = settings.model_dump(exclude_unset=True)
+    allowed_fields = {"preferred_subgroup", "preferred_pe_teacher", "theme_mode"}
     for key, value in update_data.items():
-        setattr(current_user, key, value)
+        if key in allowed_fields:
+            setattr(current_user, key, value)
     await db.commit()
     await db.refresh(current_user)
     return current_user

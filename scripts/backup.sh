@@ -60,11 +60,20 @@ if [ ! -s "$BACKUP_FILE" ]; then
   exit 1
 fi
 
+# Encrypt backup if BACKUP_ENCRYPTION_KEY is set (gpg symmetric)
+if [ -n "${BACKUP_ENCRYPTION_KEY:-}" ]; then
+  gpg --batch --yes --symmetric --cipher-algo AES256 \
+    --passphrase "$BACKUP_ENCRYPTION_KEY" "$BACKUP_FILE"
+  rm -f "$BACKUP_FILE"
+  BACKUP_FILE="${BACKUP_FILE}.gpg"
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup encrypted with AES-256"
+fi
+
 SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup created: $BACKUP_FILE ($SIZE)"
 
-# Rotate old backups
-DELETED=$(find "$BACKUP_DIR" -name "studyhelper_*.sql.gz" -mtime +${RETENTION_DAYS} -print -delete | wc -l)
+# Rotate old backups (both .sql.gz and .sql.gz.gpg)
+DELETED=$(find "$BACKUP_DIR" \( -name "studyhelper_*.sql.gz" -o -name "studyhelper_*.sql.gz.gpg" \) -mtime +${RETENTION_DAYS} -print -delete | wc -l)
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Rotated ${DELETED} backup(s) older than ${RETENTION_DAYS} days"
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backup completed successfully"

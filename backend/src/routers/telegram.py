@@ -32,9 +32,9 @@ async def telegram_webhook(request: Request) -> dict[str, str]:
 
     Validates the secret token header before processing.
     """
-    # Validate secret header
+    # Validate secret header (always required — enforced by config validator)
     secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
-    if settings.telegram_webhook_secret and secret != settings.telegram_webhook_secret:
+    if secret != settings.telegram_webhook_secret:
         raise HTTPException(status_code=403, detail="Invalid secret")
 
     from src.telegram.bot import get_bot, get_dispatcher
