@@ -1155,6 +1155,39 @@ widget_api_keys      — API-ключи для виджетов (per user)
 
 ---
 
+## 32. Release Signing решения (2026-02-17)
+
+### Keystore через base64 GitHub Secret
+
+**Решение:** Хранить keystore как base64-encoded GitHub Secret (`KEYSTORE_BASE64`), декодировать в CI.
+
+**Обоснование:**
+- Keystore — бинарный файл, не может быть GitHub Secret напрямую
+- `base64 -d` в CI → `release.keystore` в android/app/ → Gradle подхватывает через env var
+- `rm -f` с `if: always()` — cleanup даже при fail
+- RSA 2048 / validity 10000 дней — стандартный баланс безопасности и срока действия
+
+### Conditional release/debug build (fork-friendly)
+
+**Решение:** CI собирает release APK если секреты заданы, иначе debug.
+
+**Обоснование:**
+- Форки не имеют доступа к secrets → `assembleDebug` как fallback
+- `HAVE_SIGNING_KEY` job-level env → `if:` conditions на шагах
+- Динамический APK path через `$GITHUB_OUTPUT`
+- Release body указывает тип сборки ("Release (signed)" / "Debug (unsigned)")
+
+### Gradle-native signing вместо external action
+
+**Решение:** Использовать `signingConfigs` в build.gradle.kts с env vars, без `r0adkll/sign-android-release`.
+
+**Обоснование:**
+- build.gradle.kts уже содержит `signingConfigs` с `System.getenv()` — дополнительный action не нужен
+- Меньше зависимостей в CI pipeline
+- Signing интегрирован в Gradle build — один шаг вместо build + sign
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -1277,3 +1310,6 @@ widget_api_keys      — API-ключи для виджетов (per user)
 | 2026-02-17 | _METRICS_ALLOWED_NETWORKS константа | import + ip_network при каждом запросе → модульная константа |
 | 2026-02-17 | REDISCLI_AUTH вместо -a | Подавление password warning в healthcheck логах |
 | 2026-02-17 | GPG --passphrase-fd 0 | Passphrase не виден в ps aux |
+| 2026-02-17 | Keystore через base64 Secret | Бинарный keystore не может быть Secret напрямую, base64 decode в CI |
+| 2026-02-17 | Conditional release/debug build | Fork-friendly: assembleRelease если секреты есть, assembleDebug иначе |
+| 2026-02-17 | Gradle-native signing | signingConfigs уже в build.gradle.kts, external action не нужен |

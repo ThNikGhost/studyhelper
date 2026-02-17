@@ -1,29 +1,29 @@
 # Текущая задача
 
 ## Статус
-**Проект в режиме поддержки. Code review fixes завершены.**
+**Проект в режиме поддержки. Release signing реализован.**
 
-## Последняя сессия: Code Review Fix (SEC-1 follow-up) — 2026-02-17
+## Последняя сессия: F6 Release Signing — 2026-02-17
 
 ### Сделано
-- **`backend/src/main.py`** — /metrics: `import ipaddress` на уровне модуля, `_METRICS_ALLOWED_NETWORKS` константа (добавлена `192.168.0.0/16`), fallback `403` при отсутствии `client_ip`
-- **`docker-compose.prod.yml`** — Redis healthcheck: `REDISCLI_AUTH=$REDIS_PASSWORD` вместо `-a` (подавляет password warning в логах)
-- **`scripts/backup.sh`** — GPG passphrase через `--passphrase-fd 0` вместо `--passphrase` CLI arg (скрыт от `ps aux`)
-- **`backend/src/routers/auth.py`** — комментарий `# Must match UserSettingsUpdate schema fields` над `allowed_fields`
-- **`docker-compose.yml`** — комментарий `# Requires POSTGRES_PASSWORD in .env` к db-сервису
-- **`.env.example`** — обновлён: добавлены `REDIS_PASSWORD`, `SENTRY_DSN`, `TELEGRAM_*`, `BACKUP_ENCRYPTION_KEY`
+- **`.github/workflows/android.yml`** — conditional release/debug build: decode keystore из base64 Secret, `assembleRelease` с env vars, fallback `assembleDebug` для форков, динамический APK path, cleanup keystore с `if: always()`
+- **`android/app/.../UpdateChecker.kt`** — `APK_ASSET_NAME = "app-release.apk"`, удалён TODO
+- **`android/app/build.gradle.kts`** — versionCode 8, versionName "1.3.0"
+- **`docs/DECISIONS.md`** — раздел 32: Release Signing (keystore base64, conditional build, Gradle-native signing)
 
-### Верификация
-- Backend тесты: 619 passed
-- Ruff check + format: clean
-- ESLint: clean
+### Ручной шаг (вне кода)
+1. Сгенерировать keystore: `keytool -genkeypair -v -keystore release.keystore -alias studyhelper -keyalg RSA -keysize 2048 -validity 10000`
+2. Конвертировать: `base64 -w 0 release.keystore`
+3. Добавить 4 GitHub Secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`
+4. Создать тег: `git tag android/v1.3.0 && git push origin android/v1.3.0`
+
+### Нюанс: debug → release миграция
+Android не позволяет обновить debug APK поверх release (разные сертификаты). Пользователям нужно удалить debug-версию и установить release заново.
 
 ## Следующие шаги (по приоритету)
-- Закоммитить и запушить все изменения (SEC-1 + code review fixes + uv.lock)
 - (Фаза 3) httpOnly cookies — access in memory, refresh in httpOnly cookie
 - (Фаза 3) JWT blacklist через Redis
 - (Будущее) CSP: убрать `unsafe-inline` (hash-based или vite-csp-guard)
-- (Будущее) Release signing: keystore + GitHub Secrets для signed APK
 
 ## Блокеры / Вопросы
 - Нет

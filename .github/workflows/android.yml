@@ -12,6 +12,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      HAVE_SIGNING_KEY: ${{ secrets.KEYSTORE_BASE64 != '' }}
+
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -24,9 +27,37 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
 
-      - name: Build Debug APK
+      - name: Decode keystore
+        if: env.HAVE_SIGNING_KEY == 'true'
+        run: echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Build Release APK
+        if: env.HAVE_SIGNING_KEY == 'true'
+        working-directory: android
+        run: ./gradlew assembleRelease
+        env:
+          KEYSTORE_FILE: release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Build Debug APK (fallback)
+        if: env.HAVE_SIGNING_KEY != 'true'
         working-directory: android
         run: ./gradlew assembleDebug
+
+      - name: Determine APK path
+        id: apk
+        run: |
+          if [ "$HAVE_SIGNING_KEY" = "true" ]; then
+            echo "path=android/app/build/outputs/apk/release/app-release.apk" >> "$GITHUB_OUTPUT"
+            echo "build_type=Release (signed)" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=android/app/build/outputs/apk/debug/app-debug.apk" >> "$GITHUB_OUTPUT"
+            echo "build_type=Debug (unsigned)" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Get version from tag
         id: version
@@ -35,13 +66,17 @@ jobs:
       - name: Upload APK to Release
         uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
         with:
-          files: android/app/build/outputs/apk/debug/app-debug.apk
+          files: ${{ steps.apk.outputs.path }}
           name: "StudyHelper Widget ${{ steps.version.outputs.version }}"
           body: |
-            Android Widget APK для StudyHelper.
+            Android Widget APK для StudyHelper — **${{ steps.apk.outputs.build_type }}**.
 
             **Установка:**
             1. Скачайте APK
             2. Установите (разрешите неизвестные источники)
             3. Добавьте виджет 4×2 на рабочий стол
             4. Введите API ключ из настроек StudyHelper
+
+      - name: Clean up keystore
+        if: always()
+        run: rm -f android/app/release.keystore

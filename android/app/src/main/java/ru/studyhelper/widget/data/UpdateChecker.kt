@@ -23,8 +23,7 @@ object UpdateChecker {
     private const val ALLOWED_DOWNLOAD_PREFIX =
         "https://github.com/$GITHUB_REPO/"
     private const val TAG_PREFIX = "android/v"
-    // TODO(release-signing): change to "app-release.apk" when keystore is configured
-    private const val APK_ASSET_NAME = "app-debug.apk"
+    private const val APK_ASSET_NAME = "app-release.apk"
     private const val TIMEOUT_MS = 15_000
     private const val BUFFER_SIZE = 8192
 
