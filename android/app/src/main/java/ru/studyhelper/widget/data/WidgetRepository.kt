@@ -60,6 +60,25 @@ object WidgetRepository {
     }
 
     /**
+     * Get widget display data from cache only, ignoring TTL.
+     * Used for resize operations to avoid network requests.
+     */
+    fun getNextLessonFromCache(context: Context): WidgetDisplayData {
+        val apiKey = PrefsManager.getApiKey(context)
+        if (apiKey == null) return WidgetDisplayData.NoKey
+
+        val rawJson = PrefsManager.getCacheIgnoringTtl(context)
+        if (rawJson == null) return WidgetDisplayData.NoData
+
+        return try {
+            val response = TodayScheduleResponse.fromJson(JSONObject(rawJson))
+            findNextLesson(response)
+        } catch (e: Exception) {
+            WidgetDisplayData.NoData
+        }
+    }
+
+    /**
      * Find the next upcoming lesson from the schedule response.
      * Logic matches scriptable-widget.js findNextLesson().
      */

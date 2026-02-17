@@ -12,7 +12,7 @@
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="2"
+        android:layout_weight="3"
         android:orientation="vertical">
 
         <!-- Header: "СЛЕДУЮЩАЯ ПАРА" -->
@@ -94,7 +94,7 @@
         android:id="@+id/rightPanel"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="1"
+        android:layout_weight="2"
         android:orientation="vertical"
         android:layout_marginStart="12dp"
         android:visibility="gone">
@@ -111,41 +111,83 @@
             android:textAllCaps="true"
             android:letterSpacing="0.05" />
 
-        <!-- Slot 1: single TextView "09:00  SubjectName" -->
-        <TextView
-            android:id="@+id/slot1Text"
+        <!-- Slot 1: two-line (time+location, subject) -->
+        <LinearLayout
+            android:id="@+id/slot1Container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="13sp"
-            android:textColor="@color/widget_remaining_subject"
-            android:maxLines="1"
-            android:ellipsize="end"
+            android:orientation="vertical"
             android:layout_marginTop="6dp"
-            android:visibility="gone" />
+            android:visibility="gone">
+            <TextView
+                android:id="@+id/slot1Info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:textColor="@color/widget_remaining_time"
+                android:maxLines="1"
+                android:ellipsize="end" />
+            <TextView
+                android:id="@+id/slot1Subject"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/widget_remaining_subject"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
 
         <!-- Slot 2 -->
-        <TextView
-            android:id="@+id/slot2Text"
+        <LinearLayout
+            android:id="@+id/slot2Container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="13sp"
-            android:textColor="@color/widget_remaining_subject"
-            android:maxLines="1"
-            android:ellipsize="end"
+            android:orientation="vertical"
             android:layout_marginTop="4dp"
-            android:visibility="gone" />
+            android:visibility="gone">
+            <TextView
+                android:id="@+id/slot2Info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:textColor="@color/widget_remaining_time"
+                android:maxLines="1"
+                android:ellipsize="end" />
+            <TextView
+                android:id="@+id/slot2Subject"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/widget_remaining_subject"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
 
         <!-- Slot 3 -->
-        <TextView
-            android:id="@+id/slot3Text"
+        <LinearLayout
+            android:id="@+id/slot3Container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="13sp"
-            android:textColor="@color/widget_remaining_subject"
-            android:maxLines="1"
-            android:ellipsize="end"
+            android:orientation="vertical"
             android:layout_marginTop="4dp"
-            android:visibility="gone" />
+            android:visibility="gone">
+            <TextView
+                android:id="@+id/slot3Info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:textColor="@color/widget_remaining_time"
+                android:maxLines="1"
+                android:ellipsize="end" />
+            <TextView
+                android:id="@+id/slot3Subject"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/widget_remaining_subject"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
 
     </LinearLayout>
 

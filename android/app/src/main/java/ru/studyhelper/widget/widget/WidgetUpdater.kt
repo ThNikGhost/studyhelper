@@ -56,13 +56,17 @@ object WidgetUpdater {
     /**
      * Update a single widget by ID.
      */
-    fun update(context: Context, appWidgetId: Int) {
-        FileLogger.log(context, TAG, "update($appWidgetId) start")
+    fun update(context: Context, appWidgetId: Int, cacheOnly: Boolean = false) {
+        FileLogger.log(context, TAG, "update($appWidgetId, cacheOnly=$cacheOnly) start")
         val manager = AppWidgetManager.getInstance(context)
         val options = manager.getAppWidgetOptions(appWidgetId)
         val size = determineSize(options)
         FileLogger.log(context, TAG, "update($appWidgetId) size=$size")
-        val data = WidgetRepository.getNextLesson(context)
+        val data = if (cacheOnly) {
+            WidgetRepository.getNextLessonFromCache(context)
+        } else {
+            WidgetRepository.getNextLesson(context)
+        }
         FileLogger.log(context, TAG, "update($appWidgetId) data=${data.javaClass.simpleName}")
 
         val views = when (size) {
@@ -90,13 +94,13 @@ object WidgetUpdater {
     /**
      * Update all widget instances.
      */
-    fun updateAll(context: Context) {
+    fun updateAll(context: Context, cacheOnly: Boolean = false) {
         val manager = AppWidgetManager.getInstance(context)
         val component = ComponentName(context, ScheduleWidgetProvider::class.java)
         val ids = manager.getAppWidgetIds(component)
         FileLogger.log(context, TAG, "updateAll: ${ids.size} widget(s) found: ${ids.toList()}")
         for (id in ids) {
-            update(context, id)
+            update(context, id, cacheOnly)
         }
     }
 
@@ -212,9 +216,9 @@ object WidgetUpdater {
         // Hide right panel by default
         views.setViewVisibility(R.id.divider, View.GONE)
         views.setViewVisibility(R.id.rightPanel, View.GONE)
-        views.setViewVisibility(R.id.slot1Text, View.GONE)
-        views.setViewVisibility(R.id.slot2Text, View.GONE)
-        views.setViewVisibility(R.id.slot3Text, View.GONE)
+        views.setViewVisibility(R.id.slot1Container, View.GONE)
+        views.setViewVisibility(R.id.slot2Container, View.GONE)
+        views.setViewVisibility(R.id.slot3Container, View.GONE)
 
         when (data) {
             is WidgetDisplayData.NoKey -> {
@@ -295,15 +299,24 @@ object WidgetUpdater {
         }
     }
 
-    /** Fill up to 3 remaining lesson slots in the large layout. */
+    /** Fill up to 3 remaining lesson slots in the large layout (two-line format). */
     private fun fillRemainingSlots(views: RemoteViews, lessons: List<LessonBrief>) {
-        val slotIds = listOf(R.id.slot1Text, R.id.slot2Text, R.id.slot3Text)
+        val slots = listOf(
+            Triple(R.id.slot1Container, R.id.slot1Info, R.id.slot1Subject),
+            Triple(R.id.slot2Container, R.id.slot2Info, R.id.slot2Subject),
+            Triple(R.id.slot3Container, R.id.slot3Info, R.id.slot3Subject),
+        )
         for ((index, lesson) in lessons.withIndex()) {
-            if (index >= slotIds.size) break
-            val slotId = slotIds[index]
-            val text = "${lesson.timeStart}  ${lesson.subject}"
-            views.setTextViewText(slotId, text)
-            views.setViewVisibility(slotId, View.VISIBLE)
+            if (index >= slots.size) break
+            val (containerId, infoId, subjectId) = slots[index]
+            val info = if (lesson.location != null) {
+                "${lesson.timeStart} · ${lesson.location}"
+            } else {
+                lesson.timeStart
+            }
+            views.setTextViewText(infoId, info)
+            views.setTextViewText(subjectId, lesson.subject)
+            views.setViewVisibility(containerId, View.VISIBLE)
         }
     }
 

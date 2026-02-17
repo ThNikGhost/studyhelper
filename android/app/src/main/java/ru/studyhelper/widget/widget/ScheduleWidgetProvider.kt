@@ -46,11 +46,11 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
             context.applicationContext, TAG,
             "onAppWidgetOptionsChanged: id=$appWidgetId",
         )
-        // Widget was resized — rebuild with new layout
+        // Widget was resized — rebuild with cached data (no network request)
         val appContext = context.applicationContext
         executor.execute {
             try {
-                WidgetUpdater.update(appContext, appWidgetId)
+                WidgetUpdater.update(appContext, appWidgetId, cacheOnly = true)
             } catch (e: Exception) {
                 FileLogger.error(appContext, TAG, "onOptionsChanged failed for id=$appWidgetId", e)
             }

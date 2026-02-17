@@ -36,6 +36,10 @@ object PrefsManager {
         return prefs(context).getString(KEY_CACHE_JSON, null)
     }
 
+    /** Get cached JSON ignoring TTL. Used for resize operations. */
+    fun getCacheIgnoringTtl(context: Context): String? =
+        prefs(context).getString(KEY_CACHE_JSON, null)
+
     fun isCacheValid(context: Context): Boolean {
         val cacheTime = prefs(context).getLong(KEY_CACHE_TIME, 0)
         if (cacheTime == 0L) return false
