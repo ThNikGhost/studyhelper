@@ -34,6 +34,56 @@
         android:gravity="center"
         android:layout_marginBottom="32dp" />
 
+    <!-- Update banner (hidden by default) -->
+    <LinearLayout
+        android:id="@+id/updateBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/update_banner_background"
+        android:padding="16dp"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/textUpdateTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="@color/config_text"
+            android:layout_marginBottom="8dp" />
+
+        <ProgressBar
+            android:id="@+id/progressUpdate"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="0"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/textUpdateProgress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="@color/config_text_secondary"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnUpdate"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="@string/update_download"
+            android:textSize="13sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="@color/config_accent"
+            android:layout_gravity="end" />
+
+    </LinearLayout>
+
     <EditText
         android:id="@+id/editApiKey"
         android:layout_width="match_parent"

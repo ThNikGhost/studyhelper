@@ -27,4 +27,8 @@
     <color name="config_input_hint">#9CA3AF</color>
     <color name="config_accent">#6c9eff</color>
     <color name="config_error">#DC2626</color>
+
+    <!-- Update banner colors (light theme) -->
+    <color name="update_banner_bg">#EFF6FF</color>
+    <color name="update_banner_border">#BFDBFE</color>
 </resources>

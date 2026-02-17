@@ -17,4 +17,12 @@
     <string name="widget_remaining_header">ДАЛЕЕ СЕГОДНЯ</string>
     <string name="config_share_logs">Поделиться логами</string>
     <string name="config_no_logs">Лог-файл пуст</string>
+
+    <!-- Update banner -->
+    <string name="update_available">Доступно обновление: v%1$s</string>
+    <string name="update_download">Обновить</string>
+    <string name="update_downloading">Загрузка…</string>
+    <string name="update_retry">Повторить</string>
+    <string name="update_failed">Ошибка загрузки</string>
+    <string name="update_install_failed">Не удалось открыть установщик</string>
 </resources>
