@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-16 (F5.2 Android Widget App)
+- **Дата обновления**: 2026-02-17 (Android Chronometer + unified location format)
 
 ## Backend модули
 
@@ -63,6 +63,7 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **F5**: Phone Widgets — API ключ + JSON endpoint для виджетов, shared filter refactor, Scriptable JS, SettingsPage UI с инструкциями, 29 тестов
 - **F5.1**: Widget /today endpoint — полное расписание на день + первая будущая пара, offline кеш с локальным minutes_until, 24h cache TTL, shared auth refactor, текстовые фиксы виджета, 14 новых тестов
 - **F5.2**: Android Widget App — нативный APK (4×2 виджет), AGP 9.0.0 + built-in Kotlin, RemoteViews, WorkManager 30min refresh, SharedPreferences cache, GitHub Actions CI → GitHub Releases
+- **F5.3**: Android Chronometer + unified location — real-time countdown (system Chronometer вместо static text), парсер/бэкенд/фронтенд нормализация "Корпус"/"корп." в location, timeline building field
 
 ### Следующие задачи (приоритет):
 - Все post-MVP фичи реализованы
@@ -114,7 +115,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 - **Widget API**: per-user token query param auth, next lesson + today schedule JSON endpoints, 7-day lookahead, subgroup/PE filtering, Scriptable JS widget with offline cache
 - **Observability**: structlog (JSON prod / ConsoleRenderer dev), X-Request-ID, Prometheus metrics (/metrics), Sentry error tracking (optional, DSN-gated)
 - **CI**: GitHub Actions (backend lint+test, frontend lint+build, Android APK build on tag)
-- **Android Widget**: Native APK (AGP 9.0.0, Kotlin built-in, Gradle 9.3.1), 4×2 AppWidgetProvider + RemoteViews, WorkManager 30min refresh, HttpURLConnection + org.json (no external deps), SharedPreferences (API key + 24h JSON cache), debug APK via GitHub Releases (`android/v*` tags)
+- **Android Widget**: Native APK (AGP 9.0.0, Kotlin built-in, Gradle 9.3.1), 4×2 AppWidgetProvider + RemoteViews, system Chronometer real-time countdown, WorkManager 30min refresh, HttpURLConnection + org.json (no external deps), SharedPreferences (API key + 24h JSON cache), debug APK via GitHub Releases (`android/v*` tags)
 
 ## Метрики
 
