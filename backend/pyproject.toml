@@ -52,9 +52,6 @@ dev = [
 parser = [
     "playwright>=1.49.0",
 ]
-celery = [
-    "celery[redis]>=5.4.0",
-]
 push = [
     "pywebpush>=2.0.0",
 ]

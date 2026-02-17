@@ -123,10 +123,6 @@ docs/_build/
 profile_default/
 ipython_config.py
 
-# ===== Celery =====
-celerybeat-schedule
-celerybeat.pid
-
 # ===== Translations =====
 *.mo
 *.pot
