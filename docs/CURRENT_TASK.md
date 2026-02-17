@@ -21,6 +21,7 @@
 Android не позволяет обновить debug APK поверх release (разные сертификаты). Пользователям нужно удалить debug-версию и установить release заново.
 
 ## Следующие шаги (по приоритету)
+- **CD (Continuous Deployment)** — автодеплой на прод при пуше в main (SSH + docker compose rebuild)
 - (Фаза 3) httpOnly cookies — access in memory, refresh in httpOnly cookie
 - (Фаза 3) JWT blacklist через Redis
 - (Будущее) CSP: убрать `unsafe-inline` (hash-based или vite-csp-guard)

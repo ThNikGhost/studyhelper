@@ -71,6 +71,7 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **F6**: Release Signing — conditional release/debug build в CI, keystore через base64 GitHub Secret, Gradle-native signing, version bump 1.3.0, UpdateChecker → app-release.apk
 
 ### Следующие задачи (приоритет):
+- **CD** — автодеплой на прод при пуше в main (GitHub Actions → SSH → docker compose rebuild)
 - (Фаза 3) httpOnly cookies, JWT blacklist
 - (Будущее) CSP unsafe-inline removal
 
