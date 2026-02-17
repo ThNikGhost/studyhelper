@@ -1,10 +1,4 @@
 # StudyHelper Widget ProGuard rules
+# Small app (10 files) — keep all classes, let R8 optimize only dependencies
 
-# Keep widget provider (referenced from AndroidManifest)
--keep class ru.studyhelper.widget.widget.ScheduleWidgetProvider { *; }
-
-# Keep WorkManager worker
--keep class ru.studyhelper.widget.widget.WidgetRefreshWorker { *; }
-
-# Keep ConfigActivity
--keep class ru.studyhelper.widget.ui.ConfigActivity { *; }
+-keep class ru.studyhelper.widget.** { *; }
