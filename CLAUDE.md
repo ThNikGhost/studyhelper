@@ -35,10 +35,7 @@
 | Миграции | `cd backend && uv run alembic upgrade head` | — |
 
 ## Ключевые файлы
-- `docs/StudyHelper_TZ.md` — техническое задание
-- `docs/Decisions.md` — архитектурные решения
-- `docs/database_schema.md` — схема БД
-- `docs/plans/tasks/` — активные задачи (B1-B12, F1-F5)
+- `docs/DECISIONS.md` — архитектурные решения
 
 ## Workflow сессии
 - `/session-start` — загрузить контекст проекта

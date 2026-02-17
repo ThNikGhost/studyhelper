@@ -55,7 +55,7 @@ async def list_items(
 ## Authentication
 - JWT tokens: access (15min) + refresh (7 days)
 - `get_current_user` dependency for protected routes
-- Passwords: bcrypt via passlib
+- Passwords: bcrypt directly
 
 ## Database
 - PostgreSQL (production) / aiosqlite (tests)

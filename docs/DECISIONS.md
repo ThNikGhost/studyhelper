@@ -75,7 +75,7 @@
 **Обоснование:**
 - Stateless — не требует хранения сессий на сервере
 - Хорошо подходит для PWA
-- Простая реализация с python-jose
+- Простая реализация с PyJWT (решение #21: миграция с python-jose)
 
 ### Парный режим
 
@@ -90,13 +90,13 @@
 
 ### Парсинг расписания
 
-**Решение:** Playwright для парсинга, Celery для фоновых задач.
+**Решение:** httpx для парсинга HTTP API, APScheduler для фоновых задач.
 
 **Обоснование:**
-- Сайт ОмГУ использует JavaScript для рендеринга
-- Playwright умеет работать с SPA
-- Celery позволяет запускать парсинг по расписанию (cron)
-- Хеширование расписания для определения изменений
+- ОмГУ предоставляет JSON API (`eservice.omsu.ru/schedule/backend/schedule/group/{group_id}`)
+- httpx — async HTTP-клиент, нативно работает с FastAPI event loop
+- SHA-256 хеширование ответа для определения изменений (без лишних записей в БД)
+- APScheduler встраивается в FastAPI lifespan — не нужен отдельный процесс (решение #20)
 
 ---
 
@@ -105,22 +105,27 @@
 ### Ключевые таблицы
 
 ```
-users              — пользователи (макс 2)
-semesters          — семестры
-subjects           — предметы (привязка к семестру)
-schedule_entries   — записи расписания
-schedule_snapshots — снапшоты для отслеживания изменений
-works              — учебные работы
-work_statuses      — статусы работ (per user)
-work_status_history — история изменений статусов
-teachers           — преподаватели
-attendance         — посещаемость (per user)
-departments        — подразделения универа
-buildings          — корпуса
-classmates         — одногруппники
-files              — файлы
-push_subscriptions — подписки на push
-notification_settings — настройки уведомлений
+users               — пользователи (макс 2)
+semesters            — семестры
+subjects             — предметы (привязка к семестру)
+schedule_entries     — записи расписания
+schedule_snapshots   — снапшоты для отслеживания изменений
+works                — учебные работы
+work_statuses        — статусы работ (per user)
+work_status_history  — история изменений статусов
+teachers             — преподаватели
+absences             — пропуски занятий (per user)
+departments          — подразделения универа
+buildings            — корпуса
+classmates           — одногруппники
+files                — файлы
+lesson_notes         — заметки к предметам (per user)
+lk_credentials       — зашифрованные данные ЛК (per user)
+session_grades       — оценки из ЛК
+semester_disciplines — дисциплины учебного плана из ЛК
+telegram_links       — привязка Telegram аккаунтов (per user)
+calendar_feeds       — токены iCalendar подписок (per user)
+widget_api_keys      — API-ключи для виджетов (per user)
 ```
 
 ### Связи
@@ -128,7 +133,7 @@ notification_settings — настройки уведомлений
 - `works` → `subjects` (many-to-one)
 - `work_statuses` → `works`, `users` (many-to-one)
 - `schedule_entries` → `subjects`, `teachers` (many-to-one, nullable)
-- `attendance` → `users`, `schedule_entries` (many-to-one)
+- `absences` → `users`, `schedule_entries` (many-to-one)
 - `files` → `subjects`, `users` (many-to-one)
 
 ---
@@ -158,7 +163,7 @@ notification_settings — настройки уведомлений
 
 - Service Worker для offline-режима
 - Web App Manifest
-- Push-уведомления (Web Push API)
+- Уведомления через Telegram бот (решение #26)
 - Установка на домашний экран
 - Кеширование статики и API-ответов
 
@@ -593,12 +598,12 @@ notification_settings — настройки уведомлений
 - `--proxy-headers` на uvicorn + `X-Forwarded-For` в nginx → slowapi получает реальный IP клиента
 - Gzip, security headers, PWA caching (sw.js no-cache, assets/ immutable 1y) — на уровне nginx
 
-### Memory limits ~1.3GB из 2GB
+### Memory limits ~1.4GB из 2GB
 
-**Решение:** PostgreSQL 512MB, backend 512MB, Redis 192MB, nginx 128MB.
+**Решение:** PostgreSQL 512MB, backend 512MB, Redis 192MB, nginx 128MB, certbot 64MB.
 
 **Обоснование:**
-- VPS с 2GB RAM — ~700MB остаётся для OS и буферов
+- VPS с 2GB RAM — ~600MB остаётся для OS и буферов
 - PostgreSQL tuning: shared_buffers=256MB, work_mem=4MB, max_connections=50
 - Redis: maxmemory 128mb, allkeys-lru eviction, appendonly для persistence
 
@@ -1167,7 +1172,7 @@ notification_settings — настройки уведомлений
 | 2026-02-09 | Fix-commit-push-pull workflow | Git как source of truth, не править на сервере |
 | 2026-02-09 | Multi-stage Docker builds | Минимальные образы без build tools |
 | 2026-02-09 | nginx единая точка входа | Rate limiting + proxy-headers + PWA caching |
-| 2026-02-09 | Memory limits ~1.3GB | VPS 2GB: 512+512+192+128 + OS headroom |
+| 2026-02-09 | Memory limits ~1.4GB | VPS 2GB: 512+512+192+128+64(certbot) + OS headroom |
 | 2026-02-09 | Non-root user в контейнере | Минимизация attack surface |
 | 2026-02-09 | sed для line endings | Windows CRLF → Linux LF при build |
 | 2026-02-09 | CSP unsafe-inline | FOUC prevention script требует inline |
