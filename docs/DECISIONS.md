@@ -1188,6 +1188,44 @@ widget_api_keys      — API-ключи для виджетов (per user)
 
 ---
 
+## 33. CD (Continuous Deployment) решения (2026-02-18)
+
+### Deploy job в существующем ci.yml
+
+**Решение:** Добавить `deploy` job в конец `.github/workflows/ci.yml`, а не создавать отдельный workflow файл.
+
+**Обоснование:**
+- Один файл — один pipeline, `needs: [backend, frontend]` гарантирует порядок
+- Автоматически наследует `on: push: branches: [main]`
+- `if: github.event_name == 'push'` исключает PR из деплоя
+
+### printf вместо heredoc для SSH config
+
+**Решение:** Использовать `printf` в фигурных скобках для записи `~/.ssh/config`.
+
+**Обоснование:**
+- heredoc в YAML `run:` требует обязательных отступов → ломает синтаксис bash
+- `printf` работает корректно с любым уровнем вложенности в YAML
+
+### Сборка образов на сервере
+
+**Решение:** `ssh prod deploy.sh` → `git pull` → `docker compose build --pull` → `up -d`.
+
+**Обоснование:**
+- Нет настройки Registry (GHCR/Docker Hub)
+- Подходит для VPS с нормальным CPU (1-2 core)
+- Если сервер начнёт тормозить — переделать на GHCR (build в CI, pull на сервере)
+
+### Rollback через сохранённый SHA
+
+**Решение:** `deploy.sh` сохраняет `PREVIOUS_SHA` в `/tmp/deploy_state`, `rollback.sh` делает `git reset --hard` и пересобирает.
+
+**Обоснование:**
+- Rollback запускается только если `steps.deploy.outcome == 'success'` — код уже обновлён, но health check упал
+- Если `git pull` или `build` упали → старые контейнеры живы, rollback не нужен
+
+---
+
 ## История изменений
 
 | Дата | Решение | Причина |
@@ -1313,3 +1351,8 @@ widget_api_keys      — API-ключи для виджетов (per user)
 | 2026-02-17 | Keystore через base64 Secret | Бинарный keystore не может быть Secret напрямую, base64 decode в CI |
 | 2026-02-17 | Conditional release/debug build | Fork-friendly: assembleRelease если секреты есть, assembleDebug иначе |
 | 2026-02-17 | Gradle-native signing | signingConfigs уже в build.gradle.kts, external action не нужен |
+| 2026-02-18 | CD: deploy job в ci.yml, не отдельный файл | Один файл — один pipeline, порядок jobs гарантирует needs |
+| 2026-02-18 | printf вместо heredoc в SSH setup | heredoc в YAML run: требует отступы, ломает синтаксис |
+| 2026-02-18 | StrictHostKeyChecking accept-new | SSH_KNOWN_HOSTS нет в секретах; accept-new безопаснее no |
+| 2026-02-18 | Сборка образов на сервере (git pull + docker build) | Проще настройки; если тормозит — переделать на GHCR |
+| 2026-02-18 | Rollback только если deploy успешен | git pull упал → старые контейнеры живы, откатывать нечего |
