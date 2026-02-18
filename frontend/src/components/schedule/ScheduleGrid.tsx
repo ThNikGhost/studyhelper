@@ -72,7 +72,7 @@ export function ScheduleGrid({
 
   return (
     <div className="relative">
-      <div className="overflow-x-auto" onScroll={handleScroll}>
+      <div className="overflow-x-auto touch-pan-x" onScroll={handleScroll}>
         <div className="min-w-[700px]">
         {/* Grid container - narrow time column, equal day columns */}
         <div

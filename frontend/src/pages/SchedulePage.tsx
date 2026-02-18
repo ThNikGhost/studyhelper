@@ -298,7 +298,7 @@ export function SchedulePage() {
         )}
 
         {/* Schedule grid */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-x-hidden overflow-y-auto">
           {filteredWeekSchedule && (
             <ScheduleGrid
               weekSchedule={filteredWeekSchedule}
