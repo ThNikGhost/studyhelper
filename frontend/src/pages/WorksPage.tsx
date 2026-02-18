@@ -310,7 +310,7 @@ export function WorksPage() {
                   }
                 >
                   <option value="">Все предметы</option>
-                  {allSubjects.map((subject) => (
+                  {subjects.map((subject) => (
                     <option key={subject.id} value={subject.id}>
                       {subject.short_name || subject.name}
                     </option>
