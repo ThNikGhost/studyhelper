@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-18 (filter subjects by current semester in Works filter block)
+- **Дата обновления**: 2026-02-18 (fix mobile horizontal scroll in ScheduleGrid — merged conflicting scroll containers)
 
 ## Backend модули
 
