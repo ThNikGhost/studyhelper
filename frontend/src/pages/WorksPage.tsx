@@ -36,7 +36,7 @@ import {
   workStatusLabels,
   workStatusColors,
 } from '@/types/work'
-import type { Subject } from '@/types/subject'
+import type { Subject, Semester } from '@/types/subject'
 
 export function WorksPage() {
   const isOnline = useNetworkStatus()
@@ -65,10 +65,23 @@ export function WorksPage() {
     notes: '',
   })
 
-  // Fetch subjects for selector
-  const { data: subjects = [] } = useQuery<Subject[]>({
+  // Fetch current semester to filter subjects in the create/edit form
+  const { data: currentSemester, isSuccess: semesterLoaded } = useQuery<Semester | null>({
+    queryKey: ['semesters', 'current'],
+    queryFn: ({ signal }) => subjectService.getCurrentSemester(signal),
+  })
+
+  // All subjects — for getSubjectName() and the filter dropdown (works may span past semesters)
+  const { data: allSubjects = [] } = useQuery<Subject[]>({
     queryKey: ['subjects'],
     queryFn: ({ signal }) => subjectService.getSubjects(undefined, signal),
+  })
+
+  // Current-semester subjects — for the create/edit form only
+  const { data: subjects = [] } = useQuery<Subject[]>({
+    queryKey: ['subjects', currentSemester?.id],
+    queryFn: ({ signal }) => subjectService.getSubjects(currentSemester?.id, signal),
+    enabled: semesterLoaded,
   })
 
   // Fetch works
@@ -219,9 +232,9 @@ export function WorksPage() {
     deleteMutation.isPending ||
     updateStatusMutation.isPending
 
-  // Get subject name by id
+  // Get subject name by id (uses all subjects to handle works from past semesters)
   const getSubjectName = (id: number) => {
-    const subject = subjects.find((s) => s.id === id)
+    const subject = allSubjects.find((s) => s.id === id)
     return subject?.short_name || subject?.name || `Предмет ${id}`
   }
 
@@ -297,7 +310,7 @@ export function WorksPage() {
                   }
                 >
                   <option value="">Все предметы</option>
-                  {subjects.map((subject) => (
+                  {allSubjects.map((subject) => (
                     <option key={subject.id} value={subject.id}>
                       {subject.short_name || subject.name}
                     </option>
