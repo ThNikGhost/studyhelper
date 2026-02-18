@@ -249,20 +249,20 @@ export function ScheduleGrid({
                         </div>
 
                         {/* Type badge */}
-                        <div className="text-[10px] text-black mb-0.5">
+                        <div className="text-[10px] mb-0.5">
                           {lessonTypeLabels[entry.lesson_type]}
                         </div>
 
                         {/* Location */}
                         {getEntryLocation(entry) && (
-                          <div className="text-[10px] text-black">
+                          <div className="text-[10px]">
                             📍 {getEntryLocation(entry)}
                           </div>
                         )}
 
                         {/* Teacher (truncated) */}
                         {entry.teacher_name && (
-                          <div className="text-[10px] text-black truncate">
+                          <div className="text-[10px] truncate">
                             {entry.teacher_name.split(' ').slice(0, 2).join(' ')}
                           </div>
                         )}

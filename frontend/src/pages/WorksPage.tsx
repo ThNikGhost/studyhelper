@@ -71,7 +71,7 @@ export function WorksPage() {
     queryFn: ({ signal }) => subjectService.getCurrentSemester(signal),
   })
 
-  // All subjects — for getSubjectName() and the filter dropdown (works may span past semesters)
+  // All subjects — for getSubjectName() and filter dropdown (works may span past semesters)
   const { data: allSubjects = [] } = useQuery<Subject[]>({
     queryKey: ['subjects'],
     queryFn: ({ signal }) => subjectService.getSubjects(undefined, signal),
@@ -310,7 +310,7 @@ export function WorksPage() {
                   }
                 >
                   <option value="">Все предметы</option>
-                  {subjects.map((subject) => (
+                  {allSubjects.map((subject) => (
                     <option key={subject.id} value={subject.id}>
                       {subject.short_name || subject.name}
                     </option>
@@ -342,7 +342,11 @@ export function WorksPage() {
         </Card>
 
         {/* Add button */}
-        <Button className="w-full mb-6" onClick={openAddModal} disabled={!isOnline}>
+        <Button
+          className="w-full mb-6"
+          onClick={openAddModal}
+          disabled={!isOnline || !semesterLoaded || subjects.length === 0}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Добавить работу
         </Button>
@@ -461,7 +465,7 @@ export function WorksPage() {
                 required
               >
                 <option value="">Выберите предмет</option>
-                {subjects.map((subject) => (
+                {(editingWork ? allSubjects : subjects).map((subject) => (
                   <option key={subject.id} value={subject.id}>
                     {subject.name}
                   </option>
