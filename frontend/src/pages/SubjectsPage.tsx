@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Pencil, Trash2, RefreshCw, ArrowLeft, BookOpen, Loader2 } from 'lucide-react'
+import { Plus, RefreshCw, ArrowLeft, BookOpen, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -15,7 +15,20 @@ import { toast } from 'sonner'
 import subjectService from '@/services/subjectService'
 import workService from '@/services/workService'
 import { calculateSemesterProgress, getProgressBarColor, getProgressColor } from '@/lib/progressUtils'
+import { formatIsoDate } from '@/lib/dateUtils'
 import type { Subject, SubjectCreate, Semester } from '@/types/subject'
+
+function formatSemesterLabel(semester: Semester): string {
+  return `${semester.number} семестр ${semester.year_start}/${semester.year_end}`
+}
+
+function isSemesterCurrent(semester: Semester): boolean {
+  if (semester.start_date && semester.end_date) {
+    const today = new Date().toISOString().split('T')[0]
+    return today >= semester.start_date && today <= semester.end_date
+  }
+  return semester.is_current
+}
 
 export function SubjectsPage() {
   const isOnline = useNetworkStatus()
@@ -50,6 +63,7 @@ export function SubjectsPage() {
 
   // Auto-select current semester
   const effectiveSemesterId = selectedSemesterId ?? currentSemester?.id
+  const selectedSemester = semesters.find((s) => s.id === effectiveSemesterId)
 
   // Fetch subjects for selected semester
   const {
@@ -229,21 +243,33 @@ export function SubjectsPage() {
         {/* Semester selector */}
         <Card className="mb-6">
           <CardContent className="py-3 px-4">
-            <Label htmlFor="semester-select" className="text-sm text-muted-foreground">
-              Семестр
-            </Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label htmlFor="semester-select" className="text-sm text-muted-foreground">
+                Семестр
+              </Label>
+              {selectedSemester && isSemesterCurrent(selectedSemester) && (
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                  Текущий
+                </span>
+              )}
+            </div>
             <select
               id="semester-select"
-              className="w-full mt-1 px-3 py-2 bg-background border rounded-md text-sm"
+              className="w-full px-3 py-2 bg-background border rounded-md text-sm"
               value={effectiveSemesterId || ''}
               onChange={(e) => setSelectedSemesterId(e.target.value ? Number(e.target.value) : undefined)}
             >
-              {semesters.map((semester) => (
-                <option key={semester.id} value={semester.id}>
-                  {semester.name} {semester.is_current && '(текущий)'}
+              {semesters.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {formatSemesterLabel(s)}{isSemesterCurrent(s) ? ' (текущий)' : ''}
                 </option>
               ))}
             </select>
+            {selectedSemester?.start_date && selectedSemester?.end_date && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {formatIsoDate(selectedSemester.start_date)} — {formatIsoDate(selectedSemester.end_date)}
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -276,42 +302,14 @@ export function SubjectsPage() {
         {/* Subjects list with progress */}
         <div className="space-y-3">
           {subjects.map((subject) => (
-            <div key={subject.id} className="relative">
-              <SubjectProgressCard
-                subject={subject}
-                progress={progressBySubject.get(subject.id)}
-                onClick={() => navigate(`/works?subject_id=${subject.id}`)}
-              />
-              {/* Edit/Delete buttons overlay */}
-              <div className="absolute top-3 right-3 flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    openEditModal(subject)
-                  }}
-                  disabled={!isOnline}
-                  title="Редактировать"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setDeleteConfirmSubject(subject)
-                  }}
-                  disabled={!isOnline}
-                  title="Удалить"
-                >
-                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                </Button>
-              </div>
-            </div>
+            <SubjectProgressCard
+              key={subject.id}
+              subject={subject}
+              progress={progressBySubject.get(subject.id)}
+              onClick={() => navigate(`/works?subject_id=${subject.id}`)}
+              onEdit={isOnline ? (e) => { e.stopPropagation(); openEditModal(subject) } : undefined}
+              onDelete={isOnline ? (e) => { e.stopPropagation(); setDeleteConfirmSubject(subject) } : undefined}
+            />
           ))}
         </div>
 
@@ -415,9 +413,9 @@ export function SubjectsPage() {
                 onChange={(e) => setFormData({ ...formData, semester_id: Number(e.target.value) })}
                 required
               >
-                {semesters.map((semester) => (
-                  <option key={semester.id} value={semester.id}>
-                    {semester.name}
+                {semesters.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {formatSemesterLabel(s)}{isSemesterCurrent(s) ? ' (текущий)' : ''}
                   </option>
                 ))}
               </select>

@@ -10,7 +10,6 @@ import {
   BookOpen,
   ClipboardList,
   Users,
-  GraduationCap,
   FolderOpen,
   CheckCircle2,
   BarChart3,
@@ -68,13 +67,6 @@ const menuItems = [
     icon: BarChart3,
     href: '/timeline',
     color: 'text-indigo-500',
-  },
-  {
-    title: 'Семестры',
-    description: 'Управление семестрами',
-    icon: GraduationCap,
-    href: '/semesters',
-    color: 'text-cyan-500',
   },
   {
     title: 'Зачётка',

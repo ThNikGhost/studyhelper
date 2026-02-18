@@ -52,7 +52,7 @@ describe('DashboardPage', () => {
     expect(screen.getByText('Предметы')).toBeInTheDocument()
     expect(screen.getByText('Работы')).toBeInTheDocument()
     expect(screen.getByText('Одногруппники')).toBeInTheDocument()
-    expect(screen.getByText('Семестры')).toBeInTheDocument()
+    expect(screen.getByText('Зачётка')).toBeInTheDocument()
   })
 
   it('renders today schedule widget', () => {

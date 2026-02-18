@@ -65,6 +65,17 @@ export function getToday(): string {
 }
 
 /**
+ * Format an ISO date string (YYYY-MM-DD) to DD.MM.YYYY for display.
+ *
+ * @param dateStr - ISO date string like "2025-09-01".
+ * @returns Formatted string like "01.09.2025".
+ */
+export function formatIsoDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-')
+  return `${day}.${month}.${year}`
+}
+
+/**
  * Format time string from HH:MM:SS to HH:MM.
  */
 export function formatTime(timeStr: string): string {
