@@ -1,27 +1,26 @@
 # Текущая задача
 
 ## Статус
-**Проект в режиме поддержки. Release signing реализован.**
+**Проект в режиме поддержки. CD реализован.**
 
-## Последняя сессия: F6 Release Signing — 2026-02-17
+## Последняя сессия: CD Continuous Deployment — 2026-02-18
 
 ### Сделано
-- **`.github/workflows/android.yml`** — conditional release/debug build: decode keystore из base64 Secret, `assembleRelease` с env vars, fallback `assembleDebug` для форков, динамический APK path, cleanup keystore с `if: always()`
-- **`android/app/.../UpdateChecker.kt`** — `APK_ASSET_NAME = "app-release.apk"`, удалён TODO
-- **`android/app/build.gradle.kts`** — versionCode 8, versionName "1.3.0"
-- **`docs/DECISIONS.md`** — раздел 32: Release Signing (keystore base64, conditional build, Gradle-native signing)
+- **`.github/workflows/ci.yml`** — добавлен `deploy` job: SSH setup через `printf`, `ssh prod deploy.sh`, health check 10 попыток, auto-rollback при падении health check
+- **`scripts/deploy.sh`** — git pull + docker compose build --pull + up --remove-orphans + image prune, сохраняет PREVIOUS_SHA в `/tmp/deploy_state`
+- **`scripts/rollback.sh`** — git reset --hard PREVIOUS_SHA + rebuild из сохранённого state
+- Оба скрипта с executable bit (`100755`) в git index
 
-### Ручной шаг (вне кода)
-1. Сгенерировать keystore: `keytool -genkeypair -v -keystore release.keystore -alias studyhelper -keyalg RSA -keysize 2048 -validity 10000`
-2. Конвертировать: `base64 -w 0 release.keystore`
-3. Добавить 4 GitHub Secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`
-4. Создать тег: `git tag android/v1.3.0 && git push origin android/v1.3.0`
-
-### Нюанс: debug → release миграция
-Android не позволяет обновить debug APK поверх release (разные сертификаты). Пользователям нужно удалить debug-версию и установить release заново.
+### Ручные шаги (одноразово, перед активацией)
+1. Сгенерировать SSH deploy key: `ssh-keygen -t ed25519 -C "github-actions-deploy" -f deploy_key -N ""`
+2. Добавить публичный ключ на сервер (`deploy@89.110.93.63`): `cat deploy_key.pub >> ~/.ssh/authorized_keys`
+3. Добавить 3 GitHub Secrets:
+   - `DEPLOY_SSH_KEY` — содержимое `deploy_key` (приватный ключ)
+   - `DEPLOY_SSH_HOST` — `89.110.93.63`
+   - `DEPLOY_SSH_KNOWN_HOSTS` — вывод `ssh-keyscan -H 89.110.93.63`
+4. Bootstrapping на сервере: `cd /opt/repos/studyhelper && git pull origin main`
 
 ## Следующие шаги (по приоритету)
-- **CD (Continuous Deployment)** — автодеплой на прод при пуше в main (SSH + docker compose rebuild)
 - (Фаза 3) httpOnly cookies — access in memory, refresh in httpOnly cookie
 - (Фаза 3) JWT blacklist через Redis
 - (Будущее) CSP: убрать `unsafe-inline` (hash-based или vite-csp-guard)

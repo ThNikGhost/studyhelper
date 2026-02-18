@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-17 (release signing)
+- **Дата обновления**: 2026-02-18 (CD continuous deployment)
 
 ## Backend модули
 
@@ -69,9 +69,9 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **Cleanup**: Removed dead Celery module (backend/src/tasks/, 160 lines), celery optional dep, .gitignore Celery section, completed plan files
 - **SEC-1.1**: Code review fixes — /metrics constants+fallback, REDISCLI_AUTH healthcheck, GPG passphrase-fd, allowed_fields comment, .env.example update, docker-compose comment
 - **F6**: Release Signing — conditional release/debug build в CI, keystore через base64 GitHub Secret, Gradle-native signing, version bump 1.3.0, UpdateChecker → app-release.apk
+- **CD**: Continuous Deployment — deploy job в ci.yml (needs backend+frontend, push to main only), SSH via printf, scripts/deploy.sh + scripts/rollback.sh (+x), health check 10 retries, auto-rollback on failure
 
 ### Следующие задачи (приоритет):
-- **CD** — автодеплой на прод при пуше в main (GitHub Actions → SSH → docker compose rebuild)
 - (Фаза 3) httpOnly cookies, JWT blacklist
 - (Будущее) CSP unsafe-inline removal
 
