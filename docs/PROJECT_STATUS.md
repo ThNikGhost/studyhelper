@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-18 (CD continuous deployment)
+- **Дата обновления**: 2026-02-18 (UI polish: semester selector, subject card overlap fix)
 
 ## Backend модули
 
@@ -31,6 +31,12 @@
 
 13 страниц: Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Timeline, Settings, Grades. (Notes убрана из навигации, доступна через LessonDetailModal)
 
+**Последние UI-улучшения (2026-02-18):**
+- Вкладка "Семестры" убрана из Quick Actions на дашборде (роут `/semesters` сохранён)
+- Селектор семестра в SubjectsPage: формат "6 семестр 2025/2026", бейдж "Текущий", даты под селектором
+- Кнопки edit/delete в карточке предмета: убран absolute overlay, кнопки встроены в заголовок карточки
+- `formatIsoDate` добавлен в `dateUtils.ts`
+
 React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (system/light/dark).
 
 ## Деплой
@@ -43,33 +49,7 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 
 ## Что в работе
 
-Все B1-B12 bugfixes и F1-F5 post-MVP фичи завершены и задеплоены.
-
-### Завершено (закоммичено):
-- **B1-B3**: ClassmatesPage mobile fixes (grid, аватарки, кнопка "+")
-- **B4**: Schedule scroll indicator — fade-градиент справа на мобильных
-- **B5**: SettingsPage padding fix
-- **B6**: ThemeToggle → Settings (перенос, удаление мёртвых файлов, aria-pressed)
-- **B7**: Remove "Notes" tab (route + QuickActions)
-- **B8**: GradesPage light theme contrast — border-классы к grade badges
-- **B9**: Semester dates from LK — _determine_current_semester(), auto-dates, is_current fix
-- **B11**: File download JWT fix — blob download с авторизацией
-- **B12**: Nginx healthcheck path — `http://localhost/health` вместо `https://localhost/`
-- **F1**: PostgreSQL backups — pg_dump cron daily, gzip, 7-day rotation, restore script
-- **F2**: Sentry integration — sentry-sdk[fastapi] + @sentry/react, conditional init, user context
-- **F3**: Telegram bot — aiogram 3.25, webhook mode, 9 команд + reply-keyboard, 5 типов уведомлений, SettingsPage integration
-- **F3.1**: Telegram bot simplification — убраны /week /grades /attendance, добавлена ReplyKeyboardMarkup (📚 Расписание на сегодня, ⏭ Следующее занятие)
-- **F4**: iCalendar (.ics) feed — подписка на расписание + дедлайны, icalendar 7.x, per-user token auth, SettingsPage UI, 27 тестов
-- **F5**: Phone Widgets — API ключ + JSON endpoint для виджетов, shared filter refactor, Scriptable JS, SettingsPage UI с инструкциями, 29 тестов
-- **F5.1**: Widget /today endpoint — полное расписание на день + первая будущая пара, offline кеш с локальным minutes_until, 24h cache TTL, shared auth refactor, текстовые фиксы виджета, 14 новых тестов
-- **F5.2**: Android Widget App — нативный APK (4×2 виджет), AGP 9.0.0 + built-in Kotlin, RemoteViews, WorkManager 30min refresh, SharedPreferences cache, GitHub Actions CI → GitHub Releases
-- **F5.3**: Android Chronometer + unified location — real-time countdown (system Chronometer вместо static text), парсер/бэкенд/фронтенд нормализация "Корпус"/"корп." в location, timeline building field
-- **B13**: Fix "ауд." location parsing — `_parse_audit_corps` обрабатывает `"ауд. 114) Спортивный зал, 6("` → `("6", "114")`, defense-in-depth в `_clean_room` и frontend `formatLocation`
-- **SEC-1**: Security Audit Phase 1+2 — rate limit /refresh, Telegram strict secret, file ownership check, VK URL sanitization, mass-assignment fix, Permissions-Policy, server_tokens off, CI permissions + SHA-pinning, /metrics IP check, passlib removal, LkSyncError generic messages, backup encryption, Docker pinning, dev-compose hardening
-- **Cleanup**: Removed dead Celery module (backend/src/tasks/, 160 lines), celery optional dep, .gitignore Celery section, completed plan files
-- **SEC-1.1**: Code review fixes — /metrics constants+fallback, REDISCLI_AUTH healthcheck, GPG passphrase-fd, allowed_fields comment, .env.example update, docker-compose comment
-- **F6**: Release Signing — conditional release/debug build в CI, keystore через base64 GitHub Secret, Gradle-native signing, version bump 1.3.0, UpdateChecker → app-release.apk
-- **CD**: Continuous Deployment — deploy job в ci.yml (needs backend+frontend, push to main only), SSH via printf, scripts/deploy.sh + scripts/rollback.sh (+x), health check 10 retries, auto-rollback on failure
+Все задачи B1-B13, F1-F6, SEC-1, SEC-1.1, CD завершены и задеплоены. История изменений — в `DECISIONS.md` и git log.
 
 ### Следующие задачи (приоритет):
 - (Фаза 3) httpOnly cookies, JWT blacklist
