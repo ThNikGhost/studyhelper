@@ -94,22 +94,23 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
           {
             printf 'Host prod\n'
-            printf '  HostName %s\n' "$DEPLOY_SSH_HOST"
-            printf '  User deploy\n'
+            printf '  HostName %s\n' "$SSH_HOST"
+            printf '  Port %s\n' "$SSH_PORT"
+            printf '  User %s\n' "$SSH_USER"
             printf '  IdentityFile ~/.ssh/deploy_key\n'
-            printf '  StrictHostKeyChecking yes\n'
+            printf '  StrictHostKeyChecking accept-new\n'
             printf '  BatchMode yes\n'
             printf '  ConnectTimeout 10\n'
           } >> ~/.ssh/config
         env:
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
-          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_USER: ${{ secrets.SSH_USER }}
 
       - name: Deploy
         id: deploy
