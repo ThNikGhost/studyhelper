@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-19 (feat: hidden subjects, deadline_has_time, batch works, timezone fix)
+- **Дата обновления**: 2026-02-19 (feat: hidden subjects, deadline_has_time, batch works, timezone fix, new work types)
 
 ## Backend модули
 
@@ -12,7 +12,7 @@
 | Auth | User (+settings, +hidden_subjects) | UserSettingsUpdate | CRUD + settings | +PATCH /me/settings | 26 |
 | Semesters | +start/end_date | +Timeline | +timeline | +timeline | 26 |
 | Subjects | +planned_classes, +total_hours | — | — | — | 18 |
-| Works | Work (+deadline_has_time), WorkStatus, WorkStatusHistory | — | — | — | 23 |
+| Works | Work (+deadline_has_time, +diff_credit/colloquium types), WorkStatus, WorkStatusHistory | — | — | — | 23 |
 | Teachers | — | — | — | — | 20 |
 | University | Department, Building | — | — | — | 28 |
 | Classmates | — | — | — | — | 20 |
