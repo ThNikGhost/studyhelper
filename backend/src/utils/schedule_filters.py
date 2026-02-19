@@ -10,38 +10,45 @@ from src.models.subject import Subject
 from src.models.user import User
 
 
-async def resolve_hidden_subject_names(
+async def resolve_hidden_subjects(
     db: AsyncSession,
     user: User,
-) -> set[str]:
-    """Resolve hidden subject IDs to subject names.
+) -> dict[str, set[str] | None]:
+    """Resolve hidden subject config to {name: types} mapping.
 
     Args:
         db: Database session.
         user: User whose hidden subjects to resolve.
 
     Returns:
-        Set of subject names that should be hidden.
+        Dict mapping subject name to hidden lesson types (None = all hidden).
     """
     if not user.hidden_subjects:
-        return set()
+        return {}
+    ids = [int(k) for k in user.hidden_subjects]
     result = await db.execute(
-        select(Subject.name).where(Subject.id.in_(user.hidden_subjects))
+        select(Subject.id, Subject.name).where(Subject.id.in_(ids))
     )
-    return set(result.scalars().all())
+    id_to_name = {row.id: row.name for row in result.all()}
+    return {
+        id_to_name[int(k)]: (set(v) if v else None)
+        for k, v in user.hidden_subjects.items()
+        if int(k) in id_to_name
+    }
 
 
 def filter_entries_by_user_prefs(
     entries: list[ScheduleEntry],
     user: User,
-    hidden_subject_names: set[str] | None = None,
+    hidden_subjects: dict[str, set[str] | None] | None = None,
 ) -> list[ScheduleEntry]:
     """Filter schedule entries by user subgroup, PE teacher, and hidden subjects.
 
     Args:
         entries: List of schedule entries to filter.
         user: User whose preferences to apply.
-        hidden_subject_names: Pre-resolved hidden subject names.
+        hidden_subjects: Pre-resolved hidden subject config
+            ({name: types} where types=None means hide all).
 
     Returns:
         Filtered list of schedule entries.
@@ -68,11 +75,13 @@ def filter_entries_by_user_prefs(
 
         # Hidden subjects filter (by name, since schedule entries lack subject_id)
         if (
-            hidden_subject_names
+            hidden_subjects
             and entry.subject_name
-            and entry.subject_name in hidden_subject_names
+            and entry.subject_name in hidden_subjects
         ):
-            continue
+            types = hidden_subjects[entry.subject_name]
+            if types is None or entry.lesson_type in types:
+                continue
 
         filtered.append(entry)
     return filtered

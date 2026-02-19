@@ -15,11 +15,14 @@ import { useAuthStore } from '@/stores/authStore'
 import { useLocalSettingsStore } from '@/stores/settingsStore'
 import type { User, UserSettingsUpdate, ThemeMode } from '@/types/auth'
 
+/** Hidden subjects config: subject ID → hidden lesson types (null = all). */
+type HiddenSubjects = Record<string, string[] | null>
+
 interface UserSettings {
   subgroup: number | null
   peTeacher: string | null
   themeMode: ThemeMode
-  hiddenSubjects: number[]
+  hiddenSubjects: HiddenSubjects
 }
 
 interface UseUserSettingsReturn {
@@ -100,7 +103,7 @@ export function useUserSettings(): UseUserSettingsReturn {
         subgroup: user.preferred_subgroup,
         peTeacher: user.preferred_pe_teacher,
         themeMode: user.theme_mode ?? 'system',
-        hiddenSubjects: user.hidden_subjects ?? [],
+        hiddenSubjects: user.hidden_subjects ?? {},
       }
     : {
         subgroup: localSettings.subgroup,
@@ -125,7 +128,7 @@ export function useUserSettings(): UseUserSettingsReturn {
         localSettings.setThemeMode(newSettings.theme_mode ?? 'system')
       }
       if (newSettings.hidden_subjects !== undefined) {
-        localSettings.setHiddenSubjects(newSettings.hidden_subjects ?? [])
+        localSettings.setHiddenSubjects(newSettings.hidden_subjects ?? {})
       }
     }
   }

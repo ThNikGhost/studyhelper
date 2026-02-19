@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
 import {
@@ -50,7 +50,14 @@ export function WorksPage() {
   const isOnline = useNetworkStatus()
   const queryClient = useQueryClient()
   const { settings } = useUserSettings()
-  const hiddenSet = new Set(settings.hiddenSubjects)
+  const fullyHiddenIds = useMemo(() => {
+    const hs = settings.hiddenSubjects
+    const ids = new Set<number>()
+    for (const [id, types] of Object.entries(hs)) {
+      if (types === null) ids.add(Number(id))
+    }
+    return ids
+  }, [settings.hiddenSubjects])
   const [filterSubjectId, setFilterSubjectId] = useState<number | undefined>(undefined)
   const [filterStatus, setFilterStatus] = useState<WorkStatus | undefined>(undefined)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -415,7 +422,7 @@ export function WorksPage() {
                   }
                 >
                   <option value="">Все предметы</option>
-                  {subjects.filter((s) => !hiddenSet.has(s.id)).map((subject) => (
+                  {subjects.filter((s) => !fullyHiddenIds.has(s.id)).map((subject) => (
                     <option key={subject.id} value={subject.id}>
                       {subject.short_name || subject.name}
                     </option>
@@ -458,7 +465,7 @@ export function WorksPage() {
 
         {/* Works list */}
         <div className="space-y-3">
-          {works.filter((w) => !hiddenSet.has(w.subject_id)).map((work) => (
+          {works.filter((w) => !fullyHiddenIds.has(w.subject_id)).map((work) => (
             <Card key={work.id}>
               <CardContent className="py-4 px-4">
                 <div className="flex items-start justify-between gap-3">
@@ -532,7 +539,7 @@ export function WorksPage() {
         </div>
 
         {/* Empty state */}
-        {works.filter((w) => !hiddenSet.has(w.subject_id)).length === 0 && (
+        {works.filter((w) => !fullyHiddenIds.has(w.subject_id)).length === 0 && (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
               <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -593,7 +600,7 @@ export function WorksPage() {
                 required
               >
                 <option value="">Выберите предмет</option>
-                {(editingWork ? allSubjects : subjects).filter((s) => !hiddenSet.has(s.id)).map((subject) => (
+                {(editingWork ? allSubjects : subjects).filter((s) => !fullyHiddenIds.has(s.id)).map((subject) => (
                   <option key={subject.id} value={subject.id}>
                     {subject.name}
                   </option>

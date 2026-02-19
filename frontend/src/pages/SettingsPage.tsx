@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Settings, Dumbbell, Users, Building2, Check, Loader2, RefreshCw, LogOut, Eye, EyeOff, Sun, Moon, Monitor, MessageCircle, Copy, Bell, BellOff, LinkIcon, Unlink, Calendar, X, Smartphone, ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Link } from 'react-router-dom'
 import {
   Card,
@@ -19,6 +20,8 @@ import { useTheme } from '@/hooks/useTheme'
 import { scheduleService } from '@/services/scheduleService'
 import subjectService from '@/services/subjectService'
 import type { Subject, Semester } from '@/types/subject'
+import { LessonType, lessonTypeLabels } from '@/types/schedule'
+import type { WeekSchedule } from '@/types/schedule'
 import { lkService } from '@/services/lkService'
 import { telegramService } from '@/services/telegramService'
 import { calendarFeedService } from '@/services/calendarFeedService'
@@ -26,6 +29,58 @@ import { widgetService } from '@/services/widgetService'
 import { getPeTeachersFromWeek } from '@/lib/peTeacherFilter'
 import { formatDistanceToNow } from '@/lib/dateUtils'
 import type { LkCredentials } from '@/types/lk'
+
+const LESSON_TYPE_SHORT_LABELS: Record<string, string> = {
+  [LessonType.LECTURE]: 'Лек',
+  [LessonType.PRACTICE]: 'Прак',
+  [LessonType.LAB]: 'Лаб',
+  [LessonType.SEMINAR]: 'Сем',
+  [LessonType.EXAM]: 'Экз',
+  [LessonType.CONSULTATION]: 'Конс',
+  [LessonType.OTHER]: 'Др',
+}
+
+const LESSON_TYPE_CHIP_COLORS: Record<string, string> = {
+  [LessonType.LECTURE]: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700',
+  [LessonType.PRACTICE]: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900 dark:text-green-200 dark:border-green-700',
+  [LessonType.LAB]: 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900 dark:text-orange-200 dark:border-orange-700',
+  [LessonType.SEMINAR]: 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-700',
+  [LessonType.EXAM]: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-200 dark:border-red-700',
+  [LessonType.CONSULTATION]: 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600',
+  [LessonType.OTHER]: 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600',
+}
+
+/** Get unique lesson types per subject from week schedule data. */
+function getSubjectLessonTypes(
+  weekSchedule: WeekSchedule | undefined,
+  subjects: Subject[],
+): Map<number, string[]> {
+  const result = new Map<number, string[]>()
+  if (!weekSchedule || subjects.length === 0) return result
+
+  // Build name → id map
+  const nameToId = new Map(subjects.map((s) => [s.name, s.id]))
+
+  // Collect lesson types per subject
+  const typesBySubject = new Map<number, Set<string>>()
+  for (const day of weekSchedule.days) {
+    for (const entry of day.entries) {
+      const id = nameToId.get(entry.subject_name)
+      if (id === undefined) continue
+      let types = typesBySubject.get(id)
+      if (!types) {
+        types = new Set()
+        typesBySubject.set(id, types)
+      }
+      types.add(entry.lesson_type)
+    }
+  }
+
+  for (const [id, types] of typesBySubject) {
+    result.set(id, Array.from(types))
+  }
+  return result
+}
 
 export default function SettingsPage() {
   const queryClient = useQueryClient()
@@ -46,8 +101,6 @@ export default function SettingsPage() {
     enabled: !!currentSemester?.id,
     staleTime: 5 * 60 * 1000,
   })
-
-  const hiddenSet = useMemo(() => new Set(hiddenSubjects), [hiddenSubjects])
 
   // LK form state
   const [lkEmail, setLkEmail] = useState('')
@@ -72,6 +125,12 @@ export default function SettingsPage() {
     queryFn: () => scheduleService.getWeekSchedule(),
     staleTime: 1000 * 60 * 5,
   })
+
+  // Per-subject lesson types from schedule data
+  const subjectLessonTypes = useMemo(
+    () => getSubjectLessonTypes(weekSchedule, currentSubjects),
+    [weekSchedule, currentSubjects],
+  )
 
   // Fetch LK status
   const { data: lkStatus, isLoading: lkStatusLoading } = useQuery({
@@ -301,23 +360,83 @@ export default function SettingsPage() {
     [currentSubjects],
   )
   const staleHiddenCount = useMemo(
-    () => hiddenSubjects.filter((id) => !currentSubjectIds.has(id)).length,
+    () => Object.keys(hiddenSubjects).filter((id) => !currentSubjectIds.has(Number(id))).length,
     [hiddenSubjects, currentSubjectIds],
   )
+  const hiddenCount = Object.keys(hiddenSubjects).length
 
-  const toggleHiddenSubject = (subjectId: number) => {
-    const current = new Set(hiddenSubjects)
-    if (current.has(subjectId)) {
-      current.delete(subjectId)
+  const toggleHideAll = (subjectId: number) => {
+    const key = String(subjectId)
+    const next = { ...hiddenSubjects }
+    if (key in next) {
+      delete next[key]
     } else {
-      current.add(subjectId)
+      next[key] = null
     }
-    updateSettings({ hidden_subjects: Array.from(current) })
+    updateSettings({ hidden_subjects: Object.keys(next).length > 0 ? next : null })
+  }
+
+  const toggleHiddenType = (subjectId: number, lessonType: string) => {
+    const key = String(subjectId)
+    const available = subjectLessonTypes.get(subjectId) ?? []
+    const next = { ...hiddenSubjects }
+    const current = next[key]
+
+    if (current === undefined) {
+      // Subject is fully visible → hide this one type
+      next[key] = [lessonType]
+    } else if (current === null) {
+      // Subject fully hidden → show this one type (hide all others)
+      const others = available.filter((t) => t !== lessonType)
+      if (others.length === 0) {
+        delete next[key]
+      } else {
+        next[key] = others
+      }
+    } else {
+      // Partial hide
+      if (current.includes(lessonType)) {
+        // Unhide this type
+        const remaining = current.filter((t) => t !== lessonType)
+        if (remaining.length === 0) {
+          delete next[key]
+        } else {
+          next[key] = remaining
+        }
+      } else {
+        // Hide this type too
+        const updated = [...current, lessonType]
+        if (updated.length >= available.length) {
+          next[key] = null // all types hidden → fully hidden
+        } else {
+          next[key] = updated
+        }
+      }
+    }
+    updateSettings({ hidden_subjects: Object.keys(next).length > 0 ? next : null })
   }
 
   const clearStaleHidden = () => {
-    const kept = hiddenSubjects.filter((id) => currentSubjectIds.has(id))
-    updateSettings({ hidden_subjects: kept.length > 0 ? kept : null })
+    const next: Record<string, string[] | null> = {}
+    for (const [id, types] of Object.entries(hiddenSubjects)) {
+      if (currentSubjectIds.has(Number(id))) {
+        next[id] = types
+      }
+    }
+    updateSettings({ hidden_subjects: Object.keys(next).length > 0 ? next : null })
+  }
+
+  /** Check if a specific lesson type is hidden for a subject. */
+  const isTypeHidden = (subjectId: number, lessonType: string): boolean => {
+    const config = hiddenSubjects[String(subjectId)]
+    if (config === undefined) return false
+    if (config === null) return true
+    return config.includes(lessonType)
+  }
+
+  /** Check if subject has any hidden types. */
+  const isSubjectHidden = (subjectId: number): boolean => {
+    return String(subjectId) in hiddenSubjects
   }
 
   const availablePeTeachers = weekSchedule ? getPeTeachersFromWeek(weekSchedule) : []
@@ -459,29 +578,61 @@ export default function SettingsPage() {
               <CardTitle>Скрытые предметы</CardTitle>
             </div>
             <CardDescription>
-              Скрытые предметы не отображаются в расписании, дашборде, работах и посещаемости.
+              Скройте предмет целиком или только определённые типы занятий (лекции, практики, лабы).
+              Частично скрытые предметы не отображаются в расписании, но остаются в работах и посещаемости.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {currentSubjects.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {currentSubjects.map((subject) => {
-                  const isHidden = hiddenSet.has(subject.id)
+                  const hidden = isSubjectHidden(subject.id)
+                  const fullyHidden = hiddenSubjects[String(subject.id)] === null
+                  const types = subjectLessonTypes.get(subject.id) ?? []
                   return (
-                    <Button
-                      key={subject.id}
-                      variant={isHidden ? 'outline' : 'default'}
-                      onClick={() => toggleHiddenSubject(subject.id)}
-                      disabled={isUpdating}
-                      className="w-full justify-start gap-2"
-                    >
-                      {isHidden ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
+                    <div key={subject.id} className="flex items-center gap-2 flex-wrap">
+                      <Button
+                        variant={hidden ? 'outline' : 'default'}
+                        size="sm"
+                        onClick={() => toggleHideAll(subject.id)}
+                        disabled={isUpdating}
+                        aria-pressed={!hidden}
+                        className="gap-1.5 shrink-0"
+                      >
+                        {hidden ? (
+                          <EyeOff className="h-3.5 w-3.5" />
+                        ) : (
+                          <Eye className="h-3.5 w-3.5" />
+                        )}
+                        <span className={cn('truncate max-w-[180px]', fullyHidden && 'line-through opacity-60')}>
+                          {subject.name}
+                        </span>
+                      </Button>
+                      {types.length > 1 && (
+                        <div className="flex gap-1 flex-wrap">
+                          {types.map((lt) => {
+                            const typeHidden = isTypeHidden(subject.id, lt)
+                            return (
+                              <button
+                                key={lt}
+                                type="button"
+                                onClick={() => toggleHiddenType(subject.id, lt)}
+                                disabled={isUpdating}
+                                className={cn(
+                                  'text-xs px-2 py-0.5 rounded-full border font-medium transition-colors',
+                                  typeHidden
+                                    ? 'opacity-40 line-through border-muted-foreground/30 text-muted-foreground bg-muted'
+                                    : LESSON_TYPE_CHIP_COLORS[lt as LessonType] ?? 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600',
+                                )}
+                                title={typeHidden ? `Показать ${lessonTypeLabels[lt as LessonType]}` : `Скрыть ${lessonTypeLabels[lt as LessonType]}`}
+                              >
+                                {LESSON_TYPE_SHORT_LABELS[lt as LessonType] ?? lt}
+                              </button>
+                            )
+                          })}
+                        </div>
                       )}
-                      <span className="truncate">{subject.name}</span>
-                    </Button>
+                    </div>
                   )
                 })}
               </div>
@@ -490,9 +641,9 @@ export default function SettingsPage() {
                 Предметы текущего семестра не найдены.
               </p>
             )}
-            {hiddenSubjects.length > 0 && (
+            {hiddenCount > 0 && (
               <p className="mt-3 text-sm text-muted-foreground">
-                Скрыто предметов: {hiddenSubjects.length}
+                Скрыто предметов: {hiddenCount}
               </p>
             )}
             {staleHiddenCount > 0 && (

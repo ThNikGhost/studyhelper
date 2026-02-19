@@ -11,7 +11,7 @@ import { calculateSemesterProgress } from '@/lib/progressUtils'
 import { filterDaySchedule } from '@/lib/peTeacherFilter'
 import { filterDayBySubgroup } from '@/lib/subgroupFilter'
 import { filterDayByHidden } from '@/lib/hiddenSubjectFilter'
-import { useHiddenSubjectNames } from '@/hooks/useHiddenSubjectNames'
+import { useHiddenSubjects } from '@/hooks/useHiddenSubjects'
 import { TodayScheduleWidget } from '@/components/dashboard/TodayScheduleWidget'
 import { DeadlinesWidget } from '@/components/dashboard/DeadlinesWidget'
 import { SemesterProgressWidget } from '@/components/dashboard/SemesterProgressWidget'
@@ -24,8 +24,8 @@ import type { Semester } from '@/types/subject'
 export default function DashboardPage() {
   const { user, logout } = useAuthStore()
   const { settings } = useUserSettings()
-  const { peTeacher, subgroup, hiddenSubjects } = settings
-  const hiddenNames = useHiddenSubjectNames()
+  const { peTeacher, subgroup } = settings
+  const { hiddenEntries, fullyHiddenIds } = useHiddenSubjects()
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
 
   const handleLogout = async () => {
@@ -116,27 +116,24 @@ export default function DashboardPage() {
     if (!todaySchedule) return undefined
     let filtered = filterDaySchedule(todaySchedule, peTeacher)
     filtered = filterDayBySubgroup(filtered, subgroup)
-    filtered = filterDayByHidden(filtered, hiddenNames)
+    filtered = filterDayByHidden(filtered, hiddenEntries)
     return filtered
-  }, [todaySchedule, peTeacher, subgroup, hiddenNames])
+  }, [todaySchedule, peTeacher, subgroup, hiddenEntries])
 
   const filteredSubjects = useMemo(() => {
-    if (hiddenSubjects.length === 0) return subjects
-    const hidden = new Set(hiddenSubjects)
-    return subjects.filter((s) => !hidden.has(s.id))
-  }, [subjects, hiddenSubjects])
+    if (fullyHiddenIds.size === 0) return subjects
+    return subjects.filter((s) => !fullyHiddenIds.has(s.id))
+  }, [subjects, fullyHiddenIds])
 
   const filteredAllWorks = useMemo(() => {
-    if (hiddenSubjects.length === 0) return allWorks
-    const hidden = new Set(hiddenSubjects)
-    return allWorks.filter((w) => !hidden.has(w.subject_id))
-  }, [allWorks, hiddenSubjects])
+    if (fullyHiddenIds.size === 0) return allWorks
+    return allWorks.filter((w) => !fullyHiddenIds.has(w.subject_id))
+  }, [allWorks, fullyHiddenIds])
 
   const filteredUpcomingWorks = useMemo(() => {
-    if (!upcomingWorks || hiddenSubjects.length === 0) return upcomingWorks
-    const hidden = new Set(hiddenSubjects)
-    return upcomingWorks.filter((w) => !hidden.has(w.subject_id))
-  }, [upcomingWorks, hiddenSubjects])
+    if (!upcomingWorks || fullyHiddenIds.size === 0) return upcomingWorks
+    return upcomingWorks.filter((w) => !fullyHiddenIds.has(w.subject_id))
+  }, [upcomingWorks, fullyHiddenIds])
 
   const semesterProgress = useMemo(
     () => calculateSemesterProgress(filteredAllWorks, filteredSubjects),

@@ -284,19 +284,27 @@ class TestSettings:
         assert data["theme_mode"] == "light"
         assert "preferred_pe_teacher" in data
 
-    async def test_update_hidden_subjects(
+    async def test_update_hidden_subjects_dict(
         self, client: AsyncClient, auth_headers: dict
     ):
-        """Test saving hidden_subjects list."""
+        """Test saving hidden_subjects dict format."""
         response = await client.patch(
             "/api/v1/auth/me/settings",
             headers=auth_headers,
-            json={"hidden_subjects": [1, 2, 3]},
+            json={
+                "hidden_subjects": {
+                    "1": None,
+                    "2": ["lab"],
+                    "3": ["lecture", "practice"],
+                }
+            },
         )
 
         assert response.status_code == 200
         data = response.json()
-        assert data["hidden_subjects"] == [1, 2, 3]
+        assert data["hidden_subjects"]["1"] is None
+        assert data["hidden_subjects"]["2"] == ["lab"]
+        assert set(data["hidden_subjects"]["3"]) == {"lecture", "practice"}
 
     async def test_clear_hidden_subjects(self, client: AsyncClient, auth_headers: dict):
         """Test clearing hidden_subjects by setting to null."""
@@ -304,7 +312,7 @@ class TestSettings:
         await client.patch(
             "/api/v1/auth/me/settings",
             headers=auth_headers,
-            json={"hidden_subjects": [1, 2]},
+            json={"hidden_subjects": {"1": None}},
         )
 
         # Clear
@@ -332,36 +340,93 @@ class TestSettings:
         response = await client.patch(
             "/api/v1/auth/me/settings",
             headers=auth_headers,
-            json={"hidden_subjects": [5, 10]},
+            json={"hidden_subjects": {"5": None, "10": ["lab"]}},
         )
 
         assert response.status_code == 200
         data = response.json()
-        assert data["hidden_subjects"] == [5, 10]
+        assert data["hidden_subjects"]["5"] is None
+        assert data["hidden_subjects"]["10"] == ["lab"]
         assert data["preferred_subgroup"] == 1
         assert data["theme_mode"] == "dark"
 
-    async def test_hidden_subjects_deduplicates_and_rejects_invalid(
+    async def test_hidden_subjects_rejects_invalid_keys(
         self, client: AsyncClient, auth_headers: dict
     ):
-        """Test hidden_subjects validator removes duplicates and non-positive IDs."""
+        """Test hidden_subjects validator removes non-positive and invalid keys."""
         response = await client.patch(
             "/api/v1/auth/me/settings",
             headers=auth_headers,
-            json={"hidden_subjects": [3, -1, 3, 0, 5, 5]},
+            json={
+                "hidden_subjects": {
+                    "3": None,
+                    "-1": None,
+                    "0": None,
+                    "abc": None,
+                    "5": ["lab"],
+                }
+            },
         )
 
         assert response.status_code == 200
-        assert response.json()["hidden_subjects"] == [3, 5]
+        data = response.json()
+        hs = data["hidden_subjects"]
+        assert "3" in hs
+        assert "5" in hs
+        assert "-1" not in hs
+        assert "0" not in hs
+        assert "abc" not in hs
 
     async def test_hidden_subjects_all_invalid_becomes_null(
         self, client: AsyncClient, auth_headers: dict
     ):
-        """Test hidden_subjects with only invalid IDs becomes null."""
+        """Test hidden_subjects with only invalid keys becomes null."""
         response = await client.patch(
             "/api/v1/auth/me/settings",
             headers=auth_headers,
-            json={"hidden_subjects": [-1, 0, -99]},
+            json={"hidden_subjects": {"-1": None, "0": None, "abc": ["lab"]}},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["hidden_subjects"] is None
+
+    async def test_hidden_subjects_empty_list_becomes_null(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Test empty lesson type list is normalized to null (hide all)."""
+        response = await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"hidden_subjects": {"1": []}},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["hidden_subjects"]["1"] is None
+
+    async def test_hidden_subjects_invalid_lesson_types_filtered(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Test invalid lesson types are filtered out."""
+        response = await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"hidden_subjects": {"1": ["lab", "invalid_type", "practice"]}},
+        )
+
+        assert response.status_code == 200
+        types = response.json()["hidden_subjects"]["1"]
+        assert "lab" in types
+        assert "practice" in types
+        assert "invalid_type" not in types
+
+    async def test_hidden_subjects_empty_dict_becomes_null(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Test empty dict is normalized to null."""
+        response = await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"hidden_subjects": {}},
         )
 
         assert response.status_code == 200

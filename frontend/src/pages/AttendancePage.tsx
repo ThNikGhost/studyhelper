@@ -20,7 +20,14 @@ export function AttendancePage() {
   const isOnline = useNetworkStatus()
   const queryClient = useQueryClient()
   const { settings } = useUserSettings()
-  const hiddenSet = useMemo(() => new Set(settings.hiddenSubjects), [settings.hiddenSubjects])
+  const fullyHiddenIds = useMemo(() => {
+    const hs = settings.hiddenSubjects
+    const ids = new Set<number>()
+    for (const [id, types] of Object.entries(hs)) {
+      if (types === null) ids.add(Number(id))
+    }
+    return ids
+  }, [settings.hiddenSubjects])
 
   const [selectedSemesterId, setSelectedSemesterId] = useState<number | undefined>(undefined)
   const [filterSubjectId, setFilterSubjectId] = useState<number | null>(null)
@@ -108,9 +115,9 @@ export function AttendancePage() {
 
   // Filter stats and entries by hidden subjects
   const filteredStats = useMemo(() => {
-    if (!stats || hiddenSet.size === 0) return stats
+    if (!stats || fullyHiddenIds.size === 0) return stats
     const filteredBySubject = stats.by_subject.filter(
-      (s) => s.subject_id === null || !hiddenSet.has(s.subject_id),
+      (s) => s.subject_id === null || !fullyHiddenIds.has(s.subject_id),
     )
     const totalClasses = filteredBySubject.reduce((sum, s) => sum + s.total_classes, 0)
     const absences = filteredBySubject.reduce((sum, s) => sum + s.absences, 0)
@@ -123,12 +130,12 @@ export function AttendancePage() {
       attendance_percent: totalClasses > 0 ? Math.round((attended / totalClasses) * 100) : 100,
       by_subject: filteredBySubject,
     }
-  }, [stats, hiddenSet])
+  }, [stats, fullyHiddenIds])
 
   const filteredEntries = useMemo(() => {
-    if (hiddenSet.size === 0) return entries
-    return entries.filter((e) => e.subject_id === null || !hiddenSet.has(e.subject_id))
-  }, [entries, hiddenSet])
+    if (fullyHiddenIds.size === 0) return entries
+    return entries.filter((e) => e.subject_id === null || !fullyHiddenIds.has(e.subject_id))
+  }, [entries, fullyHiddenIds])
 
   const isLoading = semestersLoading || (hasDates && (statsLoading || entriesLoading))
   const error = statsError || entriesError

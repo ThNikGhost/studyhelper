@@ -44,45 +44,80 @@ function makeWeek(days: DaySchedule[]): WeekSchedule {
 }
 
 describe('filterHiddenEntries', () => {
-  it('returns all entries when hiddenNames is empty', () => {
+  it('returns all entries when hiddenEntries is empty', () => {
     const entries = [makeEntry(), makeEntry({ subject_name: 'Физика' })]
-    const result = filterHiddenEntries(entries, new Set())
+    const result = filterHiddenEntries(entries, new Map())
     expect(result).toHaveLength(2)
   })
 
-  it('filters out entries with matching subject_name', () => {
+  it('filters out fully hidden subjects (null = all types)', () => {
     const entries = [
       makeEntry({ subject_name: 'Математика' }),
       makeEntry({ subject_name: 'Физика' }),
       makeEntry({ subject_name: 'Химия' }),
     ]
-    const result = filterHiddenEntries(entries, new Set(['Физика']))
+    const hidden = new Map<string, Set<string> | null>([['Физика', null]])
+    const result = filterHiddenEntries(entries, hidden)
     expect(result).toHaveLength(2)
     expect(result.map((e) => e.subject_name)).toEqual(['Математика', 'Химия'])
   })
 
-  it('filters multiple hidden subjects', () => {
+  it('filters only specific lesson types', () => {
     const entries = [
-      makeEntry({ subject_name: 'Математика' }),
-      makeEntry({ subject_name: 'Физика' }),
-      makeEntry({ subject_name: 'Химия' }),
+      makeEntry({ subject_name: 'Математика', lesson_type: 'lecture' }),
+      makeEntry({ subject_name: 'Математика', lesson_type: 'lab' }),
+      makeEntry({ subject_name: 'Математика', lesson_type: 'practice' }),
     ]
-    const result = filterHiddenEntries(entries, new Set(['Математика', 'Химия']))
+    const hidden = new Map<string, Set<string> | null>([
+      ['Математика', new Set(['lab'])],
+    ])
+    const result = filterHiddenEntries(entries, hidden)
+    expect(result).toHaveLength(2)
+    expect(result.map((e) => e.lesson_type)).toEqual(['lecture', 'practice'])
+  })
+
+  it('filters multiple lesson types for one subject', () => {
+    const entries = [
+      makeEntry({ subject_name: 'Физика', lesson_type: 'lecture' }),
+      makeEntry({ subject_name: 'Физика', lesson_type: 'lab' }),
+      makeEntry({ subject_name: 'Физика', lesson_type: 'practice' }),
+    ]
+    const hidden = new Map<string, Set<string> | null>([
+      ['Физика', new Set(['lab', 'practice'])],
+    ])
+    const result = filterHiddenEntries(entries, hidden)
+    expect(result).toHaveLength(1)
+    expect(result[0].lesson_type).toBe('lecture')
+  })
+
+  it('handles mixed: one fully hidden, one per-type', () => {
+    const entries = [
+      makeEntry({ subject_name: 'Математика', lesson_type: 'lecture' }),
+      makeEntry({ subject_name: 'Физика', lesson_type: 'lecture' }),
+      makeEntry({ subject_name: 'Физика', lesson_type: 'lab' }),
+    ]
+    const hidden = new Map<string, Set<string> | null>([
+      ['Математика', null],
+      ['Физика', new Set(['lab'])],
+    ])
+    const result = filterHiddenEntries(entries, hidden)
     expect(result).toHaveLength(1)
     expect(result[0].subject_name).toBe('Физика')
+    expect(result[0].lesson_type).toBe('lecture')
   })
 
   it('is case-sensitive', () => {
     const entries = [makeEntry({ subject_name: 'Математика' })]
-    const result = filterHiddenEntries(entries, new Set(['математика']))
+    const hidden = new Map<string, Set<string> | null>([['математика', null]])
+    const result = filterHiddenEntries(entries, hidden)
     expect(result).toHaveLength(1)
   })
 })
 
 describe('filterDayByHidden', () => {
-  it('returns day unchanged when hiddenNames is empty', () => {
+  it('returns day unchanged when hiddenEntries is empty', () => {
     const day = makeDay([makeEntry()])
-    const result = filterDayByHidden(day, new Set())
+    const result = filterDayByHidden(day, new Map())
     expect(result).toBe(day)
   })
 
@@ -91,16 +126,17 @@ describe('filterDayByHidden', () => {
       makeEntry({ subject_name: 'Математика' }),
       makeEntry({ subject_name: 'Физика' }),
     ])
-    const result = filterDayByHidden(day, new Set(['Математика']))
+    const hidden = new Map<string, Set<string> | null>([['Математика', null]])
+    const result = filterDayByHidden(day, hidden)
     expect(result.entries).toHaveLength(1)
     expect(result.entries[0].subject_name).toBe('Физика')
   })
 })
 
 describe('filterWeekByHidden', () => {
-  it('returns week unchanged when hiddenNames is empty', () => {
+  it('returns week unchanged when hiddenEntries is empty', () => {
     const week = makeWeek([makeDay([makeEntry()])])
-    const result = filterWeekByHidden(week, new Set())
+    const result = filterWeekByHidden(week, new Map())
     expect(result).toBe(week)
   })
 
@@ -115,10 +151,26 @@ describe('filterWeekByHidden', () => {
         makeEntry({ subject_name: 'Химия' }),
       ]),
     ])
-    const result = filterWeekByHidden(week, new Set(['Математика']))
+    const hidden = new Map<string, Set<string> | null>([['Математика', null]])
+    const result = filterWeekByHidden(week, hidden)
     expect(result.days[0].entries).toHaveLength(1)
     expect(result.days[0].entries[0].subject_name).toBe('Физика')
     expect(result.days[1].entries).toHaveLength(1)
     expect(result.days[1].entries[0].subject_name).toBe('Химия')
+  })
+
+  it('per-type filter works across days', () => {
+    const week = makeWeek([
+      makeDay([
+        makeEntry({ subject_name: 'Физика', lesson_type: 'lecture' }),
+        makeEntry({ subject_name: 'Физика', lesson_type: 'lab' }),
+      ]),
+    ])
+    const hidden = new Map<string, Set<string> | null>([
+      ['Физика', new Set(['lab'])],
+    ])
+    const result = filterWeekByHidden(week, hidden)
+    expect(result.days[0].entries).toHaveLength(1)
+    expect(result.days[0].entries[0].lesson_type).toBe('lecture')
   })
 })

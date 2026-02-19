@@ -13,6 +13,9 @@ import type { ThemeMode } from '@/types/auth'
 
 const STORAGE_KEY = 'studyhelper-local-settings'
 
+/** Hidden subjects config: subject ID → hidden lesson types (null = all). */
+type HiddenSubjects = Record<string, string[] | null>
+
 interface LocalSettingsState {
   /** User's subgroup (1, 2, ...) or null to show all. */
   subgroup: number | null
@@ -23,8 +26,8 @@ interface LocalSettingsState {
   /** Theme mode for FOUC prevention. */
   themeMode: ThemeMode
 
-  /** Hidden subject IDs. */
-  hiddenSubjects: number[]
+  /** Hidden subject IDs with per-type config. */
+  hiddenSubjects: HiddenSubjects
 
   /** Set user's subgroup preference. */
   setSubgroup: (value: number | null) => void
@@ -36,32 +39,53 @@ interface LocalSettingsState {
   setThemeMode: (value: ThemeMode) => void
 
   /** Set hidden subjects. */
-  setHiddenSubjects: (value: number[]) => void
+  setHiddenSubjects: (value: HiddenSubjects) => void
 }
 
 interface StoredSettings {
   subgroup: number | null
   peTeacher: string | null
   themeMode: ThemeMode
-  hiddenSubjects: number[]
+  hiddenSubjects: HiddenSubjects
 }
 
-/** Read settings from localStorage. */
+/** Read settings from localStorage with migration from old format. */
 function readFromStorage(): StoredSettings {
+  const defaults: StoredSettings = {
+    subgroup: null,
+    peTeacher: null,
+    themeMode: 'system',
+    hiddenSubjects: {},
+  }
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    if (!stored) {
-      return { subgroup: null, peTeacher: null, themeMode: 'system', hiddenSubjects: [] }
+    if (!stored) return defaults
+    const parsed = JSON.parse(stored) as Record<string, unknown>
+
+    // Migrate old array format [1, 5] → {"1": null, "5": null}
+    let hiddenSubjects: HiddenSubjects = {}
+    if (Array.isArray(parsed.hiddenSubjects)) {
+      for (const id of parsed.hiddenSubjects) {
+        if (typeof id === 'number' && id > 0) {
+          hiddenSubjects[String(id)] = null
+        }
+      }
+    } else if (
+      parsed.hiddenSubjects &&
+      typeof parsed.hiddenSubjects === 'object' &&
+      !Array.isArray(parsed.hiddenSubjects)
+    ) {
+      hiddenSubjects = parsed.hiddenSubjects as HiddenSubjects
     }
-    const parsed = JSON.parse(stored) as Partial<StoredSettings>
+
     return {
-      subgroup: parsed.subgroup ?? null,
-      peTeacher: parsed.peTeacher ?? null,
-      themeMode: parsed.themeMode ?? 'system',
-      hiddenSubjects: parsed.hiddenSubjects ?? [],
+      subgroup: (parsed.subgroup as number | null) ?? null,
+      peTeacher: (parsed.peTeacher as string | null) ?? null,
+      themeMode: (parsed.themeMode as ThemeMode) ?? 'system',
+      hiddenSubjects,
     }
   } catch {
-    return { subgroup: null, peTeacher: null, themeMode: 'system', hiddenSubjects: [] }
+    return defaults
   }
 }
 

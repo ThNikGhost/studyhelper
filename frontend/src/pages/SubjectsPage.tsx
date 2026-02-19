@@ -36,7 +36,14 @@ export function SubjectsPage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { settings } = useUserSettings()
-  const hiddenSet = new Set(settings.hiddenSubjects)
+  const fullyHiddenIds = useMemo(() => {
+    const hs = settings.hiddenSubjects
+    const ids = new Set<number>()
+    for (const [id, types] of Object.entries(hs)) {
+      if (types === null) ids.add(Number(id))
+    }
+    return ids
+  }, [settings.hiddenSubjects])
   const [selectedSemesterId, setSelectedSemesterId] = useState<number | undefined>(undefined)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null)
@@ -304,7 +311,7 @@ export function SubjectsPage() {
 
         {/* Subjects list with progress */}
         <div className="space-y-3">
-          {subjects.filter((s) => !hiddenSet.has(s.id)).map((subject) => (
+          {subjects.filter((s) => !fullyHiddenIds.has(s.id)).map((subject) => (
             <SubjectProgressCard
               key={subject.id}
               subject={subject}
@@ -317,7 +324,7 @@ export function SubjectsPage() {
         </div>
 
         {/* Empty state */}
-        {subjects.filter((s) => !hiddenSet.has(s.id)).length === 0 && (
+        {subjects.filter((s) => !fullyHiddenIds.has(s.id)).length === 0 && (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
               <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />

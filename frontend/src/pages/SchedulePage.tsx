@@ -14,7 +14,7 @@ import { filterWeekSchedule } from '@/lib/peTeacherFilter'
 import { filterWeekBySubgroup } from '@/lib/subgroupFilter'
 import { filterWeekByHidden } from '@/lib/hiddenSubjectFilter'
 import { useUserSettings } from '@/hooks/useUserSettings'
-import { useHiddenSubjectNames } from '@/hooks/useHiddenSubjectNames'
+import { useHiddenSubjects } from '@/hooks/useHiddenSubjects'
 import { toast } from 'sonner'
 import scheduleService from '@/services/scheduleService'
 import { noteService } from '@/services/noteService'
@@ -27,6 +27,17 @@ function addDays(dateStr: string, days: number): string {
   return formatDateLocal(date)
 }
 
+/** Check if a schedule entry is hidden by the per-type config. */
+function isEntryHidden(
+  entry: ScheduleEntry,
+  hiddenEntries: Map<string, Set<string> | null>,
+): boolean {
+  const types = hiddenEntries.get(entry.subject_name)
+  if (types === undefined) return false
+  if (types === null) return true
+  return types.has(entry.lesson_type)
+}
+
 export function SchedulePage() {
   const isOnline = useNetworkStatus()
   const [targetDate, setTargetDate] = useState<string | undefined>(undefined)
@@ -34,7 +45,7 @@ export function SchedulePage() {
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
   const { settings } = useUserSettings()
   const { subgroup, peTeacher } = settings
-  const hiddenNames = useHiddenSubjectNames()
+  const { hiddenEntries } = useHiddenSubjects()
   const today = getToday()
   const queryClient = useQueryClient()
 
@@ -72,19 +83,24 @@ export function SchedulePage() {
   // but with hidden subjects filtered out
   const allEntries = useMemo(() => {
     if (!weekSchedule) return []
-    return weekSchedule.days
-      .flatMap((d) => d.entries)
-      .filter((e) => !hiddenNames.has(e.subject_name))
-  }, [weekSchedule, hiddenNames])
+    const entries = weekSchedule.days.flatMap((d) => d.entries)
+    if (hiddenEntries.size === 0) return entries
+    return entries.filter((e) => {
+      const types = hiddenEntries.get(e.subject_name)
+      if (types === undefined) return true
+      if (types === null) return false
+      return !types.has(e.lesson_type)
+    })
+  }, [weekSchedule, hiddenEntries])
 
   // Apply filters: PE teacher, subgroup, hidden subjects
   const filteredWeekSchedule = useMemo(() => {
     if (!weekSchedule) return undefined
     let filtered = filterWeekSchedule(weekSchedule, peTeacher)
     filtered = filterWeekBySubgroup(filtered, subgroup)
-    filtered = filterWeekByHidden(filtered, hiddenNames)
+    filtered = filterWeekByHidden(filtered, hiddenEntries)
     return filtered
-  }, [weekSchedule, peTeacher, subgroup, hiddenNames])
+  }, [weekSchedule, peTeacher, subgroup, hiddenEntries])
 
   // Mutation for refreshing schedule from OmGU
   const refreshMutation = useMutation({
@@ -263,7 +279,7 @@ export function SchedulePage() {
         </Card>
 
         {/* Current lesson indicator */}
-        {currentLesson?.current && isCurrentWeek && timeRemaining && !hiddenNames.has(currentLesson.current.subject_name) && (
+        {currentLesson?.current && isCurrentWeek && timeRemaining && !isEntryHidden(currentLesson.current, hiddenEntries) && (
           <Card className="mb-2 border-primary">
             <CardContent className="py-2 px-3">
               <div className="flex items-center justify-between">
@@ -283,7 +299,7 @@ export function SchedulePage() {
         )}
 
         {/* Next lesson (when no current) */}
-        {!currentLesson?.current && currentLesson?.next && isCurrentWeek && !hiddenNames.has(currentLesson.next.subject_name) && (
+        {!currentLesson?.current && currentLesson?.next && isCurrentWeek && !isEntryHidden(currentLesson.next, hiddenEntries) && (
           <Card className="mb-2">
             <CardContent className="py-2 px-3">
               <div className="flex items-center justify-between">
