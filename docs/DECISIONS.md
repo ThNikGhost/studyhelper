@@ -1363,3 +1363,7 @@ widget_api_keys      — API-ключи для виджетов (per user)
 | 2026-02-19 | appendTimezoneOffset на фронтенде | Naive datetime из `<input>` → backend парсит как UTC → +6h при чтении = off-by-one day; фикс: клиент добавляет offset перед отправкой |
 | 2026-02-19 | deadline_has_time boolean вместо nullable time | Всегда храним полный datetime (23:59 для date-only), флаг управляет отображением; проще SQL-запросы, нет NULL time edge-cases |
 | 2026-02-19 | Batch-добавление через Promise.allSettled | Frontend-only, без нового backend endpoint; allSettled показывает partial success; достаточно для 5-10 работ |
+| 2026-02-19 | hidden_subjects: JSON вместо PostgreSQL ARRAY | Тесты используют aiosqlite, который не поддерживает ARRAY; JSON работает в SQLite 3.38+ и PostgreSQL |
+| 2026-02-19 | hidden_subjects: subject ID вместо имён | ID привязаны к семестру → скрытие автоматически "сбрасывается" при смене семестра; стейлые ID очищаются через UI |
+| 2026-02-19 | hidden_subjects: валидация max 100, dedup, positive-only | Pydantic field_validator: защита от DoS (огромные списки), очистка некорректных данных на входе |
+| 2026-02-19 | Фильтрация hidden subjects: backend + frontend | Backend: schedule_filters (calendar, widget, telegram); Frontend: все 5 страниц (schedule, dashboard, subjects, works, attendance) |
