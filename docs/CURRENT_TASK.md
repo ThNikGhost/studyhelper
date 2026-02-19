@@ -3,19 +3,20 @@
 ## Статус
 **Проект в режиме поддержки. CD реализован, протестирован и работает в проде.**
 
-Последний коммит `aa862fe` (2026-02-19): fix(android) — countdown больше не уходит в минус при начале пары (precise timing + AlarmManager refresh).
+Последний коммит `7f0aa94` (2026-02-19): feat(settings) — hidden subjects per-user setting, скрытие предметов из всех представлений.
 
 ### Что сделано сегодня (2026-02-19):
-- fix: Redis distributed lock для morning summary и deadline alert jobs (предотвращает дубликаты при `--workers 2`)
-- fix: исключение volatile поля `lesson_date` из `compute_schedule_hash()` — хеш стабилен при еженедельной смене дат
-- fix(android): countdown виджета больше не тикает в минус:
-  - `computePreciseMsUntil()` — точность до секунды вместо минут
-  - `scheduleUpdateAlarm()` — AlarmManager exact alarm на момент начала пары
-  - `WidgetRefreshReceiver` — BroadcastReceiver для обновления виджета при срабатывании alarm
-  - Cleanup alarm в `onDisabled()`
+- feat: hidden subjects — per-user настройка скрытия предметов:
+  - Backend: миграция (JSON column), модель, схема с валидацией (max 100, dedup, positive-only), фильтрация в schedule_filters
+  - Frontend: фильтрация на всех страницах (Schedule, Dashboard, Subjects, Works, Attendance)
+  - Settings UI: карточка с toggle-кнопками предметов текущего семестра, очистка стейлых ID
+  - 12 новых тестов (5 auth + 7 schedule_filters)
+- fix: Redis distributed lock для morning summary и deadline alert jobs
+- fix: исключение volatile поля `lesson_date` из `compute_schedule_hash()`
+- fix(android): countdown виджета больше не тикает в минус
 
 ## Следующие шаги (по приоритету)
-- Деплой backend-фиксов на прод (Redis lock + hash fix) и проверка логов
+- Деплой hidden subjects + backend-фиксов на прод
 - Сборка и тестирование Android APK с fix countdown (тег `android/v*` для release)
 - (Фаза 3) httpOnly cookies — access in memory, refresh in httpOnly cookie
 - (Фаза 3) JWT blacklist через Redis

@@ -3,13 +3,13 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-19 (fix Android widget countdown going negative — precise timing + AlarmManager refresh)
+- **Дата обновления**: 2026-02-19 (feat: hidden subjects per-user setting — hide subjects from all views)
 
 ## Backend модули
 
 | Модуль | Модель | Схемы | Сервис | Роутер | Тесты |
 |--------|--------|-------|--------|--------|-------|
-| Auth | User (+settings) | UserSettingsUpdate | CRUD + settings | +PATCH /me/settings | 21 |
+| Auth | User (+settings, +hidden_subjects) | UserSettingsUpdate | CRUD + settings | +PATCH /me/settings | 26 |
 | Semesters | +start/end_date | +Timeline | +timeline | +timeline | 26 |
 | Subjects | +planned_classes, +total_hours | — | — | — | 18 |
 | Works | Work, WorkStatus, WorkStatusHistory | — | — | — | 23 |
@@ -109,12 +109,12 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 620 |
+| Backend тестов | 631 |
 | Frontend тестов | 375 |
 | Покрытие | ~80% |
 | API endpoints | ~75 |
 | Моделей | 19 |
-| Миграций | 22 |
+| Миграций | 23 |
 | Frontend страниц | 13 |
 | Линтеры | Ruff + ESLint clean |
 | Build | TypeScript + Vite clean |
