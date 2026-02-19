@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-19 (feat: hidden subjects per-user setting — hide subjects from all views)
+- **Дата обновления**: 2026-02-19 (feat(works): timezone fix, optional deadline time, batch add)
 
 ## Backend модули
 
@@ -12,7 +12,7 @@
 | Auth | User (+settings, +hidden_subjects) | UserSettingsUpdate | CRUD + settings | +PATCH /me/settings | 26 |
 | Semesters | +start/end_date | +Timeline | +timeline | +timeline | 26 |
 | Subjects | +planned_classes, +total_hours | — | — | — | 18 |
-| Works | Work, WorkStatus, WorkStatusHistory | — | — | — | 23 |
+| Works | Work (+deadline_has_time), WorkStatus, WorkStatusHistory | — | — | — | 23 |
 | Teachers | — | — | — | — | 20 |
 | University | Department, Building | — | — | — | 28 |
 | Classmates | — | — | — | — | 20 |
@@ -31,11 +31,11 @@
 
 13 страниц: Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Timeline, Settings, Grades. (Notes убрана из навигации, доступна через LessonDetailModal)
 
-**Последние UI-улучшения (2026-02-18):**
-- Вкладка "Семестры" убрана из Quick Actions на дашборде (роут `/semesters` сохранён)
-- Селектор семестра в SubjectsPage: формат "6 семестр 2025/2026", бейдж "Текущий", даты под селектором
-- Кнопки edit/delete в карточке предмета: убран absolute overlay, кнопки встроены в заголовок карточки
-- `formatIsoDate` добавлен в `dateUtils.ts`
+**Последние UI-улучшения (2026-02-19):**
+- WorksPage: split date/time deadline input, optional time with "date-only" hint
+- WorksPage: batch mode — add multiple works at once (single/batch toggle)
+- formatDeadline: shows time when hasTime=true (e.g. "Завтра 18:00")
+- Timezone fix: appendTimezoneOffset on submit, toLocalDatetimeString on edit load
 
 React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (system/light/dark).
 
@@ -43,7 +43,7 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **URL**: https://studyhelper1.ru (89.110.93.63)
 - **SSL**: Let's Encrypt, certbot auto-renewal (12h)
 - **Контейнеры**: db, redis, backend, nginx, certbot (5 шт.)
-- **Миграции**: 22 применено
+- **Миграции**: 23 применено (24-я deadline_has_time ожидает деплой)
 - **Sync**: APScheduler каждые 6ч + Redis distributed lock
 - **Backups**: pg_dump daily cron (3:00 UTC), gzip, 7-day rotation
 
@@ -109,12 +109,12 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 631 |
-| Frontend тестов | 375 |
+| Backend тестов | 629 |
+| Frontend тестов | 385 |
 | Покрытие | ~80% |
 | API endpoints | ~75 |
 | Моделей | 19 |
-| Миграций | 23 |
+| Миграций | 24 |
 | Frontend страниц | 13 |
 | Линтеры | Ruff + ESLint clean |
 | Build | TypeScript + Vite clean |

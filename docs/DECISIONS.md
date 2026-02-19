@@ -1360,3 +1360,6 @@ widget_api_keys      — API-ключи для виджетов (per user)
 | 2026-02-19 | Исключение lesson_date из schedule hash | lesson_date меняется еженедельно без реальных изменений расписания → ложные уведомления |
 | 2026-02-19 | AlarmManager exact alarm для widget countdown | Chronometer не имеет auto-stop; setExact(ELAPSED_REALTIME) battery-friendly, не будит телефон; fallback на set() для API 33+ без permission |
 | 2026-02-19 | computePreciseMsUntil с секундной точностью | minutesUntil из API — целые минуты, Chronometer показывает секунды → до 59 сек drift; парсим timeStart vs Calendar |
+| 2026-02-19 | appendTimezoneOffset на фронтенде | Naive datetime из `<input>` → backend парсит как UTC → +6h при чтении = off-by-one day; фикс: клиент добавляет offset перед отправкой |
+| 2026-02-19 | deadline_has_time boolean вместо nullable time | Всегда храним полный datetime (23:59 для date-only), флаг управляет отображением; проще SQL-запросы, нет NULL time edge-cases |
+| 2026-02-19 | Batch-добавление через Promise.allSettled | Frontend-only, без нового backend endpoint; allSettled показывает partial success; достаточно для 5-10 работ |
