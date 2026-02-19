@@ -1,19 +1,23 @@
 # Текущая задача
 
 ## Статус
-**Проект в режиме поддержки. CD реализован, протестирован и работает в проде.**
+**Проект в режиме поддержки. Все фичи реализованы и задеплоены.**
 
-Последний коммит `db72b6d` (2026-02-19): fix(android) — fix FileProvider StringIndexOutOfBoundsException on APK install.
+Последний коммит `5791122` (2026-02-19): fix(migration) — correct alembic down_revision to latest head.
 
 ### Что сделано в этой сессии (2026-02-19):
-- fix(android): исправлен краш при установке APK через FileProvider
-  - `file_paths.xml`: `path="update.apk"` → `path="."` (FileProvider ожидает директорию, не файл)
-  - Бамп версии: 1.3.0 → 1.3.2 (versionCode 8 → 9)
-  - Тег `android/v1.3.2` → CI собрал и опубликовал release APK на GitHub Releases
+- feat(hidden-subjects): per-lesson-type subject hiding
+  - Backend: hidden_subjects изменён с `list[int]` на `dict[str, list[str] | null]`
+  - Backend: per-type фильтрация в schedule_filters (calendar, widget)
+  - Backend: data migration h8i9j0k1l2m3 (list→dict конвертация)
+  - Frontend: UI с цветными чипами типов занятий в SettingsPage
+  - Frontend: двухуровневая фильтрация (per-type для расписания, fully-hidden для остальных)
+  - Frontend: обновлены все 5 consuming pages + localStorage migration
+  - 21 файл изменён, 11 новых тестов (642 backend, 388 frontend)
+- fix(migration): исправлен down_revision (multiple heads → single head)
+- Успешный деплой на прод, все контейнеры healthy
 
 ## Следующие шаги (по приоритету)
-- Деплой всех изменений на прод (миграции b2c3d4e5f6g8 + a1b2c3d4e5f7 + новые типы работ)
-- Тестирование APK 1.3.2 на устройстве (обновление с 1.3.1 должно работать без краша)
 - (Фаза 3) httpOnly cookies — access in memory, refresh in httpOnly cookie
 - (Фаза 3) JWT blacklist через Redis
 - (Будущее) CSP: убрать `unsafe-inline` (hash-based или vite-csp-guard)

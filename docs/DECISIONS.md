@@ -1368,3 +1368,5 @@ widget_api_keys      — API-ключи для виджетов (per user)
 | 2026-02-19 | hidden_subjects: валидация max 100, dedup, positive-only | Pydantic field_validator: защита от DoS (огромные списки), очистка некорректных данных на входе |
 | 2026-02-19 | Фильтрация hidden subjects: backend + frontend | Backend: schedule_filters (calendar, widget, telegram); Frontend: все 5 страниц (schedule, dashboard, subjects, works, attendance) |
 | 2026-02-19 | FileProvider path="." вместо path="update.apk" | FileProvider интерпретирует path как директорию; path="update.apk" вызывал StringIndexOutOfBoundsException |
+| 2026-02-19 | hidden_subjects dict с per-type filtering | `dict[str, list[str]\|null]` вместо `list[int]`: null=hide all, ["lab"]=hide only labs; двухуровневая фильтрация |
+| 2026-02-19 | Alembic data-only migration для dict формата | DDL не меняется (JSON column); upgrade конвертирует `[5,12]` → `{"5":null,"12":null}` |

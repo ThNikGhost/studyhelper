@@ -3,13 +3,13 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-19 (fix: Android FileProvider APK install crash)
+- **Дата обновления**: 2026-02-19 (feat: per-lesson-type subject hiding)
 
 ## Backend модули
 
 | Модуль | Модель | Схемы | Сервис | Роутер | Тесты |
 |--------|--------|-------|--------|--------|-------|
-| Auth | User (+settings, +hidden_subjects) | UserSettingsUpdate | CRUD + settings | +PATCH /me/settings | 26 |
+| Auth | User (+settings, +hidden_subjects dict) | UserSettingsUpdate | CRUD + settings | +PATCH /me/settings | 37 |
 | Semesters | +start/end_date | +Timeline | +timeline | +timeline | 26 |
 | Subjects | +planned_classes, +total_hours | — | — | — | 18 |
 | Works | Work (+deadline_has_time, +diff_credit/colloquium types), WorkStatus, WorkStatusHistory | — | — | — | 23 |
@@ -32,10 +32,11 @@
 13 страниц: Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Timeline, Settings, Grades. (Notes убрана из навигации, доступна через LessonDetailModal)
 
 **Последние UI-улучшения (2026-02-19):**
+- SettingsPage: per-lesson-type subject hiding — colored type chips (Лек/Прак/Лаб) per subject
+- Schedule filtering: hide specific lesson types while keeping others visible
+- Works/Subjects/Attendance: only fully hidden subjects (all types) are filtered out
 - WorksPage: split date/time deadline input, optional time with "date-only" hint
 - WorksPage: batch mode — add multiple works at once (single/batch toggle)
-- formatDeadline: shows time when hasTime=true (e.g. "Завтра 18:00")
-- Timezone fix: appendTimezoneOffset on submit, toLocalDatetimeString on edit load
 - SchedulePage: hidden subjects filtered from alternate entry "!" indicators
 
 React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (system/light/dark).
@@ -44,7 +45,7 @@ React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (
 - **URL**: https://studyhelper1.ru (89.110.93.63)
 - **SSL**: Let's Encrypt, certbot auto-renewal (12h)
 - **Контейнеры**: db, redis, backend, nginx, certbot (5 шт.)
-- **Миграции**: 23 применено (24-я deadline_has_time ожидает деплой)
+- **Миграции**: 25 применено (все задеплоены)
 - **Sync**: APScheduler каждые 6ч + Redis distributed lock
 - **Backups**: pg_dump daily cron (3:00 UTC), gzip, 7-day rotation
 
@@ -110,12 +111,12 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 631 |
-| Frontend тестов | 385 |
+| Backend тестов | 642 |
+| Frontend тестов | 388 |
 | Покрытие | ~80% |
 | API endpoints | ~75 |
 | Моделей | 19 |
-| Миграций | 24 |
+| Миграций | 25 |
 | Frontend страниц | 13 |
 | Линтеры | Ruff + ESLint clean |
 | Build | TypeScript + Vite clean |
