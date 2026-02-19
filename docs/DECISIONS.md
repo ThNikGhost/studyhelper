@@ -1358,3 +1358,5 @@ widget_api_keys      — API-ключи для виджетов (per user)
 | 2026-02-18 | Rollback только если deploy успешен | git pull упал → старые контейнеры живы, откатывать нечего |
 | 2026-02-19 | Redis lock для Telegram notification jobs | APScheduler 3.x не координирует jobs между workers; Redis lock по паттерну schedule_sync |
 | 2026-02-19 | Исключение lesson_date из schedule hash | lesson_date меняется еженедельно без реальных изменений расписания → ложные уведомления |
+| 2026-02-19 | AlarmManager exact alarm для widget countdown | Chronometer не имеет auto-stop; setExact(ELAPSED_REALTIME) battery-friendly, не будит телефон; fallback на set() для API 33+ без permission |
+| 2026-02-19 | computePreciseMsUntil с секундной точностью | minutesUntil из API — целые минуты, Chronometer показывает секунды → до 59 сек drift; парсим timeStart vs Calendar |

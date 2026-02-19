@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-19 (fix duplicate Telegram notifications via Redis lock; fix false schedule-change alerts by excluding lesson_date from hash)
+- **Дата обновления**: 2026-02-19 (fix Android widget countdown going negative — precise timing + AlarmManager refresh)
 
 ## Backend модули
 
@@ -103,7 +103,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 - **Widget API**: per-user token query param auth, next lesson + today schedule JSON endpoints, 7-day lookahead, subgroup/PE filtering, Scriptable JS widget with offline cache
 - **Observability**: structlog (JSON prod / ConsoleRenderer dev), X-Request-ID, Prometheus metrics (/metrics), Sentry error tracking (optional, DSN-gated)
 - **CI**: GitHub Actions (backend lint+test, frontend lint+build, Android conditional release/debug build on tag)
-- **Android Widget**: Native APK (AGP 9.0.0, Kotlin built-in, Gradle 9.3.1), 4×2 AppWidgetProvider + RemoteViews, system Chronometer real-time countdown, WorkManager 30min refresh, HttpURLConnection + org.json (no external deps), SharedPreferences (API key + 24h JSON cache), release-signed APK via GitHub Releases (`android/v*` tags), Gradle-native signing with base64 keystore Secret
+- **Android Widget**: Native APK (AGP 9.0.0, Kotlin built-in, Gradle 9.3.1), 4×2 AppWidgetProvider + RemoteViews, system Chronometer real-time countdown + AlarmManager exact refresh at lesson start, WorkManager 30min refresh, HttpURLConnection + org.json (no external deps), SharedPreferences (API key + 24h JSON cache), release-signed APK via GitHub Releases (`android/v*` tags), Gradle-native signing with base64 keystore Secret
 
 ## Метрики
 
