@@ -68,11 +68,14 @@ export function SchedulePage() {
     return new Set(allNotes.map((n) => n.subject_name))
   }, [allNotes])
 
-  // All entries before filtering (for alternate entry detection)
+  // All entries before subgroup filtering (for alternate entry detection)
+  // but with hidden subjects filtered out
   const allEntries = useMemo(() => {
     if (!weekSchedule) return []
-    return weekSchedule.days.flatMap((d) => d.entries)
-  }, [weekSchedule])
+    return weekSchedule.days
+      .flatMap((d) => d.entries)
+      .filter((e) => !hiddenNames.has(e.subject_name))
+  }, [weekSchedule, hiddenNames])
 
   // Apply filters: PE teacher, subgroup, hidden subjects
   const filteredWeekSchedule = useMemo(() => {
