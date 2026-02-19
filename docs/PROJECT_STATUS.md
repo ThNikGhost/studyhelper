@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-18 (fix mobile horizontal scroll in ScheduleGrid — merged conflicting scroll containers)
+- **Дата обновления**: 2026-02-19 (fix duplicate Telegram notifications via Redis lock; fix false schedule-change alerts by excluding lesson_date from hash)
 
 ## Backend модули
 
@@ -98,7 +98,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 - **Docker**: multi-stage builds (uv backend, node frontend), nginx reverse proxy, ~1.3GB total
 - **SSL**: Let's Encrypt certbot (webroot), 3 nginx server-blocks, http2, HSTS
 - **Auto-sync**: APScheduler 3.x, IntervalTrigger(6h, jitter=60), Redis lock (TTL 600s)
-- **Telegram**: aiogram 3.25 webhook mode, conditional init (token-gated), 9 commands + reply keyboard, CronTrigger notifications
+- **Telegram**: aiogram 3.25 webhook mode, conditional init (token-gated), 9 commands + reply keyboard, CronTrigger notifications, Redis lock for notification jobs
 - **Calendar Feed**: icalendar 7.x, per-user token URL auth, schedule + deadline events, subgroup/PE filtering, REFRESH-INTERVAL 6h
 - **Widget API**: per-user token query param auth, next lesson + today schedule JSON endpoints, 7-day lookahead, subgroup/PE filtering, Scriptable JS widget with offline cache
 - **Observability**: structlog (JSON prod / ConsoleRenderer dev), X-Request-ID, Prometheus metrics (/metrics), Sentry error tracking (optional, DSN-gated)
@@ -109,7 +109,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 619 |
+| Backend тестов | 620 |
 | Frontend тестов | 375 |
 | Покрытие | ~80% |
 | API endpoints | ~75 |

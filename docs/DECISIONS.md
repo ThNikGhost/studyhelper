@@ -1356,3 +1356,5 @@ widget_api_keys      — API-ключи для виджетов (per user)
 | 2026-02-18 | StrictHostKeyChecking accept-new | SSH_KNOWN_HOSTS нет в секретах; accept-new безопаснее no |
 | 2026-02-18 | Сборка образов на сервере (git pull + docker build) | Проще настройки; если тормозит — переделать на GHCR |
 | 2026-02-18 | Rollback только если deploy успешен | git pull упал → старые контейнеры живы, откатывать нечего |
+| 2026-02-19 | Redis lock для Telegram notification jobs | APScheduler 3.x не координирует jobs между workers; Redis lock по паттерну schedule_sync |
+| 2026-02-19 | Исключение lesson_date из schedule hash | lesson_date меняется еженедельно без реальных изменений расписания → ложные уведомления |
