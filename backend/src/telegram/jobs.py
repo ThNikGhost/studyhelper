@@ -13,17 +13,17 @@ logger = logging.getLogger(__name__)
 
 
 async def _job_morning_summary() -> None:
-    """APScheduler job: send morning summaries."""
-    from src.telegram.notifications import send_morning_summaries
+    """APScheduler job: send morning summaries (with Redis lock)."""
+    from src.telegram.notifications import send_morning_summaries_locked
 
-    await send_morning_summaries()
+    await send_morning_summaries_locked()
 
 
 async def _job_deadline_check() -> None:
-    """APScheduler job: check and send deadline alerts."""
-    from src.telegram.notifications import send_deadline_alerts
+    """APScheduler job: check and send deadline alerts (with Redis lock)."""
+    from src.telegram.notifications import send_deadline_alerts_locked
 
-    await send_deadline_alerts()
+    await send_deadline_alerts_locked()
 
 
 def register_telegram_jobs(scheduler: AsyncIOScheduler) -> None:

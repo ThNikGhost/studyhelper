@@ -53,6 +53,56 @@ class TestHashUtils:
         hash2 = compute_schedule_hash(entries2)
         assert hash1 != hash2
 
+    def test_different_lesson_date_same_hash(self):
+        """Entries differing only by lesson_date should produce the same hash.
+
+        The lesson_date field changes weekly when the API returns a new week's
+        schedule, but the actual schedule structure hasn't changed.
+        """
+        entries_week1 = [
+            {
+                "day_of_week": 1,
+                "start_time": "08:00",
+                "end_time": "09:30",
+                "subject_name": "Math",
+                "teacher_name": "Ivanov",
+                "room": "301",
+                "lesson_date": "2026-02-16",
+            },
+            {
+                "day_of_week": 3,
+                "start_time": "10:00",
+                "end_time": "11:30",
+                "subject_name": "Physics",
+                "teacher_name": "Petrov",
+                "room": "205",
+                "lesson_date": "2026-02-18",
+            },
+        ]
+        entries_week2 = [
+            {
+                "day_of_week": 1,
+                "start_time": "08:00",
+                "end_time": "09:30",
+                "subject_name": "Math",
+                "teacher_name": "Ivanov",
+                "room": "301",
+                "lesson_date": "2026-02-23",
+            },
+            {
+                "day_of_week": 3,
+                "start_time": "10:00",
+                "end_time": "11:30",
+                "subject_name": "Physics",
+                "teacher_name": "Petrov",
+                "room": "205",
+                "lesson_date": "2026-02-25",
+            },
+        ]
+        hash1 = compute_schedule_hash(entries_week1)
+        hash2 = compute_schedule_hash(entries_week2)
+        assert hash1 == hash2
+
 
 class TestDataMapperTime:
     """Tests for DataMapper.parse_time."""

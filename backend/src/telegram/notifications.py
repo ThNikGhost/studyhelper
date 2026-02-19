@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Awaitable, Callable
+
+from redis.exceptions import LockNotOwnedError
 
 from src.database import get_session_maker
 from src.services import telegram as tg_service
@@ -13,6 +16,38 @@ from src.telegram.formatters import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+async def _with_notification_lock(
+    lock_name: str, func: Callable[[], Awaitable[int]]
+) -> int:
+    """Run notification function under Redis distributed lock.
+
+    Prevents duplicate notifications when multiple workers run
+    the same APScheduler job concurrently.
+
+    Args:
+        lock_name: Unique name for the Redis lock.
+        func: Async callable that sends notifications and returns count.
+
+    Returns:
+        Number of notifications sent, or 0 if lock was not acquired.
+    """
+    from src.scheduler import _get_redis
+
+    redis = await _get_redis()
+    lock = redis.lock(f"studyhelper:{lock_name}", timeout=300, blocking=False)
+    acquired = await lock.acquire()
+    if not acquired:
+        logger.info("Notification %s skipped: another worker holds the lock", lock_name)
+        return 0
+    try:
+        return await func()
+    finally:
+        try:
+            await lock.release()
+        except LockNotOwnedError:
+            logger.warning("Notification lock %s expired before release", lock_name)
 
 
 async def send_schedule_changed() -> int:
@@ -138,3 +173,21 @@ async def send_deadline_alerts() -> int:
 
     logger.info("Deadline alerts sent: %d total", sent)
     return sent
+
+
+async def send_morning_summaries_locked() -> int:
+    """Send morning summaries with Redis distributed lock.
+
+    Returns:
+        Number of users notified, or 0 if another worker holds the lock.
+    """
+    return await _with_notification_lock("morning_summary_lock", send_morning_summaries)
+
+
+async def send_deadline_alerts_locked() -> int:
+    """Send deadline alerts with Redis distributed lock.
+
+    Returns:
+        Number of alerts sent, or 0 if another worker holds the lock.
+    """
+    return await _with_notification_lock("deadline_alerts_lock", send_deadline_alerts)

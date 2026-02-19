@@ -36,9 +36,15 @@ def compute_schedule_hash(entries: list[dict[str, Any]]) -> str:
     if not entries:
         return hashlib.sha256(b"").hexdigest()
 
+    # Strip volatile date fields that change weekly without real schedule changes
+    _volatile_keys = {"lesson_date"}
+    stable_entries = [
+        {k: v for k, v in e.items() if k not in _volatile_keys} for e in entries
+    ]
+
     # Sort entries by day and time for consistent ordering
     sorted_entries = sorted(
-        entries,
+        stable_entries,
         key=lambda e: (
             e.get("day_of_week", 0),
             str(e.get("start_time", "")),
