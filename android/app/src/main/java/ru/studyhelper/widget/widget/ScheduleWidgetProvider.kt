@@ -65,6 +65,7 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
     override fun onDisabled(context: Context) {
         FileLogger.log(context.applicationContext, TAG, "onDisabled: last widget removed")
         WidgetRefreshWorker.cancel(context)
+        WidgetUpdater.cancelUpdateAlarm(context)
         executor.shutdown()
     }
 

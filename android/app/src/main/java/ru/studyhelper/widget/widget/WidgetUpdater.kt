@@ -1,10 +1,12 @@
 package ru.studyhelper.widget.widget
 
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
@@ -17,6 +19,7 @@ import ru.studyhelper.widget.data.LessonBrief
 import ru.studyhelper.widget.data.WidgetDisplayData
 import ru.studyhelper.widget.data.WidgetRepository
 import ru.studyhelper.widget.ui.ConfigActivity
+import java.util.Calendar
 
 /**
  * Builds RemoteViews for the widget based on current data state and widget size.
@@ -333,8 +336,8 @@ object WidgetUpdater {
      * Chronometer (API 24+, minSdk 26) renders the countdown natively with
      * per-second ticks at ~0% battery cost. Format: "через MM:SS" or "через H:MM:SS".
      *
-     * When minutesUntil <= 0 the lesson has already started — show static "Сейчас"
-     * instead of Chronometer (which would tick into negative values).
+     * Uses second-precision timing via [computePreciseMsUntil] and schedules an
+     * AlarmManager callback at lesson start to prevent negative countdown values.
      */
     private fun applyCountdown(
         context: Context,
@@ -342,14 +345,25 @@ object WidgetUpdater {
         data: WidgetDisplayData.Lesson,
     ) {
         if (data.isToday && data.minutesUntil != null && data.minutesUntil > 0) {
-            // Real-time countdown using system Chronometer
-            views.setViewVisibility(R.id.textCountdown, View.GONE)
-            val base = SystemClock.elapsedRealtime() + (data.minutesUntil * 60 * 1000L)
-            views.setChronometerCountDown(R.id.chronometerCountdown, true)
-            views.setChronometer(R.id.chronometerCountdown, base, "через %s", true)
-            views.setViewVisibility(R.id.chronometerCountdown, View.VISIBLE)
+            val msUntil = computePreciseMsUntil(data.timeStart, data.minutesUntil)
+            if (msUntil > 0) {
+                // Real-time countdown with second precision
+                views.setViewVisibility(R.id.textCountdown, View.GONE)
+                val base = SystemClock.elapsedRealtime() + msUntil
+                views.setChronometerCountDown(R.id.chronometerCountdown, true)
+                views.setChronometer(R.id.chronometerCountdown, base, "через %s", true)
+                views.setViewVisibility(R.id.chronometerCountdown, View.VISIBLE)
+                // Schedule widget refresh when lesson starts to avoid negative countdown
+                scheduleUpdateAlarm(context, msUntil)
+            } else {
+                // minutesUntil>0 but second precision says lesson already started
+                views.setViewVisibility(R.id.chronometerCountdown, View.GONE)
+                views.setTextViewText(R.id.textCountdown, "Сейчас")
+                views.setTextColor(R.id.textCountdown, color(context, R.color.widget_countdown_today))
+                views.setViewVisibility(R.id.textCountdown, View.VISIBLE)
+            }
         } else if (data.isToday && data.minutesUntil != null) {
-            // Lesson already started — static "Сейчас"
+            // minutesUntil <= 0 — lesson already started
             views.setViewVisibility(R.id.chronometerCountdown, View.GONE)
             views.setTextViewText(R.id.textCountdown, "Сейчас")
             views.setTextColor(R.id.textCountdown, color(context, R.color.widget_countdown_today))
@@ -363,6 +377,69 @@ object WidgetUpdater {
         } else {
             views.setViewVisibility(R.id.textCountdown, View.GONE)
             views.setViewVisibility(R.id.chronometerCountdown, View.GONE)
+        }
+    }
+
+    /**
+     * Compute precise milliseconds until a lesson starts using second-level resolution.
+     *
+     * The API provides [fallbackMinutes] (integer minutes), but Chronometer displays
+     * seconds — so we compute from [timeStart] ("HH:mm") vs current wall clock to
+     * avoid up to 59 seconds of drift.
+     *
+     * @param timeStart Lesson start time in "HH:mm" format.
+     * @param fallbackMinutes Coarse minutes-until from API, used if parsing fails.
+     * @return Milliseconds until lesson start (may be <= 0 if lesson just started).
+     */
+    private fun computePreciseMsUntil(timeStart: String, fallbackMinutes: Int): Long {
+        return try {
+            val parts = timeStart.split(":")
+            val lessonMs = parts[0].toLong() * 3_600_000 + parts[1].toLong() * 60_000
+            val now = Calendar.getInstance()
+            val nowMs = now.get(Calendar.HOUR_OF_DAY) * 3_600_000L +
+                now.get(Calendar.MINUTE) * 60_000L +
+                now.get(Calendar.SECOND) * 1_000L
+            lessonMs - nowMs
+        } catch (_: Exception) {
+            fallbackMinutes * 60_000L
+        }
+    }
+
+    /**
+     * Schedule an exact alarm to refresh the widget when the countdown expires.
+     *
+     * Uses ELAPSED_REALTIME (not WAKEUP) — battery-friendly, won't wake the device.
+     * On API 33+ without SCHEDULE_EXACT_ALARM permission, falls back to inexact
+     * [AlarmManager.set] (up to ~10 min delay, still better than 30 min WorkManager).
+     */
+    private fun scheduleUpdateAlarm(context: Context, msUntil: Long) {
+        if (msUntil <= 0) return
+        val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, WidgetRefreshReceiver::class.java)
+        val pi = PendingIntent.getBroadcast(
+            context, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val triggerAt = SystemClock.elapsedRealtime() + msUntil
+        if (Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms()) {
+            am.setExact(AlarmManager.ELAPSED_REALTIME, triggerAt, pi)
+        } else {
+            am.set(AlarmManager.ELAPSED_REALTIME, triggerAt, pi)
+        }
+        FileLogger.log(context, TAG, "alarm scheduled in ${msUntil / 1000}s")
+    }
+
+    /** Cancel any pending countdown refresh alarm. */
+    fun cancelUpdateAlarm(context: Context) {
+        val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, WidgetRefreshReceiver::class.java)
+        val pi = PendingIntent.getBroadcast(
+            context, 0, intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
+        )
+        if (pi != null) {
+            am.cancel(pi)
+            FileLogger.log(context, TAG, "alarm cancelled")
         }
     }
 
