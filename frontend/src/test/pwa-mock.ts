@@ -11,4 +11,6 @@ export const pwaRegisterMock = {
   setNeedRefresh: vi.fn(),
   setOfflineReady: vi.fn(),
   updateServiceWorker: vi.fn(),
+  /** Captured onRegisteredSW callback from last useRegisterSW call. */
+  onRegisteredSW: null as ((swUrl: string, registration: unknown) => void) | null,
 }

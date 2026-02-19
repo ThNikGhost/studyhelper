@@ -6,11 +6,16 @@ import { pwaRegisterMock } from './pwa-mock'
 
 // Mock virtual:pwa-register/react using shared mock state
 vi.mock('virtual:pwa-register/react', () => ({
-  useRegisterSW: () => ({
-    needRefresh: [pwaRegisterMock.needRefresh, pwaRegisterMock.setNeedRefresh],
-    offlineReady: [pwaRegisterMock.offlineReady, pwaRegisterMock.setOfflineReady],
-    updateServiceWorker: pwaRegisterMock.updateServiceWorker,
-  }),
+  useRegisterSW: (options?: { onRegisteredSW?: (swUrl: string, r: unknown) => void }) => {
+    if (options?.onRegisteredSW) {
+      pwaRegisterMock.onRegisteredSW = options.onRegisteredSW
+    }
+    return {
+      needRefresh: [pwaRegisterMock.needRefresh, pwaRegisterMock.setNeedRefresh],
+      offlineReady: [pwaRegisterMock.offlineReady, pwaRegisterMock.setOfflineReady],
+      updateServiceWorker: pwaRegisterMock.updateServiceWorker,
+    }
+  },
 }))
 
 // Mock localStorage
@@ -63,5 +68,6 @@ afterEach(() => {
   pwaRegisterMock.setNeedRefresh.mockClear()
   pwaRegisterMock.setOfflineReady.mockClear()
   pwaRegisterMock.updateServiceWorker.mockClear()
+  pwaRegisterMock.onRegisteredSW = null
 })
 afterAll(() => server.close())
