@@ -8,6 +8,8 @@ export const WorkType = {
   REPORT: 'report',
   TEST: 'test',
   EXAM: 'exam',
+  DIFF_CREDIT: 'diff_credit',
+  COLLOQUIUM: 'colloquium',
   OTHER: 'other',
 } as const
 
@@ -97,6 +99,8 @@ export const workTypeLabels: Record<WorkType, string> = {
   [WorkType.REPORT]: 'Реферат',
   [WorkType.TEST]: 'Контрольная',
   [WorkType.EXAM]: 'Экзамен',
+  [WorkType.DIFF_CREDIT]: 'Дифф. зачёт',
+  [WorkType.COLLOQUIUM]: 'Коллоквиум',
   [WorkType.OTHER]: 'Другое',
 }
 

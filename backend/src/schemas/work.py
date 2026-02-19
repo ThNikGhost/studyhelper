@@ -16,6 +16,8 @@ class WorkType(str, Enum):
     REPORT = "report"
     TEST = "test"
     EXAM = "exam"
+    DIFF_CREDIT = "diff_credit"
+    COLLOQUIUM = "colloquium"
     OTHER = "other"
 
 

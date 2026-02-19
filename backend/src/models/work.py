@@ -24,6 +24,8 @@ class WorkType(str, Enum):
     REPORT = "report"  # Реферат
     TEST = "test"  # Контрольная работа
     EXAM = "exam"  # Экзамен
+    DIFF_CREDIT = "diff_credit"  # Дифференциальный зачёт
+    COLLOQUIUM = "colloquium"  # Коллоквиум
     OTHER = "other"  # Другое
 
 
