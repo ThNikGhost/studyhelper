@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-19 (feat: hidden subjects, deadline_has_time, batch works, timezone fix, new work types)
+- **Дата обновления**: 2026-02-19 (fix: hidden subjects alternate entry indicators)
 
 ## Backend модули
 
@@ -36,6 +36,7 @@
 - WorksPage: batch mode — add multiple works at once (single/batch toggle)
 - formatDeadline: shows time when hasTime=true (e.g. "Завтра 18:00")
 - Timezone fix: appendTimezoneOffset on submit, toLocalDatetimeString on edit load
+- SchedulePage: hidden subjects filtered from alternate entry "!" indicators
 
 React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (system/light/dark).
 

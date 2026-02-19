@@ -3,14 +3,13 @@
 ## Статус
 **Проект в режиме поддержки. CD реализован, протестирован и работает в проде.**
 
-Последний коммит `8dec2ac` (2026-02-19): feat(works) — add diff_credit and colloquium work types.
+Последний коммит `a078a04` (2026-02-19): fix(hidden-subjects) — filter hidden subjects from alternate entry indicators.
 
 ### Что сделано в этой сессии (2026-02-19):
-- feat(works): добавлены два новых типа работ — `diff_credit` (Дифф. зачёт) и `colloquium` (Коллоквиум)
-  - Backend: WorkType enum в models/work.py и schemas/work.py
-  - Frontend: WorkType константа + workTypeLabels в types/work.ts
-  - Миграция не нужна (work_type хранится как String(20) в БД)
-  - Тесты: 631 backend passed, 385 frontend passed
+- fix(hidden-subjects): скрытые предметы больше не показываются как жёлтые индикаторы "!" другой подгруппы
+  - `allEntries` в SchedulePage.tsx теперь фильтрует по `hiddenNames`
+  - Одна строка `.filter()` + обновление deps массива useMemo
+  - ESLint clean, 385 frontend tests passed (3 pre-existing SchedulePage failures)
 
 ## Следующие шаги (по приоритету)
 - Деплой всех изменений на прод (миграции b2c3d4e5f6g8 + a1b2c3d4e5f7 + новые типы работ)
