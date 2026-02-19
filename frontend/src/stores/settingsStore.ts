@@ -23,6 +23,9 @@ interface LocalSettingsState {
   /** Theme mode for FOUC prevention. */
   themeMode: ThemeMode
 
+  /** Hidden subject IDs. */
+  hiddenSubjects: number[]
+
   /** Set user's subgroup preference. */
   setSubgroup: (value: number | null) => void
 
@@ -31,12 +34,16 @@ interface LocalSettingsState {
 
   /** Set theme mode. */
   setThemeMode: (value: ThemeMode) => void
+
+  /** Set hidden subjects. */
+  setHiddenSubjects: (value: number[]) => void
 }
 
 interface StoredSettings {
   subgroup: number | null
   peTeacher: string | null
   themeMode: ThemeMode
+  hiddenSubjects: number[]
 }
 
 /** Read settings from localStorage. */
@@ -44,16 +51,17 @@ function readFromStorage(): StoredSettings {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) {
-      return { subgroup: null, peTeacher: null, themeMode: 'system' }
+      return { subgroup: null, peTeacher: null, themeMode: 'system', hiddenSubjects: [] }
     }
     const parsed = JSON.parse(stored) as Partial<StoredSettings>
     return {
       subgroup: parsed.subgroup ?? null,
       peTeacher: parsed.peTeacher ?? null,
       themeMode: parsed.themeMode ?? 'system',
+      hiddenSubjects: parsed.hiddenSubjects ?? [],
     }
   } catch {
-    return { subgroup: null, peTeacher: null, themeMode: 'system' }
+    return { subgroup: null, peTeacher: null, themeMode: 'system', hiddenSubjects: [] }
   }
 }
 
@@ -73,6 +81,7 @@ export const useLocalSettingsStore = create<LocalSettingsState>((set, get) => {
     subgroup: initial.subgroup,
     peTeacher: initial.peTeacher,
     themeMode: initial.themeMode,
+    hiddenSubjects: initial.hiddenSubjects,
 
     setSubgroup: (value) => {
       set({ subgroup: value })
@@ -87,6 +96,11 @@ export const useLocalSettingsStore = create<LocalSettingsState>((set, get) => {
     setThemeMode: (value) => {
       set({ themeMode: value })
       saveToStorage({ ...get(), themeMode: value })
+    },
+
+    setHiddenSubjects: (value) => {
+      set({ hiddenSubjects: value })
+      saveToStorage({ ...get(), hiddenSubjects: value })
     },
   }
 })

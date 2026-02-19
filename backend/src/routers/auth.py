@@ -77,7 +77,12 @@ async def update_settings(
     """
     update_data = settings.model_dump(exclude_unset=True)
     # Must match UserSettingsUpdate schema fields
-    allowed_fields = {"preferred_subgroup", "preferred_pe_teacher", "theme_mode"}
+    allowed_fields = {
+        "preferred_subgroup",
+        "preferred_pe_teacher",
+        "theme_mode",
+        "hidden_subjects",
+    }
     for key, value in update_data.items():
         if key in allowed_fields:
             setattr(current_user, key, value)

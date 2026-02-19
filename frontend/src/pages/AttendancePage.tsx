@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNetworkStatus } from '@/hooks/useNetworkStatus'
+import { useUserSettings } from '@/hooks/useUserSettings'
 import { ArrowLeft, RefreshCw, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -18,6 +19,8 @@ import type { AttendanceEntry, AttendanceStats } from '@/types/attendance'
 export function AttendancePage() {
   const isOnline = useNetworkStatus()
   const queryClient = useQueryClient()
+  const { settings } = useUserSettings()
+  const hiddenSet = useMemo(() => new Set(settings.hiddenSubjects), [settings.hiddenSubjects])
 
   const [selectedSemesterId, setSelectedSemesterId] = useState<number | undefined>(undefined)
   const [filterSubjectId, setFilterSubjectId] = useState<number | null>(null)
@@ -102,6 +105,30 @@ export function AttendancePage() {
       markAbsentMutation.mutate(entryId)
     }
   }
+
+  // Filter stats and entries by hidden subjects
+  const filteredStats = useMemo(() => {
+    if (!stats || hiddenSet.size === 0) return stats
+    const filteredBySubject = stats.by_subject.filter(
+      (s) => s.subject_id === null || !hiddenSet.has(s.subject_id),
+    )
+    const totalClasses = filteredBySubject.reduce((sum, s) => sum + s.total_classes, 0)
+    const absences = filteredBySubject.reduce((sum, s) => sum + s.absences, 0)
+    const attended = totalClasses - absences
+    return {
+      ...stats,
+      total_classes: totalClasses,
+      absences,
+      attended,
+      attendance_percent: totalClasses > 0 ? Math.round((attended / totalClasses) * 100) : 100,
+      by_subject: filteredBySubject,
+    }
+  }, [stats, hiddenSet])
+
+  const filteredEntries = useMemo(() => {
+    if (hiddenSet.size === 0) return entries
+    return entries.filter((e) => e.subject_id === null || !hiddenSet.has(e.subject_id))
+  }, [entries, hiddenSet])
 
   const isLoading = semestersLoading || (hasDates && (statsLoading || entriesLoading))
   const error = statsError || entriesError
@@ -191,12 +218,12 @@ export function AttendancePage() {
       ) : hasDates ? (
         <div className="space-y-6">
           {/* Stats card */}
-          {stats && <AttendanceStatsCard stats={stats} />}
+          {filteredStats && <AttendanceStatsCard stats={filteredStats} />}
 
           {/* Subject list */}
-          {stats && stats.by_subject.length > 0 && (
+          {filteredStats && filteredStats.by_subject.length > 0 && (
             <SubjectAttendanceList
-              subjects={stats.by_subject}
+              subjects={filteredStats.by_subject}
               selectedSubjectId={filterSubjectId}
               onSelectSubject={setFilterSubjectId}
             />
@@ -217,9 +244,9 @@ export function AttendancePage() {
                 </Button>
               )}
             </h2>
-            {entries.length > 0 ? (
+            {filteredEntries.length > 0 ? (
               <AttendanceTable
-                entries={entries}
+                entries={filteredEntries}
                 onToggle={handleToggle}
                 isToggling={togglingId}
                 disabled={!isOnline}

@@ -10,7 +10,7 @@ def filter_entries_by_user_prefs(
     entries: list[ScheduleEntry],
     user: User,
 ) -> list[ScheduleEntry]:
-    """Filter schedule entries by user subgroup and PE teacher preferences.
+    """Filter schedule entries by user subgroup, PE teacher, and hidden subjects.
 
     Args:
         entries: List of schedule entries to filter.
@@ -19,6 +19,7 @@ def filter_entries_by_user_prefs(
     Returns:
         Filtered list of schedule entries.
     """
+    hidden = set(user.hidden_subjects or [])
     filtered = []
     for entry in entries:
         # Subgroup filter: show if entry has no subgroup or matches user's
@@ -37,6 +38,10 @@ def filter_entries_by_user_prefs(
             and entry.teacher_name
             and entry.teacher_name != user.preferred_pe_teacher
         ):
+            continue
+
+        # Hidden subjects filter
+        if hidden and entry.subject_id is not None and entry.subject_id in hidden:
             continue
 
         filtered.append(entry)

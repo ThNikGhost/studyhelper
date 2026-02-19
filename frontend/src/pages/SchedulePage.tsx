@@ -12,6 +12,7 @@ import { LessonDetailModal } from '@/components/schedule/LessonDetailModal'
 import { formatDateLocal, getToday, formatTimeUntil } from '@/lib/dateUtils'
 import { filterWeekSchedule } from '@/lib/peTeacherFilter'
 import { filterWeekBySubgroup } from '@/lib/subgroupFilter'
+import { filterWeekByHidden } from '@/lib/hiddenSubjectFilter'
 import { useUserSettings } from '@/hooks/useUserSettings'
 import { toast } from 'sonner'
 import scheduleService from '@/services/scheduleService'
@@ -31,7 +32,7 @@ export function SchedulePage() {
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
   const { settings } = useUserSettings()
-  const { subgroup, peTeacher } = settings
+  const { subgroup, peTeacher, hiddenSubjects } = settings
   const today = getToday()
   const queryClient = useQueryClient()
 
@@ -71,13 +72,14 @@ export function SchedulePage() {
     return weekSchedule.days.flatMap((d) => d.entries)
   }, [weekSchedule])
 
-  // Apply filters: PE teacher first, then subgroup
+  // Apply filters: PE teacher, subgroup, hidden subjects
   const filteredWeekSchedule = useMemo(() => {
     if (!weekSchedule) return undefined
     let filtered = filterWeekSchedule(weekSchedule, peTeacher)
     filtered = filterWeekBySubgroup(filtered, subgroup)
+    filtered = filterWeekByHidden(filtered, hiddenSubjects)
     return filtered
-  }, [weekSchedule, peTeacher, subgroup])
+  }, [weekSchedule, peTeacher, subgroup, hiddenSubjects])
 
   // Mutation for refreshing schedule from OmGU
   const refreshMutation = useMutation({

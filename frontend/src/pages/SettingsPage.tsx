@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Settings, Dumbbell, Users, Building2, Check, Loader2, RefreshCw, LogOut, Eye, EyeOff, Sun, Moon, Monitor, MessageCircle, Copy, Bell, BellOff, LinkIcon, Unlink, Calendar, X, Smartphone, ChevronDown } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -17,6 +17,8 @@ import { toast } from 'sonner'
 import { useUserSettings } from '@/hooks/useUserSettings'
 import { useTheme } from '@/hooks/useTheme'
 import { scheduleService } from '@/services/scheduleService'
+import subjectService from '@/services/subjectService'
+import type { Subject, Semester } from '@/types/subject'
 import { lkService } from '@/services/lkService'
 import { telegramService } from '@/services/telegramService'
 import { calendarFeedService } from '@/services/calendarFeedService'
@@ -28,8 +30,24 @@ import type { LkCredentials } from '@/types/lk'
 export default function SettingsPage() {
   const queryClient = useQueryClient()
   const { settings, updateSettings, isUpdating } = useUserSettings()
-  const { subgroup, peTeacher } = settings
+  const { subgroup, peTeacher, hiddenSubjects } = settings
   const { mode, setTheme } = useTheme()
+
+  // Fetch current semester and its subjects for hidden subjects card
+  const { data: currentSemester } = useQuery<Semester | null>({
+    queryKey: ['semesters', 'current'],
+    queryFn: ({ signal }) => subjectService.getCurrentSemester(signal),
+    staleTime: 10 * 60 * 1000,
+  })
+
+  const { data: currentSubjects = [] } = useQuery<Subject[]>({
+    queryKey: ['subjects', currentSemester?.id],
+    queryFn: ({ signal }) => subjectService.getSubjects(currentSemester!.id, signal),
+    enabled: !!currentSemester?.id,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const hiddenSet = useMemo(() => new Set(hiddenSubjects), [hiddenSubjects])
 
   // LK form state
   const [lkEmail, setLkEmail] = useState('')
@@ -278,6 +296,30 @@ export default function SettingsPage() {
 
   const isTgMutating = tgGenerateCodeMutation.isPending || tgUnlinkMutation.isPending || tgNotifyMutation.isPending
 
+  const currentSubjectIds = useMemo(
+    () => new Set(currentSubjects.map((s) => s.id)),
+    [currentSubjects],
+  )
+  const staleHiddenCount = useMemo(
+    () => hiddenSubjects.filter((id) => !currentSubjectIds.has(id)).length,
+    [hiddenSubjects, currentSubjectIds],
+  )
+
+  const toggleHiddenSubject = (subjectId: number) => {
+    const current = new Set(hiddenSubjects)
+    if (current.has(subjectId)) {
+      current.delete(subjectId)
+    } else {
+      current.add(subjectId)
+    }
+    updateSettings({ hidden_subjects: Array.from(current) })
+  }
+
+  const clearStaleHidden = () => {
+    const kept = hiddenSubjects.filter((id) => currentSubjectIds.has(id))
+    updateSettings({ hidden_subjects: kept.length > 0 ? kept : null })
+  }
+
   const availablePeTeachers = weekSchedule ? getPeTeachersFromWeek(weekSchedule) : []
 
   const handleVerify = () => {
@@ -405,6 +447,69 @@ export default function SettingsPage() {
               <p className="mt-3 text-sm text-muted-foreground">
                 Выбран: {peTeacher}
               </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Hidden Subjects Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <EyeOff className="h-5 w-5 text-slate-500" />
+              <CardTitle>Скрытые предметы</CardTitle>
+            </div>
+            <CardDescription>
+              Скрытые предметы не отображаются в расписании, дашборде, работах и посещаемости.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {currentSubjects.length > 0 ? (
+              <div className="space-y-2">
+                {currentSubjects.map((subject) => {
+                  const isHidden = hiddenSet.has(subject.id)
+                  return (
+                    <Button
+                      key={subject.id}
+                      variant={isHidden ? 'outline' : 'default'}
+                      onClick={() => toggleHiddenSubject(subject.id)}
+                      disabled={isUpdating}
+                      className="w-full justify-start gap-2"
+                    >
+                      {isHidden ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                      <span className="truncate">{subject.name}</span>
+                    </Button>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Предметы текущего семестра не найдены.
+              </p>
+            )}
+            {hiddenSubjects.length > 0 && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Скрыто предметов: {hiddenSubjects.length}
+              </p>
+            )}
+            {staleHiddenCount > 0 && (
+              <div className="mt-2 flex items-center gap-2">
+                <p className="text-sm text-muted-foreground">
+                  Из прошлых семестров: {staleHiddenCount}
+                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearStaleHidden}
+                  disabled={isUpdating}
+                  className="h-7 px-2 text-xs"
+                >
+                  Очистить
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>

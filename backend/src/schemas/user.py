@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class UserBase(BaseModel):
@@ -32,6 +32,16 @@ class UserSettingsUpdate(BaseModel):
     preferred_subgroup: int | None = None
     preferred_pe_teacher: str | None = Field(None, max_length=200)
     theme_mode: Literal["light", "dark", "system"] | None = None
+    hidden_subjects: list[int] | None = Field(None, max_length=100)
+
+    @field_validator("hidden_subjects")
+    @classmethod
+    def validate_hidden_subjects(cls, v: list[int] | None) -> list[int] | None:
+        """Deduplicate and reject non-positive IDs."""
+        if v is None:
+            return v
+        cleaned = list(dict.fromkeys(x for x in v if x > 0))
+        return cleaned or None
 
 
 class UserResponse(UserBase):
@@ -44,5 +54,6 @@ class UserResponse(UserBase):
     preferred_subgroup: int | None
     preferred_pe_teacher: str | None
     theme_mode: str | None
+    hidden_subjects: list[int] | None
     created_at: datetime
     updated_at: datetime

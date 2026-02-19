@@ -19,6 +19,7 @@ interface UserSettings {
   subgroup: number | null
   peTeacher: string | null
   themeMode: ThemeMode
+  hiddenSubjects: number[]
 }
 
 interface UseUserSettingsReturn {
@@ -65,6 +66,9 @@ export function useUserSettings(): UseUserSettingsReturn {
           ...(newSettings.theme_mode !== undefined && {
             theme_mode: newSettings.theme_mode ?? null,
           }),
+          ...(newSettings.hidden_subjects !== undefined && {
+            hidden_subjects: newSettings.hidden_subjects ?? null,
+          }),
         }
         setUser(optimisticUser)
       }
@@ -96,11 +100,13 @@ export function useUserSettings(): UseUserSettingsReturn {
         subgroup: user.preferred_subgroup,
         peTeacher: user.preferred_pe_teacher,
         themeMode: user.theme_mode ?? 'system',
+        hiddenSubjects: user.hidden_subjects ?? [],
       }
     : {
         subgroup: localSettings.subgroup,
         peTeacher: localSettings.peTeacher,
         themeMode: localSettings.themeMode,
+        hiddenSubjects: localSettings.hiddenSubjects,
       }
 
   // Update function that handles both authenticated and local modes
@@ -117,6 +123,9 @@ export function useUserSettings(): UseUserSettingsReturn {
       }
       if (newSettings.theme_mode !== undefined) {
         localSettings.setThemeMode(newSettings.theme_mode ?? 'system')
+      }
+      if (newSettings.hidden_subjects !== undefined) {
+        localSettings.setHiddenSubjects(newSettings.hidden_subjects ?? [])
       }
     }
   }

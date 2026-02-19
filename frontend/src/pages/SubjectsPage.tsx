@@ -16,6 +16,7 @@ import subjectService from '@/services/subjectService'
 import workService from '@/services/workService'
 import { calculateSemesterProgress, getProgressBarColor, getProgressColor } from '@/lib/progressUtils'
 import { formatIsoDate } from '@/lib/dateUtils'
+import { useUserSettings } from '@/hooks/useUserSettings'
 import type { Subject, SubjectCreate, Semester } from '@/types/subject'
 
 function formatSemesterLabel(semester: Semester): string {
@@ -34,6 +35,8 @@ export function SubjectsPage() {
   const isOnline = useNetworkStatus()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { settings } = useUserSettings()
+  const hiddenSet = new Set(settings.hiddenSubjects)
   const [selectedSemesterId, setSelectedSemesterId] = useState<number | undefined>(undefined)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null)
@@ -301,7 +304,7 @@ export function SubjectsPage() {
 
         {/* Subjects list with progress */}
         <div className="space-y-3">
-          {subjects.map((subject) => (
+          {subjects.filter((s) => !hiddenSet.has(s.id)).map((subject) => (
             <SubjectProgressCard
               key={subject.id}
               subject={subject}
@@ -314,7 +317,7 @@ export function SubjectsPage() {
         </div>
 
         {/* Empty state */}
-        {subjects.length === 0 && (
+        {subjects.filter((s) => !hiddenSet.has(s.id)).length === 0 && (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
               <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />

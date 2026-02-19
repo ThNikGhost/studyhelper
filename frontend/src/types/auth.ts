@@ -8,6 +8,7 @@ export interface User {
   preferred_subgroup: number | null
   preferred_pe_teacher: string | null
   theme_mode: ThemeMode | null
+  hidden_subjects: number[] | null
   created_at: string
   updated_at: string
 }
@@ -16,6 +17,7 @@ export interface UserSettingsUpdate {
   preferred_subgroup?: number | null
   preferred_pe_teacher?: string | null
   theme_mode?: ThemeMode | null
+  hidden_subjects?: number[] | null
 }
 
 export interface RegisterRequest {

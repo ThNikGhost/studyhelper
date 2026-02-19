@@ -283,3 +283,86 @@ class TestSettings:
         assert data["preferred_subgroup"] == 2
         assert data["theme_mode"] == "light"
         assert "preferred_pe_teacher" in data
+
+    async def test_update_hidden_subjects(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Test saving hidden_subjects list."""
+        response = await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"hidden_subjects": [1, 2, 3]},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["hidden_subjects"] == [1, 2, 3]
+
+    async def test_clear_hidden_subjects(self, client: AsyncClient, auth_headers: dict):
+        """Test clearing hidden_subjects by setting to null."""
+        # Set first
+        await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"hidden_subjects": [1, 2]},
+        )
+
+        # Clear
+        response = await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"hidden_subjects": None},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["hidden_subjects"] is None
+
+    async def test_update_hidden_subjects_preserves_other_settings(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Test hidden_subjects partial update preserves other settings."""
+        # Set subgroup and theme first
+        await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"preferred_subgroup": 1, "theme_mode": "dark"},
+        )
+
+        # Now set hidden_subjects only
+        response = await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"hidden_subjects": [5, 10]},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["hidden_subjects"] == [5, 10]
+        assert data["preferred_subgroup"] == 1
+        assert data["theme_mode"] == "dark"
+
+    async def test_hidden_subjects_deduplicates_and_rejects_invalid(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Test hidden_subjects validator removes duplicates and non-positive IDs."""
+        response = await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"hidden_subjects": [3, -1, 3, 0, 5, 5]},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["hidden_subjects"] == [3, 5]
+
+    async def test_hidden_subjects_all_invalid_becomes_null(
+        self, client: AsyncClient, auth_headers: dict
+    ):
+        """Test hidden_subjects with only invalid IDs becomes null."""
+        response = await client.patch(
+            "/api/v1/auth/me/settings",
+            headers=auth_headers,
+            json={"hidden_subjects": [-1, 0, -99]},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["hidden_subjects"] is None

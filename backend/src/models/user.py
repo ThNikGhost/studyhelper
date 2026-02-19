@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String
+from sqlalchemy import JSON, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models.base import Base, TimestampMixin
@@ -30,6 +30,7 @@ class User(Base, TimestampMixin):
     preferred_subgroup: Mapped[int | None] = mapped_column(nullable=True)
     preferred_pe_teacher: Mapped[str | None] = mapped_column(String(200), nullable=True)
     theme_mode: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    hidden_subjects: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
 
     # Relationships
     work_statuses: Mapped[list["WorkStatus"]] = relationship(
