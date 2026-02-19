@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-19 (feat: per-lesson-type subject hiding)
+- **Дата обновления**: 2026-02-20 (fix: PWA update prompt resilience)
 
 ## Backend модули
 
@@ -39,7 +39,7 @@
 - WorksPage: batch mode — add multiple works at once (single/batch toggle)
 - SchedulePage: hidden subjects filtered from alternate entry "!" indicators
 
-React.lazy() code splitting, PWA (offline fallback, update prompt), dark theme (system/light/dark).
+React.lazy() code splitting, PWA (offline fallback, update prompt with hourly SW checks + fallback reload), dark theme (system/light/dark).
 
 ## Деплой
 - **URL**: https://studyhelper1.ru (89.110.93.63)
