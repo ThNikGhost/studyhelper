@@ -29,6 +29,7 @@ export interface Work {
   description: string | null
   work_type: WorkType
   deadline: string | null // ISO datetime
+  deadline_has_time: boolean
   max_grade: number | null
   subject_id: number
   created_at: string
@@ -55,6 +56,7 @@ export interface WorkCreate {
   description?: string | null
   work_type: WorkType
   deadline?: string | null
+  deadline_has_time?: boolean
   max_grade?: number | null
   subject_id: number
 }
@@ -64,6 +66,7 @@ export interface WorkUpdate {
   description?: string | null
   work_type?: WorkType
   deadline?: string | null
+  deadline_has_time?: boolean
   max_grade?: number | null
   subject_id?: number
 }
@@ -79,6 +82,7 @@ export interface UpcomingWork {
   title: string
   work_type: WorkType
   deadline: string
+  deadline_has_time: boolean
   subject_id: number
   subject_name: string
   my_status: WorkStatus | null

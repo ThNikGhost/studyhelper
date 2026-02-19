@@ -74,6 +74,7 @@ async def create_work(
             description=work_data.description,
             work_type=work_data.work_type.value,
             deadline=work_data.deadline,
+            deadline_has_time=work_data.deadline_has_time,
             max_grade=work_data.max_grade,
             subject_id=work_data.subject_id,
         )

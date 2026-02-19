@@ -106,6 +106,7 @@ async def get_upcoming_works(
                 title=work.title,
                 work_type=work.work_type,
                 deadline=work.deadline,
+                deadline_has_time=work.deadline_has_time,
                 subject_id=work.subject_id,
                 subject_name=work.subject.name,
                 my_status=my_status,

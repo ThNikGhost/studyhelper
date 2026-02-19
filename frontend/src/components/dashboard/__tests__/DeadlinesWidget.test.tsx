@@ -24,6 +24,7 @@ function createWork(overrides: Partial<UpcomingWork> & { id: number; deadline: s
   return {
     title: `Work ${overrides.id}`,
     work_type: 'homework',
+    deadline_has_time: true,
     subject_id: 1,
     subject_name: 'Тестовый предмет',
     my_status: null,

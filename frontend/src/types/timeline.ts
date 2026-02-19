@@ -5,6 +5,7 @@ export interface TimelineDeadline {
   title: string
   work_type: string
   deadline: string
+  deadline_has_time: boolean
   subject_name: string
   subject_id: number
   status: string | null

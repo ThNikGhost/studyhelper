@@ -127,7 +127,11 @@ def format_deadlines(works: list) -> str:
     header = f"\u23f0 <b>Ближайшие дедлайны</b> ({len(works)} шт.)\n"
     items: list[str] = []
     for w in works:
-        deadline_str = w.deadline.strftime("%d.%m %H:%M") if w.deadline else "—"
+        if w.deadline:
+            fmt = "%d.%m %H:%M" if getattr(w, "deadline_has_time", True) else "%d.%m"
+            deadline_str = w.deadline.strftime(fmt)
+        else:
+            deadline_str = "—"
         subject_name = w.subject.name if w.subject else "—"
         items.append(
             f"\n\U0001f4cc <b>{w.title}</b>\n"
@@ -200,7 +204,13 @@ def format_morning_summary(
     if upcoming_works:
         parts.append("\n\n\u23f0 <b>Ближайшие дедлайны:</b>")
         for w in upcoming_works[:3]:
-            deadline_str = w.deadline.strftime("%d.%m %H:%M") if w.deadline else "—"
+            if w.deadline:
+                fmt = (
+                    "%d.%m %H:%M" if getattr(w, "deadline_has_time", True) else "%d.%m"
+                )
+                deadline_str = w.deadline.strftime(fmt)
+            else:
+                deadline_str = "—"
             parts.append(f"  \U0001f4cc {w.title} — {deadline_str}")
 
     return "\n".join(parts)
@@ -208,7 +218,11 @@ def format_morning_summary(
 
 def format_deadline_alert(work: object) -> str:
     """Format a single deadline alert."""
-    deadline_str = work.deadline.strftime("%d.%m %H:%M") if work.deadline else "—"  # type: ignore[union-attr]
+    if work.deadline:  # type: ignore[union-attr]
+        fmt = "%d.%m %H:%M" if getattr(work, "deadline_has_time", True) else "%d.%m"
+        deadline_str = work.deadline.strftime(fmt)  # type: ignore[union-attr]
+    else:
+        deadline_str = "—"
     subject_name = work.subject.name if work.subject else "—"  # type: ignore[union-attr]
     return (
         f"\u26a0\ufe0f <b>Дедлайн скоро!</b>\n\n"

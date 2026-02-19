@@ -7,6 +7,8 @@ import {
   formatTime,
   formatTimeUntil,
   formatLocation,
+  appendTimezoneOffset,
+  toLocalDatetimeString,
 } from '../dateUtils'
 
 describe('formatDeadline', () => {
@@ -21,36 +23,66 @@ describe('formatDeadline', () => {
     expect(formatDeadline('2026-02-05')).toBe('Просрочено')
   })
 
-  it('returns "Сегодня" when deadline just passed (within 24h)', () => {
+  it('returns "Сегодня" with time when hasTime=true', () => {
     vi.useFakeTimers()
-    // diffDays = Math.ceil(diffMs / day) = 0 when diffMs ∈ (-24h, 0]
     vi.setSystemTime(new Date('2026-02-07T14:00:00'))
 
-    expect(formatDeadline('2026-02-07T12:00:00')).toBe('Сегодня')
+    expect(formatDeadline('2026-02-07T12:00:00')).toBe('Сегодня 12:00')
   })
 
-  it('returns "Завтра" for tomorrow', () => {
+  it('returns "Сегодня" without time when hasTime=false', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T14:00:00'))
+
+    expect(formatDeadline('2026-02-07T12:00:00', false)).toBe('Сегодня')
+  })
+
+  it('returns "Завтра" with time when hasTime=true', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-02-07T12:00:00'))
 
-    expect(formatDeadline('2026-02-08T12:00:00')).toBe('Завтра')
+    expect(formatDeadline('2026-02-08T12:00:00')).toBe('Завтра 12:00')
   })
 
-  it('returns "Через N дн." for dates within 7 days', () => {
+  it('returns "Завтра" without time when hasTime=false', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-02-07T12:00:00'))
 
-    expect(formatDeadline('2026-02-12T12:00:00')).toBe('Через 5 дн.')
+    expect(formatDeadline('2026-02-08T12:00:00', false)).toBe('Завтра')
   })
 
-  it('returns formatted date for dates beyond 7 days', () => {
+  it('returns "Через N дн." with time when hasTime=true', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T12:00:00'))
+
+    expect(formatDeadline('2026-02-12T12:00:00')).toBe('Через 5 дн. 12:00')
+  })
+
+  it('returns "Через N дн." without time when hasTime=false', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T12:00:00'))
+
+    expect(formatDeadline('2026-02-12T12:00:00', false)).toBe('Через 5 дн.')
+  })
+
+  it('returns formatted date with time for dates beyond 7 days', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-02-07T12:00:00'))
 
     const result = formatDeadline('2026-03-01T12:00:00')
-    // toLocaleDateString with ru-RU returns something like "1 мар."
     expect(result).toContain('1')
     expect(result).toMatch(/мар/i)
+    expect(result).toContain('12:00')
+  })
+
+  it('returns formatted date without time when hasTime=false', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T12:00:00'))
+
+    const result = formatDeadline('2026-03-01T12:00:00', false)
+    expect(result).toContain('1')
+    expect(result).toMatch(/мар/i)
+    expect(result).not.toContain('12:00')
   })
 })
 
@@ -238,5 +270,38 @@ describe('formatLocation', () => {
 
   it('strips "ауд." prefix from room with "зал"', () => {
     expect(formatLocation(null, 'ауд. 114 Спортивный зал')).toBe('114')
+  })
+})
+
+describe('appendTimezoneOffset', () => {
+  it('appends timezone offset to naive datetime', () => {
+    const result = appendTimezoneOffset('2026-03-12T18:00')
+    // Should end with timezone offset like +06:00 or -05:00
+    expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/)
+  })
+
+  it('adds seconds if missing', () => {
+    const result = appendTimezoneOffset('2026-03-12T18:00')
+    expect(result).toContain('T18:00:00')
+  })
+
+  it('preserves seconds if already present', () => {
+    const result = appendTimezoneOffset('2026-03-12T18:00:30')
+    expect(result).toContain('T18:00:30')
+  })
+})
+
+describe('toLocalDatetimeString', () => {
+  it('converts ISO string to YYYY-MM-DDTHH:MM format', () => {
+    // Use a date that we know the local representation of
+    const result = toLocalDatetimeString('2026-03-12T12:00:00')
+    expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)
+  })
+
+  it('produces valid datetime-local input value', () => {
+    const input = '2026-06-15T09:30:00'
+    const result = toLocalDatetimeString(input)
+    // Should be parseable as a date
+    expect(new Date(result).toString()).not.toBe('Invalid Date')
   })
 })

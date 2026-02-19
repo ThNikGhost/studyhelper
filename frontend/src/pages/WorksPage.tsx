@@ -11,6 +11,8 @@ import {
   Calendar,
   Filter,
   Loader2,
+  X,
+  Clock,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -19,7 +21,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
 import { toast } from 'sonner'
-import { formatDeadline, getDeadlineColor } from '@/lib/dateUtils'
+import {
+  formatDeadline,
+  getDeadlineColor,
+  appendTimezoneOffset,
+  toLocalDatetimeString,
+} from '@/lib/dateUtils'
+import { useUserSettings } from '@/hooks/useUserSettings'
 import workService from '@/services/workService'
 import subjectService from '@/services/subjectService'
 import type {
@@ -41,6 +49,8 @@ import type { Subject, Semester } from '@/types/subject'
 export function WorksPage() {
   const isOnline = useNetworkStatus()
   const queryClient = useQueryClient()
+  const { settings } = useUserSettings()
+  const hiddenSet = new Set(settings.hiddenSubjects)
   const [filterSubjectId, setFilterSubjectId] = useState<number | undefined>(undefined)
   const [filterStatus, setFilterStatus] = useState<WorkStatus | undefined>(undefined)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -57,6 +67,21 @@ export function WorksPage() {
     max_grade: undefined,
     subject_id: 0,
   })
+
+  // Split date/time state for deadline
+  const [deadlineDate, setDeadlineDate] = useState('')
+  const [deadlineTime, setDeadlineTime] = useState('')
+
+  // Batch mode state
+  interface BatchRow {
+    title: string
+    deadlineDate: string
+    deadlineTime: string
+  }
+  const [isBatchMode, setIsBatchMode] = useState(false)
+  const [batchRows, setBatchRows] = useState<BatchRow[]>([
+    { title: '', deadlineDate: '', deadlineTime: '' },
+  ])
 
   // Form state for status
   const [statusForm, setStatusForm] = useState<WorkStatusUpdate>({
@@ -163,19 +188,33 @@ export function WorksPage() {
       max_grade: undefined,
       subject_id: subjects[0]?.id || 0,
     })
+    setDeadlineDate('')
+    setDeadlineTime('')
+    setIsBatchMode(false)
+    setBatchRows([{ title: '', deadlineDate: '', deadlineTime: '' }])
     setEditingWork(null)
     setIsAddModalOpen(true)
   }
 
   const openEditModal = (work: WorkWithStatus) => {
+    let date = ''
+    let time = ''
+    if (work.deadline) {
+      const local = toLocalDatetimeString(work.deadline)
+      date = local.slice(0, 10)
+      time = work.deadline_has_time ? local.slice(11, 16) : ''
+    }
     setFormData({
       title: work.title,
       description: work.description || '',
       work_type: work.work_type,
-      deadline: work.deadline ? work.deadline.slice(0, 16) : '',
+      deadline: work.deadline || '',
       max_grade: work.max_grade ?? undefined,
       subject_id: work.subject_id,
     })
+    setDeadlineDate(date)
+    setDeadlineTime(time)
+    setIsBatchMode(false)
     setEditingWork(work)
     setIsAddModalOpen(true)
   }
@@ -200,13 +239,35 @@ export function WorksPage() {
       max_grade: undefined,
       subject_id: 0,
     })
+    setDeadlineDate('')
+    setDeadlineTime('')
+    setIsBatchMode(false)
+    setBatchRows([{ title: '', deadlineDate: '', deadlineTime: '' }])
+  }
+
+  /** Build deadline + deadline_has_time from date/time inputs. */
+  const buildDeadline = (date: string, time: string) => {
+    if (!date) return { deadline: null, deadline_has_time: true }
+    if (time) {
+      return {
+        deadline: appendTimezoneOffset(`${date}T${time}`),
+        deadline_has_time: true,
+      }
+    }
+    // Date only — store as 23:59 local (end of day), flag false
+    return {
+      deadline: appendTimezoneOffset(`${date}T23:59`),
+      deadline_has_time: false,
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    const { deadline, deadline_has_time } = buildDeadline(deadlineDate, deadlineTime)
     const submitData = {
       ...formData,
-      deadline: formData.deadline || null,
+      deadline,
+      deadline_has_time,
       max_grade: formData.max_grade || null,
     }
     if (editingWork) {
@@ -214,6 +275,49 @@ export function WorksPage() {
     } else {
       createMutation.mutate(submitData as WorkCreate)
     }
+  }
+
+  // Batch submit
+  const batchCreateMutation = useMutation({
+    mutationFn: async (items: WorkCreate[]) => {
+      const results = await Promise.allSettled(items.map((d) => workService.createWork(d)))
+      const succeeded = results.filter((r) => r.status === 'fulfilled').length
+      const failed = results.filter((r) => r.status === 'rejected').length
+      return { succeeded, failed }
+    },
+    onSuccess: ({ succeeded, failed }) => {
+      queryClient.invalidateQueries({ queryKey: ['works'] })
+      if (failed === 0) {
+        toast.success(`Добавлено работ: ${succeeded}`)
+      } else {
+        toast.warning(`Добавлено: ${succeeded}, ошибок: ${failed}`)
+      }
+      closeModal()
+    },
+    onError: () => {
+      toast.error('Не удалось добавить работы')
+    },
+  })
+
+  const handleBatchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const validRows = batchRows.filter((r) => r.title.trim())
+    if (validRows.length === 0) return
+
+    const items: WorkCreate[] = validRows.map((row) => {
+      const { deadline, deadline_has_time } = buildDeadline(row.deadlineDate, row.deadlineTime)
+      return {
+        title: row.title.trim(),
+        description: formData.description || null,
+        work_type: formData.work_type,
+        deadline,
+        deadline_has_time,
+        max_grade: formData.max_grade || null,
+        subject_id: formData.subject_id,
+      }
+    })
+
+    batchCreateMutation.mutate(items)
   }
 
   const handleStatusSubmit = (e: React.FormEvent) => {
@@ -230,7 +334,8 @@ export function WorksPage() {
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteMutation.isPending ||
-    updateStatusMutation.isPending
+    updateStatusMutation.isPending ||
+    batchCreateMutation.isPending
 
   // Get subject name by id (uses all subjects to handle works from past semesters)
   const getSubjectName = (id: number) => {
@@ -310,7 +415,7 @@ export function WorksPage() {
                   }
                 >
                   <option value="">Все предметы</option>
-                  {subjects.map((subject) => (
+                  {subjects.filter((s) => !hiddenSet.has(s.id)).map((subject) => (
                     <option key={subject.id} value={subject.id}>
                       {subject.short_name || subject.name}
                     </option>
@@ -353,7 +458,7 @@ export function WorksPage() {
 
         {/* Works list */}
         <div className="space-y-3">
-          {works.map((work) => (
+          {works.filter((w) => !hiddenSet.has(w.subject_id)).map((work) => (
             <Card key={work.id}>
               <CardContent className="py-4 px-4">
                 <div className="flex items-start justify-between gap-3">
@@ -378,7 +483,7 @@ export function WorksPage() {
                         className={`flex items-center gap-1 text-sm mt-2 ${getDeadlineColor(work.deadline)}`}
                       >
                         <Calendar className="h-3.5 w-3.5" />
-                        <span>{formatDeadline(work.deadline)}</span>
+                        <span>{formatDeadline(work.deadline, work.deadline_has_time)}</span>
                       </div>
                     )}
 
@@ -427,7 +532,7 @@ export function WorksPage() {
         </div>
 
         {/* Empty state */}
-        {works.length === 0 && (
+        {works.filter((w) => !hiddenSet.has(w.subject_id)).length === 0 && (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
               <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -443,17 +548,40 @@ export function WorksPage() {
           onClose={closeModal}
           title={editingWork ? 'Редактировать работу' : 'Новая работа'}
         >
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="title">Название *</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Лабораторная работа №1"
-                required
-              />
+          {/* Single/Batch toggle (only for new works) */}
+          {!editingWork && (
+            <div className="flex gap-1 mb-4 p-1 bg-muted rounded-lg">
+              <button
+                type="button"
+                className={`flex-1 text-sm py-1.5 rounded-md transition-colors ${!isBatchMode ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                onClick={() => setIsBatchMode(false)}
+              >
+                Одна работа
+              </button>
+              <button
+                type="button"
+                className={`flex-1 text-sm py-1.5 rounded-md transition-colors ${isBatchMode ? 'bg-background shadow-sm font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                onClick={() => setIsBatchMode(true)}
+              >
+                Несколько работ
+              </button>
             </div>
+          )}
+
+          <form onSubmit={isBatchMode ? handleBatchSubmit : handleSubmit} className="space-y-4">
+            {/* Common fields: subject, type (always shown) */}
+            {!isBatchMode && (
+              <div>
+                <Label htmlFor="title">Название *</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Лабораторная работа №1"
+                  required
+                />
+              </div>
+            )}
 
             <div>
               <Label htmlFor="subject">Предмет *</Label>
@@ -465,7 +593,7 @@ export function WorksPage() {
                 required
               >
                 <option value="">Выберите предмет</option>
-                {(editingWork ? allSubjects : subjects).map((subject) => (
+                {(editingWork ? allSubjects : subjects).filter((s) => !hiddenSet.has(s.id)).map((subject) => (
                   <option key={subject.id} value={subject.id}>
                     {subject.name}
                   </option>
@@ -492,15 +620,45 @@ export function WorksPage() {
               </select>
             </div>
 
-            <div>
-              <Label htmlFor="deadline">Дедлайн</Label>
-              <Input
-                id="deadline"
-                type="datetime-local"
-                value={formData.deadline || ''}
-                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-              />
-            </div>
+            {/* Deadline: split date/time (single mode only) */}
+            {!isBatchMode && (
+              <div>
+                <Label>Дедлайн</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    type="date"
+                    value={deadlineDate}
+                    onChange={(e) => setDeadlineDate(e.target.value)}
+                    className="flex-1"
+                  />
+                  <div className="relative flex-1">
+                    <Input
+                      type="time"
+                      value={deadlineTime}
+                      onChange={(e) => setDeadlineTime(e.target.value)}
+                      placeholder="Время"
+                      className={deadlineTime ? 'pr-8' : ''}
+                    />
+                    {deadlineTime && (
+                      <button
+                        type="button"
+                        onClick={() => setDeadlineTime('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        title="Убрать время"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {deadlineDate && !deadlineTime && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <Clock className="h-3 w-3 inline mr-1" />
+                    Дедлайн привязан ко дню (без времени)
+                  </p>
+                )}
+              </div>
+            )}
 
             <div>
               <Label htmlFor="max_grade">Макс. оценка</Label>
@@ -530,6 +688,76 @@ export function WorksPage() {
               />
             </div>
 
+            {/* Batch rows */}
+            {isBatchMode && (
+              <div>
+                <Label>Работы *</Label>
+                <div className="space-y-2 mt-1">
+                  {batchRows.map((row, idx) => (
+                    <div key={idx} className="flex gap-2 items-start">
+                      <div className="flex-1 space-y-1">
+                        <Input
+                          value={row.title}
+                          onChange={(e) => {
+                            const updated = [...batchRows]
+                            updated[idx] = { ...row, title: e.target.value }
+                            setBatchRows(updated)
+                          }}
+                          placeholder={`Название работы ${idx + 1}`}
+                          required
+                        />
+                        <div className="flex gap-2">
+                          <Input
+                            type="date"
+                            value={row.deadlineDate}
+                            onChange={(e) => {
+                              const updated = [...batchRows]
+                              updated[idx] = { ...row, deadlineDate: e.target.value }
+                              setBatchRows(updated)
+                            }}
+                            className="flex-1"
+                          />
+                          <Input
+                            type="time"
+                            value={row.deadlineTime}
+                            onChange={(e) => {
+                              const updated = [...batchRows]
+                              updated[idx] = { ...row, deadlineTime: e.target.value }
+                              setBatchRows(updated)
+                            }}
+                            className="flex-1"
+                          />
+                        </div>
+                      </div>
+                      {batchRows.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0 mt-1"
+                          onClick={() => setBatchRows(batchRows.filter((_, i) => i !== idx))}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 w-full"
+                  onClick={() =>
+                    setBatchRows([...batchRows, { title: '', deadlineDate: '', deadlineTime: '' }])
+                  }
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Добавить строку
+                </Button>
+              </div>
+            )}
+
             <div className="flex gap-2 pt-2">
               <Button type="button" variant="outline" className="flex-1" onClick={closeModal}>
                 Отмена
@@ -539,6 +767,8 @@ export function WorksPage() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : editingWork ? (
                   'Сохранить'
+                ) : isBatchMode ? (
+                  `Добавить (${batchRows.filter((r) => r.title.trim()).length})`
                 ) : (
                   'Добавить'
                 )}

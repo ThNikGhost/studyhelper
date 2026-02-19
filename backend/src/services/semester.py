@@ -147,6 +147,7 @@ async def get_semester_timeline(
                     title=work.title,
                     work_type=work.work_type,
                     deadline=work.deadline,
+                    deadline_has_time=work.deadline_has_time,
                     subject_name=subject_name_map.get(work.subject_id, ""),
                     subject_id=work.subject_id,
                     status=user_status,

@@ -264,8 +264,13 @@ def _work_to_event(work: Work) -> Event:
     event.add("summary", f"[Дедлайн] {work.title} ({work_type_name})")
 
     if work.deadline is not None:
-        event.add("dtstart", work.deadline)
-        event.add("dtend", work.deadline + timedelta(hours=1))
+        if work.deadline_has_time:
+            event.add("dtstart", work.deadline)
+            event.add("dtend", work.deadline + timedelta(hours=1))
+        else:
+            # All-day event
+            event.add("dtstart", work.deadline.date())
+            event.add("dtend", work.deadline.date() + timedelta(days=1))
 
     # Description
     desc_parts = []

@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models.base import Base, TimestampMixin
@@ -48,6 +48,9 @@ class Work(Base, TimestampMixin):
     work_type: Mapped[str] = mapped_column(String(20), nullable=False)
     deadline: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
+    )
+    deadline_has_time: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True
     )
     max_grade: Mapped[int | None] = mapped_column(Integer, nullable=True)
     subject_id: Mapped[int] = mapped_column(

@@ -148,7 +148,7 @@ export function DeadlinesWidget({ data, isLoading, isError }: DeadlinesWidgetPro
                       <div
                         className={`text-xs font-medium ${getDeadlineColor(work.deadline)}`}
                       >
-                        {formatDeadline(work.deadline)}
+                        {formatDeadline(work.deadline, work.deadline_has_time)}
                       </div>
                       {work.my_status === WorkStatus.COMPLETED ||
                       work.my_status === WorkStatus.SUBMITTED ||

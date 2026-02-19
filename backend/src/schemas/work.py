@@ -39,6 +39,7 @@ class WorkBase(BaseModel):
     )
     work_type: WorkType = Field(..., description="Type of work")
     deadline: datetime | None = Field(None, description="Deadline for the work")
+    deadline_has_time: bool = Field(True, description="Whether deadline includes time")
     max_grade: int | None = Field(None, ge=0, description="Maximum possible grade")
 
 
@@ -55,6 +56,7 @@ class WorkUpdate(BaseModel):
     description: str | None = Field(None, max_length=2000)
     work_type: WorkType | None = Field(None)
     deadline: datetime | None = Field(None)
+    deadline_has_time: bool | None = Field(None)
     max_grade: int | None = Field(None, ge=0)
     subject_id: int | None = Field(None)
 
@@ -132,6 +134,7 @@ class UpcomingWorkResponse(BaseModel):
     title: str
     work_type: WorkType
     deadline: datetime
+    deadline_has_time: bool = True
     subject_id: int
     subject_name: str
     my_status: WorkStatusEnum | None = None

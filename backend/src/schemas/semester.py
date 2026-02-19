@@ -68,6 +68,7 @@ class TimelineDeadline(BaseModel):
     title: str
     work_type: str
     deadline: datetime
+    deadline_has_time: bool = True
     subject_name: str
     subject_id: int
     status: str | None = None

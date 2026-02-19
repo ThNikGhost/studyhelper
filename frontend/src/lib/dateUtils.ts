@@ -3,29 +3,69 @@
  * deadline and date display across the application.
  */
 
-export function formatDeadline(deadline: string): string {
+/**
+ * Append local timezone offset to a naive datetime string.
+ *
+ * Converts "2026-03-12T18:00" → "2026-03-12T18:00:00+06:00" (for UTC+6).
+ * This ensures the backend receives a timezone-aware datetime.
+ */
+export function appendTimezoneOffset(naiveDatetime: string): string {
+  const date = new Date(naiveDatetime)
+  const offsetMinutes = -date.getTimezoneOffset()
+  const sign = offsetMinutes >= 0 ? '+' : '-'
+  const absMinutes = Math.abs(offsetMinutes)
+  const hours = String(Math.floor(absMinutes / 60)).padStart(2, '0')
+  const minutes = String(absMinutes % 60).padStart(2, '0')
+
+  // Normalize to include seconds
+  const base = naiveDatetime.length === 16 ? naiveDatetime + ':00' : naiveDatetime
+  return `${base}${sign}${hours}:${minutes}`
+}
+
+/**
+ * Convert an ISO string (possibly UTC) to a datetime-local input value.
+ *
+ * Parses the ISO string into a Date, then formats using local timezone
+ * components to produce "YYYY-MM-DDTHH:MM".
+ */
+export function toLocalDatetimeString(isoString: string): string {
+  const date = new Date(isoString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const mins = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${mins}`
+}
+
+export function formatDeadline(deadline: string, hasTime: boolean = true): string {
   const date = new Date(deadline)
   const now = new Date()
   const diffMs = date.getTime() - now.getTime()
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
 
+  const timeStr = hasTime
+    ? ` ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+    : ''
+
   if (diffDays < 0) {
     return 'Просрочено'
   }
   if (diffDays === 0) {
-    return 'Сегодня'
+    return hasTime ? `Сегодня${timeStr}` : 'Сегодня'
   }
   if (diffDays === 1) {
-    return 'Завтра'
+    return hasTime ? `Завтра${timeStr}` : 'Завтра'
   }
   if (diffDays <= 7) {
-    return `Через ${diffDays} дн.`
+    return hasTime ? `Через ${diffDays} дн.${timeStr}` : `Через ${diffDays} дн.`
   }
 
-  return date.toLocaleDateString('ru-RU', {
+  const dateStr = date.toLocaleDateString('ru-RU', {
     day: 'numeric',
     month: 'short',
   })
+  return hasTime ? `${dateStr}${timeStr}` : dateStr
 }
 
 export function getDeadlineColor(deadline: string): string {
