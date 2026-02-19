@@ -25,7 +25,10 @@ from src.schemas.widget import (
 )
 from src.services.schedule import get_schedule_entries_by_date_range
 from src.utils.location import format_location
-from src.utils.schedule_filters import filter_entries_by_user_prefs
+from src.utils.schedule_filters import (
+    filter_entries_by_user_prefs,
+    resolve_hidden_subject_names,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -216,8 +219,9 @@ async def get_next_lesson(
     # Load all entries for the lookahead range in one query
     entries = await get_schedule_entries_by_date_range(db, today, end_date)
 
-    # Filter by user preferences (subgroup, PE teacher)
-    filtered = filter_entries_by_user_prefs(entries, user)
+    # Filter by user preferences (subgroup, PE teacher, hidden subjects)
+    hidden_names = await resolve_hidden_subject_names(db, user)
+    filtered = filter_entries_by_user_prefs(entries, user, hidden_names)
 
     if not filtered:
         return NextLessonResponse(no_more_lessons=True, cached_at=cached_at)
@@ -307,8 +311,9 @@ async def get_today_schedule(
     # Load all entries for the lookahead range
     entries = await get_schedule_entries_by_date_range(db, today, end_date)
 
-    # Filter by user preferences (subgroup, PE teacher)
-    filtered = filter_entries_by_user_prefs(entries, user)
+    # Filter by user preferences (subgroup, PE teacher, hidden subjects)
+    hidden_names = await resolve_hidden_subject_names(db, user)
+    filtered = filter_entries_by_user_prefs(entries, user, hidden_names)
 
     if not filtered:
         return empty_response

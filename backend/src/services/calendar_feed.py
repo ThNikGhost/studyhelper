@@ -22,7 +22,10 @@ from src.models.semester import Semester
 from src.models.user import User
 from src.models.work import Work
 from src.utils.location import format_location
-from src.utils.schedule_filters import filter_entries_by_user_prefs
+from src.utils.schedule_filters import (
+    filter_entries_by_user_prefs,
+    resolve_hidden_subject_names,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +180,8 @@ async def generate_ics(db: AsyncSession, user_id: int) -> bytes:
     entries = await _load_schedule_entries(db, semester.start_date, semester.end_date)
 
     # Filter by user preferences
-    filtered_entries = filter_entries_by_user_prefs(entries, user)
+    hidden_names = await resolve_hidden_subject_names(db, user)
+    filtered_entries = filter_entries_by_user_prefs(entries, user, hidden_names)
 
     # Add schedule events
     for entry in filtered_entries:

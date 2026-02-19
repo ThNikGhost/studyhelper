@@ -14,6 +14,7 @@ import { filterWeekSchedule } from '@/lib/peTeacherFilter'
 import { filterWeekBySubgroup } from '@/lib/subgroupFilter'
 import { filterWeekByHidden } from '@/lib/hiddenSubjectFilter'
 import { useUserSettings } from '@/hooks/useUserSettings'
+import { useHiddenSubjectNames } from '@/hooks/useHiddenSubjectNames'
 import { toast } from 'sonner'
 import scheduleService from '@/services/scheduleService'
 import { noteService } from '@/services/noteService'
@@ -32,7 +33,8 @@ export function SchedulePage() {
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
   const { settings } = useUserSettings()
-  const { subgroup, peTeacher, hiddenSubjects } = settings
+  const { subgroup, peTeacher } = settings
+  const hiddenNames = useHiddenSubjectNames()
   const today = getToday()
   const queryClient = useQueryClient()
 
@@ -77,9 +79,9 @@ export function SchedulePage() {
     if (!weekSchedule) return undefined
     let filtered = filterWeekSchedule(weekSchedule, peTeacher)
     filtered = filterWeekBySubgroup(filtered, subgroup)
-    filtered = filterWeekByHidden(filtered, hiddenSubjects)
+    filtered = filterWeekByHidden(filtered, hiddenNames)
     return filtered
-  }, [weekSchedule, peTeacher, subgroup, hiddenSubjects])
+  }, [weekSchedule, peTeacher, subgroup, hiddenNames])
 
   // Mutation for refreshing schedule from OmGU
   const refreshMutation = useMutation({
@@ -258,7 +260,7 @@ export function SchedulePage() {
         </Card>
 
         {/* Current lesson indicator */}
-        {currentLesson?.current && isCurrentWeek && timeRemaining && (
+        {currentLesson?.current && isCurrentWeek && timeRemaining && !hiddenNames.has(currentLesson.current.subject_name) && (
           <Card className="mb-2 border-primary">
             <CardContent className="py-2 px-3">
               <div className="flex items-center justify-between">
@@ -278,7 +280,7 @@ export function SchedulePage() {
         )}
 
         {/* Next lesson (when no current) */}
-        {!currentLesson?.current && currentLesson?.next && isCurrentWeek && (
+        {!currentLesson?.current && currentLesson?.next && isCurrentWeek && !hiddenNames.has(currentLesson.next.subject_name) && (
           <Card className="mb-2">
             <CardContent className="py-2 px-3">
               <div className="flex items-center justify-between">

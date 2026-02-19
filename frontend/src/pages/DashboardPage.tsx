@@ -11,6 +11,7 @@ import { calculateSemesterProgress } from '@/lib/progressUtils'
 import { filterDaySchedule } from '@/lib/peTeacherFilter'
 import { filterDayBySubgroup } from '@/lib/subgroupFilter'
 import { filterDayByHidden } from '@/lib/hiddenSubjectFilter'
+import { useHiddenSubjectNames } from '@/hooks/useHiddenSubjectNames'
 import { TodayScheduleWidget } from '@/components/dashboard/TodayScheduleWidget'
 import { DeadlinesWidget } from '@/components/dashboard/DeadlinesWidget'
 import { SemesterProgressWidget } from '@/components/dashboard/SemesterProgressWidget'
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const { user, logout } = useAuthStore()
   const { settings } = useUserSettings()
   const { peTeacher, subgroup, hiddenSubjects } = settings
+  const hiddenNames = useHiddenSubjectNames()
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
 
   const handleLogout = async () => {
@@ -114,9 +116,9 @@ export default function DashboardPage() {
     if (!todaySchedule) return undefined
     let filtered = filterDaySchedule(todaySchedule, peTeacher)
     filtered = filterDayBySubgroup(filtered, subgroup)
-    filtered = filterDayByHidden(filtered, hiddenSubjects)
+    filtered = filterDayByHidden(filtered, hiddenNames)
     return filtered
-  }, [todaySchedule, peTeacher, subgroup, hiddenSubjects])
+  }, [todaySchedule, peTeacher, subgroup, hiddenNames])
 
   const filteredSubjects = useMemo(() => {
     if (hiddenSubjects.length === 0) return subjects
