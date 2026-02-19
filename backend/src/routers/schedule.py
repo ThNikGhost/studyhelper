@@ -3,9 +3,13 @@
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import distinct, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.dependencies import get_current_user, get_db
+from src.models.schedule import ScheduleEntry
+from src.models.semester import Semester
+from src.models.subject import Subject
 from src.models.user import User
 from src.schemas.schedule import (
     CurrentLessonResponse,
@@ -51,6 +55,53 @@ async def get_current_lesson(
 ) -> CurrentLessonResponse:
     """Get current and next upcoming lesson."""
     return await schedule_service.get_current_lesson(db)
+
+
+# Diagnostics
+@router.get("/diagnostics/subject-match")
+async def get_subject_name_match(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """Compare schedule entry subject names with Subject table names.
+
+    Returns matched names, schedule-only names, and subjects-only names
+    to diagnose hidden subjects filter coverage.
+    """
+    result = await db.execute(
+        select(Semester).where(Semester.is_current.is_(True)).limit(1)
+    )
+    semester = result.scalar_one_or_none()
+    if not semester or not semester.start_date or not semester.end_date:
+        return {
+            "matched": [],
+            "schedule_only": [],
+            "subjects_only": [],
+            "error": "No current semester or missing dates",
+        }
+
+    sched_result = await db.execute(
+        select(distinct(ScheduleEntry.subject_name)).where(
+            ScheduleEntry.lesson_date >= semester.start_date,
+            ScheduleEntry.lesson_date <= semester.end_date,
+        )
+    )
+    schedule_names = set(sched_result.scalars().all())
+
+    subj_result = await db.execute(
+        select(Subject.name).where(Subject.semester_id == semester.id)
+    )
+    subject_names = set(subj_result.scalars().all())
+
+    matched = sorted(schedule_names & subject_names)
+    schedule_only = sorted(schedule_names - subject_names)
+    subjects_only = sorted(subject_names - schedule_names)
+
+    return {
+        "matched": matched,
+        "schedule_only": schedule_only,
+        "subjects_only": subjects_only,
+    }
 
 
 # CRUD endpoints for schedule entries
