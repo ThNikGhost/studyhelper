@@ -1,7 +1,7 @@
 """convert hidden_subjects from list to dict format
 
 Revision ID: h8i9j0k1l2m3
-Revises: g7h8i9j0k1l2
+Revises: b2c3d4e5f6g8
 Create Date: 2026-02-19 12:00:00.000000
 
 """
@@ -17,7 +17,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "h8i9j0k1l2m3"
-down_revision: str | Sequence[str] | None = "g7h8i9j0k1l2"
+down_revision: str | Sequence[str] | None = "b2c3d4e5f6g8"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
