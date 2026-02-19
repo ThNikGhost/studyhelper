@@ -71,7 +71,7 @@ export function WorksPage() {
     queryFn: ({ signal }) => subjectService.getCurrentSemester(signal),
   })
 
-  // All subjects — for getSubjectName() and filter dropdown (works may span past semesters)
+  // All subjects — for getSubjectName() and edit modal (works may span past semesters)
   const { data: allSubjects = [] } = useQuery<Subject[]>({
     queryKey: ['subjects'],
     queryFn: ({ signal }) => subjectService.getSubjects(undefined, signal),
@@ -310,7 +310,7 @@ export function WorksPage() {
                   }
                 >
                   <option value="">Все предметы</option>
-                  {allSubjects.map((subject) => (
+                  {subjects.map((subject) => (
                     <option key={subject.id} value={subject.id}>
                       {subject.short_name || subject.name}
                     </option>
