@@ -301,11 +301,13 @@ class TestHiddenSubjectsFiltering:
         self, db_session: AsyncSession, math_subject, physics_subject
     ):
         """Create schedule entries for today."""
-        from datetime import date, time
+        import zoneinfo
+        from datetime import datetime, time
 
         from src.models.schedule import ScheduleEntry
 
-        today = date.today()
+        omsk_tz = zoneinfo.ZoneInfo("Asia/Omsk")
+        today = datetime.now(omsk_tz).date()
         day_of_week = today.isoweekday()
 
         entries = [
