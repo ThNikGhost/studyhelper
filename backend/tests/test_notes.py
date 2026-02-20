@@ -49,7 +49,9 @@ async def _create_note(
     return resp.json()
 
 
-async def _register_and_login(client: AsyncClient, email: str, password: str, name: str) -> dict[str, str]:
+async def _register_and_login(
+    client: AsyncClient, email: str, password: str, name: str
+) -> dict[str, str]:
     """Register a new user and return auth headers."""
     await client.post(
         "/api/v1/auth/register",
@@ -477,7 +479,9 @@ class TestCrossUserNotes:
     ) -> None:
         """User B should see the note created by User A in GET /notes/."""
         # User A creates a note
-        await _create_note(client, auth_headers, subject_name="Физика", content="Заметка A")
+        await _create_note(
+            client, auth_headers, subject_name="Физика", content="Заметка A"
+        )
 
         # Register and login User B
         headers_b = await _register_and_login(
@@ -496,7 +500,9 @@ class TestCrossUserNotes:
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
         """User B POSTing to the same subject as User A gets 200 (update, not 201)."""
-        await _create_note(client, auth_headers, subject_name="Физика", content="Заметка A")
+        await _create_note(
+            client, auth_headers, subject_name="Физика", content="Заметка A"
+        )
 
         headers_b = await _register_and_login(
             client, "userb@example.com", "password456", "User B"
@@ -570,9 +576,7 @@ class TestCrossUserNotes:
             client, "userb@example.com", "password456", "User B"
         )
 
-        response = await client.delete(
-            f"/api/v1/notes/{note['id']}", headers=headers_b
-        )
+        response = await client.delete(f"/api/v1/notes/{note['id']}", headers=headers_b)
         assert response.status_code == 204
 
         # Verify gone for everyone
