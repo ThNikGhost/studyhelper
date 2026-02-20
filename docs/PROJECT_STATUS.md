@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-20 (feat: Telegram bot hidden_subjects filtering)
+- **Дата обновления**: 2026-02-20 (feat: lesson notes shared across all users)
 
 ## Backend модули
 
@@ -81,7 +81,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 ## Архитектура
 
 ### Core
-- **Модель доступа**: общие данные (расписание, предметы, работы) + per-user (WorkStatus, Notes, Attendance)
+- **Модель доступа**: общие данные (расписание, предметы, работы, заметки) + per-user (WorkStatus, Attendance)
 - **Auth**: JWT (access 15min, refresh 7days), PyJWT, открытая регистрация
 - **DB**: PostgreSQL + aiosqlite (тесты), Alembic миграции
 - **Parser**: httpx + SHA-256 change detection, API `eservice.omsu.ru/schedule/backend/schedule/group/{group_id}`
@@ -111,12 +111,12 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 654 |
-| Frontend тестов | 388 |
+| Backend тестов | 659 |
+| Frontend тестов | 390 |
 | Покрытие | ~80% |
 | API endpoints | ~75 |
 | Моделей | 19 |
-| Миграций | 25 |
+| Миграций | 26 |
 | Frontend страниц | 13 |
 | Линтеры | Ruff + ESLint clean |
 | Build | TypeScript + Vite clean |

@@ -68,7 +68,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python D:\\vscode\\claude-projects\\studyhelper\\scripts\\hooks\\format_python.py"
+            "command": "python scripts/hooks/format_python.py"
           }
         ]
       }
