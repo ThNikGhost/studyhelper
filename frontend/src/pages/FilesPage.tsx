@@ -12,6 +12,7 @@ import fileService from '@/services/fileService'
 import subjectService from '@/services/subjectService'
 import type { StudyFile, FileCategory } from '@/types/file'
 import { fileCategoryLabels } from '@/types/file'
+import type { Subject, Semester } from '@/types/subject'
 
 export function FilesPage() {
   const isOnline = useNetworkStatus()
@@ -22,10 +23,17 @@ export function FilesPage() {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<StudyFile | null>(null)
 
-  // Fetch subjects for filters and dropzone
-  const { data: subjects = [] } = useQuery({
-    queryKey: ['subjects'],
-    queryFn: ({ signal }) => subjectService.getSubjects(undefined, signal),
+  // Fetch current semester for filtering subjects
+  const { data: currentSemester, isSuccess: semesterLoaded } = useQuery<Semester | null>({
+    queryKey: ['semesters', 'current'],
+    queryFn: ({ signal }) => subjectService.getCurrentSemester(signal),
+  })
+
+  // Fetch subjects for filters and dropzone (filtered by current semester)
+  const { data: subjects = [] } = useQuery<Subject[]>({
+    queryKey: ['subjects', currentSemester?.id],
+    queryFn: ({ signal }) => subjectService.getSubjects(currentSemester?.id, signal),
+    enabled: semesterLoaded,
   })
 
   // Fetch files
