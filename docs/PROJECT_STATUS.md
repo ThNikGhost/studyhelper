@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-20 (fix: PWA update prompt resilience)
+- **Дата обновления**: 2026-02-20 (feat: lesson_types computed field in subjects)
 
 ## Backend модули
 
@@ -11,7 +11,7 @@
 |--------|--------|-------|--------|--------|-------|
 | Auth | User (+settings, +hidden_subjects dict) | UserSettingsUpdate | CRUD + settings | +PATCH /me/settings | 37 |
 | Semesters | +start/end_date | +Timeline | +timeline | +timeline | 26 |
-| Subjects | +planned_classes, +total_hours | — | — | — | 18 |
+| Subjects | +planned_classes, +total_hours | +lesson_types (computed) | +_get_subject_lesson_types | — | 20 |
 | Works | Work (+deadline_has_time, +diff_credit/colloquium types), WorkStatus, WorkStatusHistory | — | — | — | 23 |
 | Teachers | — | — | — | — | 20 |
 | University | Department, Building | — | — | — | 28 |
@@ -111,7 +111,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 642 |
+| Backend тестов | 644 |
 | Frontend тестов | 388 |
 | Покрытие | ~80% |
 | API endpoints | ~75 |
