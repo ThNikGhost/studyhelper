@@ -41,6 +41,7 @@ export interface Subject {
   total_hours: number | null
   created_at: string
   updated_at: string
+  lesson_types: string[]
 }
 
 export interface SubjectCreate {

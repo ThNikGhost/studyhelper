@@ -21,7 +21,6 @@ import { scheduleService } from '@/services/scheduleService'
 import subjectService from '@/services/subjectService'
 import type { Subject, Semester } from '@/types/subject'
 import { LessonType, lessonTypeLabels } from '@/types/schedule'
-import type { WeekSchedule } from '@/types/schedule'
 import { lkService } from '@/services/lkService'
 import { telegramService } from '@/services/telegramService'
 import { calendarFeedService } from '@/services/calendarFeedService'
@@ -48,38 +47,6 @@ const LESSON_TYPE_CHIP_COLORS: Record<string, string> = {
   [LessonType.EXAM]: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-200 dark:border-red-700',
   [LessonType.CONSULTATION]: 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600',
   [LessonType.OTHER]: 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600',
-}
-
-/** Get unique lesson types per subject from week schedule data. */
-function getSubjectLessonTypes(
-  weekSchedule: WeekSchedule | undefined,
-  subjects: Subject[],
-): Map<number, string[]> {
-  const result = new Map<number, string[]>()
-  if (!weekSchedule || subjects.length === 0) return result
-
-  // Build name → id map
-  const nameToId = new Map(subjects.map((s) => [s.name, s.id]))
-
-  // Collect lesson types per subject
-  const typesBySubject = new Map<number, Set<string>>()
-  for (const day of weekSchedule.days) {
-    for (const entry of day.entries) {
-      const id = nameToId.get(entry.subject_name)
-      if (id === undefined) continue
-      let types = typesBySubject.get(id)
-      if (!types) {
-        types = new Set()
-        typesBySubject.set(id, types)
-      }
-      types.add(entry.lesson_type)
-    }
-  }
-
-  for (const [id, types] of typesBySubject) {
-    result.set(id, Array.from(types))
-  }
-  return result
 }
 
 export default function SettingsPage() {
@@ -125,12 +92,6 @@ export default function SettingsPage() {
     queryFn: () => scheduleService.getWeekSchedule(),
     staleTime: 1000 * 60 * 5,
   })
-
-  // Per-subject lesson types from schedule data
-  const subjectLessonTypes = useMemo(
-    () => getSubjectLessonTypes(weekSchedule, currentSubjects),
-    [weekSchedule, currentSubjects],
-  )
 
   // Fetch LK status
   const { data: lkStatus, isLoading: lkStatusLoading } = useQuery({
@@ -376,9 +337,9 @@ export default function SettingsPage() {
     updateSettings({ hidden_subjects: Object.keys(next).length > 0 ? next : null })
   }
 
-  const toggleHiddenType = (subjectId: number, lessonType: string) => {
+  const toggleHiddenType = (subjectId: number, lessonType: string, availableTypes: string[]) => {
     const key = String(subjectId)
-    const available = subjectLessonTypes.get(subjectId) ?? []
+    const available = availableTypes
     const next = { ...hiddenSubjects }
     const current = next[key]
 
@@ -588,7 +549,6 @@ export default function SettingsPage() {
                 {currentSubjects.map((subject) => {
                   const hidden = isSubjectHidden(subject.id)
                   const fullyHidden = hiddenSubjects[String(subject.id)] === null
-                  const types = subjectLessonTypes.get(subject.id) ?? []
                   return (
                     <div key={subject.id} className="flex items-center gap-2 flex-wrap">
                       <Button
@@ -608,15 +568,15 @@ export default function SettingsPage() {
                           {subject.name}
                         </span>
                       </Button>
-                      {types.length > 1 && (
+                      {subject.lesson_types.length > 1 && (
                         <div className="flex gap-1 flex-wrap">
-                          {types.map((lt) => {
+                          {subject.lesson_types.map((lt) => {
                             const typeHidden = isTypeHidden(subject.id, lt)
                             return (
                               <button
                                 key={lt}
                                 type="button"
-                                onClick={() => toggleHiddenType(subject.id, lt)}
+                                onClick={() => toggleHiddenType(subject.id, lt, subject.lesson_types)}
                                 disabled={isUpdating}
                                 className={cn(
                                   'text-xs px-2 py-0.5 rounded-full border font-medium transition-colors',
