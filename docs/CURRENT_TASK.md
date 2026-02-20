@@ -3,16 +3,14 @@
 ## Статус
 **Проект в режиме поддержки. Все фичи реализованы и задеплоены.**
 
-Последний коммит `1f2b16b` (2026-02-20): style(notes): apply ruff format to test_notes.py.
+Последний коммит `d1702ad` (2026-02-21): feat(files): support multiple file upload.
 
-### Что сделано в этой сессии (2026-02-20):
-- feat(notes): make lesson notes shared across all users
-  - LessonNote переведён на shared-модель: одна заметка на предмет, видна всем
-  - user_id nullable + SET NULL (last editor tracking)
-  - Новое поле last_edited_by_name в API response и NoteCard UI
-  - Миграция i9j0k1l2m3n4: дедупликация + пересоздание constraints
-  - 5 cross-user тестов добавлено (31 backend / 15 frontend NoteCard+NotesPage)
-  - CI зелёный, деплой прошёл автоматически
+### Что сделано в этой сессии (2026-02-21):
+- feat(files): multiple file upload support
+  - FileDropzone: multiple input, список файлов в очереди, удаление отдельного файла
+  - Кнопка "Загрузить (N)" при нескольких файлах
+  - FilesPage: последовательная загрузка, суммарный прогресс 0–100%, один toast в конце
+  - 3 новых теста (multiple files, remove from queue, onUpload with array), 11/11 ✅
 
 ## Следующие шаги (по приоритету)
 - (Фаза 3) httpOnly cookies — access in memory, refresh in httpOnly cookie

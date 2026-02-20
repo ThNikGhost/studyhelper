@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-20 (feat: lesson notes shared across all users)
+- **Дата обновления**: 2026-02-21 (feat: multiple file upload support)
 
 ## Backend модули
 
@@ -31,7 +31,10 @@
 
 13 страниц: Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Timeline, Settings, Grades. (Notes убрана из навигации, доступна через LessonDetailModal)
 
-**Последние UI-улучшения (2026-02-19):**
+**Последние UI-улучшения (2026-02-21):**
+- FilesPage: multiple file upload — выбор нескольких файлов через dialog/drag-drop, очередь с удалением, кнопка "Загрузить (N)", суммарный прогресс, один toast
+
+**Предыдущие UI-улучшения (2026-02-19):**
 - SettingsPage: per-lesson-type subject hiding — colored type chips (Лек/Прак/Лаб) per subject
 - Schedule filtering: hide specific lesson types while keeping others visible
 - Works/Subjects/Attendance: only fully hidden subjects (all types) are filtered out

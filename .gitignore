@@ -2,6 +2,8 @@
 .claude/settings.local.json
 CLAUDE.local.md
 .mcp.json
+docs/plans/
+docs/tasks/
 
 # ===== Python Bytecode =====
 __pycache__/
