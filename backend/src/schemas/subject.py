@@ -49,6 +49,10 @@ class SubjectResponse(SubjectBase):
     semester_id: int
     created_at: datetime
     updated_at: datetime
+    lesson_types: list[str] = Field(
+        default_factory=list,
+        description="Available lesson types for this subject across entire semester",
+    )
 
 
 # Note: SubjectWithSemesterResponse with embedded semester info

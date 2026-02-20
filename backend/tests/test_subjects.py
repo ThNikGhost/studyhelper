@@ -432,3 +432,73 @@ class TestSemesterSubjectsCascade:
             headers=auth_headers,
         )
         assert get_response.status_code == 404
+
+
+class TestSubjectLessonTypes:
+    """Tests for lesson_types computed field."""
+
+    async def test_get_subjects_includes_lesson_types_field(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        semester: dict,
+        subject_data: dict,
+    ):
+        """Test that GET /subjects includes lesson_types field."""
+        # Create subject
+        subject_data["semester_id"] = semester["id"]
+        create_response = await client.post(
+            "/api/v1/subjects",
+            json=subject_data,
+            headers=auth_headers,
+        )
+        assert create_response.status_code == 201
+        subject = create_response.json()
+
+        # Get subjects - should include lesson_types
+        response = await client.get(
+            "/api/v1/subjects",
+            params={"semester_id": semester["id"]},
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        subjects = response.json()
+        found = next(s for s in subjects if s["id"] == subject["id"])
+        assert "lesson_types" in found
+        assert isinstance(found["lesson_types"], list)
+
+    async def test_lesson_types_empty_for_no_schedule(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        semester: dict,
+        subject_data: dict,
+    ):
+        """Test lesson_types is empty list when no schedule entries exist."""
+        # Create subject
+        subject_data["semester_id"] = semester["id"]
+        create_response = await client.post(
+            "/api/v1/subjects",
+            json=subject_data,
+            headers=auth_headers,
+        )
+        assert create_response.status_code == 201
+        subject = create_response.json()
+
+        # Get subjects
+        response = await client.get(
+            "/api/v1/subjects",
+            params={"semester_id": semester["id"]},
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        subjects = response.json()
+        subject_response = next(s for s in subjects if s["id"] == subject["id"])
+        assert subject_response["lesson_types"] == []
+
+    # TODO: Add test for lesson_types with actual schedule entries
+    # This would require creating ScheduleEntry fixtures
+    # Example:
+    # - Create subject
+    # - Create schedule entries with different lesson_type values (lecture, practice, lab)
+    # - Verify lesson_types contains all unique types
