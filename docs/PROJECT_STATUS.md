@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-20 (feat: lesson_types computed field in subjects)
+- **Дата обновления**: 2026-02-20 (feat: Telegram bot hidden_subjects filtering)
 
 ## Backend модули
 
@@ -23,7 +23,7 @@
 | Attendance | Absence | +total_planned/completed | semester filter | — | 29 |
 | Notes | LessonNote | — | upsert | — | 26 |
 | LK | LkCredentials, SessionGrade, SemesterDiscipline | +LkImportResult | +import_to_app | +/import | 51 |
-| Telegram | TelegramLink | Status/LinkCode/Notifications | link/unlink/notifications | webhook+REST | ~40 |
+| Telegram | TelegramLink | Status/LinkCode/Notifications | link/unlink/notifications | webhook+REST | ~50 (+schedule_utils) |
 | Calendar | CalendarFeed | Status/CreateResponse | token CRUD + ICS gen | status/enable/disable/feed | 27 |
 | Widget | WidgetApiKey | Status/Create/NextLesson/TodaySchedule | token CRUD + next lesson + today schedule | status/enable/disable/next-lesson/today | 43 |
 
@@ -111,7 +111,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 644 |
+| Backend тестов | 654 |
 | Frontend тестов | 388 |
 | Покрытие | ~80% |
 | API endpoints | ~75 |
