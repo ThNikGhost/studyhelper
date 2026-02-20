@@ -12,21 +12,26 @@ from aiogram.types import Message
 
 from src.config import settings
 from src.database import get_session_maker
+from src.models.user import User
 from src.services import telegram as tg_service
-from src.services.schedule import get_current_lesson, get_today_schedule
+from src.services.user import get_user_by_id
 from src.telegram.formatters import (
     format_current_lesson,
     format_today_schedule,
     format_tomorrow_schedule,
 )
 from src.telegram.keyboards import main_keyboard
+from src.telegram.schedule_utils import (
+    get_filtered_current_lesson,
+    get_filtered_day_schedule,
+)
 
 logger = logging.getLogger(__name__)
 router = Router(name="schedule")
 
 
-async def _require_linked(message: Message) -> int | None:
-    """Check if user is linked. Returns user_id or sends error and returns None."""
+async def _require_linked(message: Message) -> User | None:
+    """Check if user is linked. Returns User object or sends error and returns None."""
     telegram_id = message.from_user.id  # type: ignore[union-attr]
     session_maker = get_session_maker()
     async with session_maker() as db:
@@ -36,19 +41,28 @@ async def _require_linked(message: Message) -> int | None:
             "\u274c Аккаунт не привязан.\nИспользуйте /start для инструкции."
         )
         return None
-    return link.user_id
+
+    # Load full User object
+    async with session_maker() as db:
+        user = await get_user_by_id(db, link.user_id)
+
+    if user is None:
+        await message.answer("\u274c Ошибка: пользователь не найден.")
+        return None
+
+    return user
 
 
 @router.message(Command("today", "schedule"))
 async def cmd_today(message: Message) -> None:
     """Handle /today and /schedule commands."""
-    user_id = await _require_linked(message)
-    if user_id is None:
+    user = await _require_linked(message)
+    if user is None:
         return
 
     session_maker = get_session_maker()
     async with session_maker() as db:
-        day = await get_today_schedule(db)
+        day = await get_filtered_day_schedule(db, user)
 
     await message.answer(format_today_schedule(day), reply_markup=main_keyboard())
 
@@ -56,8 +70,8 @@ async def cmd_today(message: Message) -> None:
 @router.message(Command("tomorrow"))
 async def cmd_tomorrow(message: Message) -> None:
     """Handle /tomorrow command."""
-    user_id = await _require_linked(message)
-    if user_id is None:
+    user = await _require_linked(message)
+    if user is None:
         return
 
     tz = zoneinfo.ZoneInfo(settings.timezone)
@@ -65,7 +79,7 @@ async def cmd_tomorrow(message: Message) -> None:
 
     session_maker = get_session_maker()
     async with session_maker() as db:
-        day = await get_today_schedule(db, target_date=tomorrow)
+        day = await get_filtered_day_schedule(db, user, target_date=tomorrow)
 
     await message.answer(format_tomorrow_schedule(day), reply_markup=main_keyboard())
 
@@ -73,13 +87,13 @@ async def cmd_tomorrow(message: Message) -> None:
 @router.message(Command("next"))
 async def cmd_next(message: Message) -> None:
     """Handle /next command."""
-    user_id = await _require_linked(message)
-    if user_id is None:
+    user = await _require_linked(message)
+    if user is None:
         return
 
     session_maker = get_session_maker()
     async with session_maker() as db:
-        data = await get_current_lesson(db)
+        data = await get_filtered_current_lesson(db, user)
 
     await message.answer(format_current_lesson(data), reply_markup=main_keyboard())
 

@@ -1373,3 +1373,4 @@ widget_api_keys      — API-ключи для виджетов (per user)
 | 2026-02-20 | lesson_types: computed field вместо JSON column | SELECT DISTINCT (subject_name, lesson_type) + группировка в Python; без миграции БД, SQLite+PostgreSQL compatible |
 | 2026-02-20 | lesson_types: subject_name matching | subject_id в ScheduleEntry всегда NULL (parser не заполняет); связь через имя предмета |
 | 2026-02-20 | Frontend: lesson_types из API вместо weekSchedule | Убрано 32 строки кода (getSubjectLessonTypes + Map); кнопки фильтра появляются для всех предметов с 2+ типами за семестр |
+| 2026-02-20 | Telegram bot: hidden_subjects filtering | Фильтрация через schedule_utils: get_filtered_day_schedule/current_lesson/works; работы скрываются только при полном скрытии (null), per-type не применяется к работам |

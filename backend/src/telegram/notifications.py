@@ -100,15 +100,30 @@ async def send_morning_summaries() -> int:
     if not links:
         return 0
 
-    from src.services.schedule import get_today_schedule
+    from src.services.user import get_user_by_id
     from src.services.work import get_upcoming_works
+    from src.telegram.schedule_utils import (
+        filter_works_by_hidden_subjects,
+        get_filtered_day_schedule,
+    )
+    from src.utils.schedule_filters import resolve_hidden_subjects
 
     sent = 0
     for link in links:
         try:
             async with session_maker() as db:
-                day = await get_today_schedule(db)
+                # Load user
+                user = await get_user_by_id(db, link.user_id)
+                if user is None:
+                    continue
+
+                # Get filtered schedule
+                day = await get_filtered_day_schedule(db, user)
+
+                # Get works and filter by fully hidden subjects
                 works = await get_upcoming_works(db, link.user_id, limit=3)
+                hidden_config = await resolve_hidden_subjects(db, user)
+                works = filter_works_by_hidden_subjects(works, hidden_config)
 
             text = format_morning_summary(day, works)
             await bot.send_message(link.telegram_id, text)  # type: ignore[arg-type]
@@ -146,14 +161,25 @@ async def send_deadline_alerts() -> int:
     if not links:
         return 0
 
+    from src.services.user import get_user_by_id
     from src.services.work import get_upcoming_works
+    from src.telegram.schedule_utils import filter_works_by_hidden_subjects
+    from src.utils.schedule_filters import resolve_hidden_subjects
 
     now = datetime.now(UTC)
     sent = 0
     for link in links:
         try:
             async with session_maker() as db:
+                # Load user
+                user = await get_user_by_id(db, link.user_id)
+                if user is None:
+                    continue
+
+                # Get works and filter by fully hidden subjects
                 works = await get_upcoming_works(db, link.user_id, limit=20)
+                hidden_config = await resolve_hidden_subjects(db, user)
+                works = filter_works_by_hidden_subjects(works, hidden_config)
 
             # Filter works with deadline within 24 hours
             urgent = [
