@@ -56,26 +56,26 @@ export function FilesPage() {
       ),
   })
 
-  // Upload mutation
+  // Upload mutation — onProgress passed via variables for per-file progress control
   const uploadMutation = useMutation({
     mutationFn: ({
       file,
       category,
       subjectId,
+      onProgress,
     }: {
       file: File
       category: FileCategory
       subjectId: number | null
+      onProgress: (p: number) => void
     }) =>
       fileService.uploadFile({
         file,
         category,
         subject_id: subjectId,
-        onProgress: (p) => setUploadProgress(p),
+        onProgress,
       }),
     onSuccess: () => {
-      setUploadProgress(null)
-      toast.success('Файл загружен')
       queryClient.invalidateQueries({ queryKey: ['files'] })
     },
     onError: () => {
@@ -98,11 +98,26 @@ export function FilesPage() {
   })
 
   const handleUpload = async (
-    file: File,
+    files: File[],
     category: FileCategory,
     subjectId: number | null,
   ) => {
-    await uploadMutation.mutateAsync({ file, category, subjectId })
+    try {
+      for (let i = 0; i < files.length; i++) {
+        await uploadMutation.mutateAsync({
+          file: files[i],
+          category,
+          subjectId,
+          onProgress: (p) =>
+            setUploadProgress(Math.round((i / files.length) * 100 + p / files.length)),
+        })
+      }
+      setUploadProgress(null)
+      toast.success(files.length === 1 ? 'Файл загружен' : `Загружено файлов: ${files.length}`)
+    } catch {
+      // onError already showed toast
+      setUploadProgress(null)
+    }
   }
 
   const handleDeleteConfirm = () => {

@@ -30,7 +30,7 @@ describe('FileDropzone', () => {
   it('renders dropzone area', () => {
     renderDropzone()
 
-    expect(screen.getByText(/Перетащите файл/)).toBeInTheDocument()
+    expect(screen.getByText(/Перетащите файлы/)).toBeInTheDocument()
     expect(screen.getByText(/до 50 MB/)).toBeInTheDocument()
   })
 
@@ -45,6 +45,19 @@ describe('FileDropzone', () => {
     expect(screen.getByText('5 B')).toBeInTheDocument()
   })
 
+  it('allows selecting multiple files', () => {
+    renderDropzone()
+
+    const input = screen.getByTestId('file-input')
+    const file1 = new window.File(['hello'], 'notes.pdf', { type: 'application/pdf' })
+    const file2 = new window.File(['world'], 'slides.pdf', { type: 'application/pdf' })
+    fireEvent.change(input, { target: { files: [file1, file2] } })
+
+    expect(screen.getByText('notes.pdf')).toBeInTheDocument()
+    expect(screen.getByText('slides.pdf')).toBeInTheDocument()
+    expect(screen.getByText('Загрузить (2)')).toBeInTheDocument()
+  })
+
   it('shows category and subject selects after file selection', () => {
     renderDropzone()
 
@@ -55,6 +68,38 @@ describe('FileDropzone', () => {
     expect(screen.getByLabelText('Категория файла')).toBeInTheDocument()
     expect(screen.getByLabelText('Предмет')).toBeInTheDocument()
     expect(screen.getByText('Загрузить')).toBeInTheDocument()
+  })
+
+  it('calls onUpload with file array', async () => {
+    const onUpload = vi.fn().mockResolvedValue(undefined)
+    renderDropzone({ onUpload })
+
+    const input = screen.getByTestId('file-input')
+    const file = new window.File(['test'], 'test.pdf', { type: 'application/pdf' })
+    fireEvent.change(input, { target: { files: [file] } })
+
+    fireEvent.click(screen.getByText('Загрузить'))
+
+    await vi.waitFor(() => {
+      expect(onUpload).toHaveBeenCalledWith([file], expect.any(String), null)
+    })
+  })
+
+  it('can remove individual file from queue', () => {
+    renderDropzone()
+
+    const input = screen.getByTestId('file-input')
+    const file1 = new window.File(['hello'], 'notes.pdf', { type: 'application/pdf' })
+    const file2 = new window.File(['world'], 'slides.pdf', { type: 'application/pdf' })
+    fireEvent.change(input, { target: { files: [file1, file2] } })
+
+    expect(screen.getByText('notes.pdf')).toBeInTheDocument()
+    expect(screen.getByText('slides.pdf')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByLabelText('Убрать файл notes.pdf'))
+
+    expect(screen.queryByText('notes.pdf')).not.toBeInTheDocument()
+    expect(screen.getByText('slides.pdf')).toBeInTheDocument()
   })
 
   it('rejects invalid file type', () => {
@@ -102,7 +147,7 @@ describe('FileDropzone', () => {
 
     expect(screen.getByText('test.pdf')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByLabelText('Убрать файл'))
+    fireEvent.click(screen.getByLabelText('Убрать файл test.pdf'))
     expect(screen.queryByText('test.pdf')).not.toBeInTheDocument()
   })
 })

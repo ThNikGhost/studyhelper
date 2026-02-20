@@ -8,14 +8,14 @@ import { isAllowedFileType, formatFileSize, MAX_FILE_SIZE_BYTES, ALLOWED_EXTENSI
 
 interface FileDropzoneProps {
   subjects: Subject[]
-  onUpload: (file: File, category: FileCategory, subjectId: number | null) => Promise<void>
+  onUpload: (files: File[], category: FileCategory, subjectId: number | null) => Promise<void>
   disabled?: boolean
   uploadProgress: number | null
 }
 
 export function FileDropzone({ subjects, onUpload, disabled, uploadProgress }: FileDropzoneProps) {
   const [isDragOver, setIsDragOver] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [category, setCategory] = useState<FileCategory>(FileCategory.LECTURE)
   const [subjectId, setSubjectId] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
@@ -33,15 +33,18 @@ export function FileDropzone({ subjects, onUpload, disabled, uploadProgress }: F
     return null
   }, [])
 
-  const handleFile = useCallback(
-    (file: File) => {
+  const handleFiles = useCallback(
+    (newFiles: File[]) => {
       setError(null)
-      const validationError = validateFile(file)
-      if (validationError) {
-        setError(validationError)
-        return
+      const errors: string[] = []
+      const valid: File[] = []
+      for (const file of newFiles) {
+        const err = validateFile(file)
+        if (err) errors.push(`${file.name}: ${err}`)
+        else valid.push(file)
       }
-      setSelectedFile(file)
+      if (errors.length) setError(errors.join('; '))
+      if (valid.length) setSelectedFiles((prev) => [...prev, ...valid])
     },
     [validateFile],
   )
@@ -65,28 +68,28 @@ export function FileDropzone({ subjects, onUpload, disabled, uploadProgress }: F
       setIsDragOver(false)
       if (disabled || isUploading) return
 
-      const file = e.dataTransfer.files[0]
-      if (file) handleFile(file)
+      const files = Array.from(e.dataTransfer.files)
+      if (files.length) handleFiles(files)
     },
-    [disabled, isUploading, handleFile],
+    [disabled, isUploading, handleFiles],
   )
 
   const handleInputChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (file) handleFile(file)
+      const files = Array.from(e.target.files ?? [])
+      if (files.length) handleFiles(files)
       // Reset input so the same file can be re-selected
       e.target.value = ''
     },
-    [handleFile],
+    [handleFiles],
   )
 
   const handleUpload = async () => {
-    if (!selectedFile) return
+    if (!selectedFiles.length) return
     setError(null)
     try {
-      await onUpload(selectedFile, category, subjectId ? Number(subjectId) : null)
-      setSelectedFile(null)
+      await onUpload(selectedFiles, category, subjectId ? Number(subjectId) : null)
+      setSelectedFiles([])
       setCategory(FileCategory.LECTURE)
       setSubjectId('')
     } catch {
@@ -94,9 +97,8 @@ export function FileDropzone({ subjects, onUpload, disabled, uploadProgress }: F
     }
   }
 
-  const handleClear = () => {
-    setSelectedFile(null)
-    setError(null)
+  const handleRemoveFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   return (
@@ -125,7 +127,7 @@ export function FileDropzone({ subjects, onUpload, disabled, uploadProgress }: F
       >
         <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
         <p className="text-sm text-muted-foreground">
-          Перетащите файл сюда или нажмите для выбора
+          Перетащите файлы сюда или нажмите для выбора
         </p>
         <p className="text-xs text-muted-foreground mt-1">
           {ALLOWED_EXTENSIONS.join(', ')} — до 50 MB
@@ -133,6 +135,7 @@ export function FileDropzone({ subjects, onUpload, disabled, uploadProgress }: F
         <input
           ref={inputRef}
           type="file"
+          multiple
           className="hidden"
           accept={ALLOWED_EXTENSIONS.map((ext) => `.${ext}`).join(',')}
           onChange={handleInputChange}
@@ -147,21 +150,30 @@ export function FileDropzone({ subjects, onUpload, disabled, uploadProgress }: F
         </p>
       )}
 
-      {/* Selected file preview */}
-      {selectedFile && !isUploading && (
-        <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{selectedFile.name}</p>
-            <p className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
-          </div>
-          <Button variant="ghost" size="icon" onClick={handleClear} aria-label="Убрать файл">
-            <X className="h-4 w-4" />
-          </Button>
+      {/* Selected files list */}
+      {selectedFiles.length > 0 && !isUploading && (
+        <div className="space-y-1">
+          {selectedFiles.map((file, index) => (
+            <div key={index} className="flex items-center gap-3 p-2 bg-muted rounded-lg">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{file.name}</p>
+                <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleRemoveFile(index)}
+                aria-label={`Убрать файл ${file.name}`}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
         </div>
       )}
 
       {/* Category + Subject selects + Upload button */}
-      {selectedFile && !isUploading && (
+      {selectedFiles.length > 0 && !isUploading && (
         <div className="flex flex-col sm:flex-row gap-2">
           <select
             value={category}
@@ -192,7 +204,7 @@ export function FileDropzone({ subjects, onUpload, disabled, uploadProgress }: F
 
           <Button onClick={handleUpload} disabled={disabled} className="whitespace-nowrap">
             <Upload className="h-4 w-4 mr-1" />
-            Загрузить
+            {selectedFiles.length > 1 ? `Загрузить (${selectedFiles.length})` : 'Загрузить'}
           </Button>
         </div>
       )}
