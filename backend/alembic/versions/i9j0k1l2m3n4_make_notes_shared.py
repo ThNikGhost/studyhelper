@@ -11,8 +11,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
 revision: str = "i9j0k1l2m3n4"
@@ -52,7 +50,9 @@ def upgrade() -> None:
     op.alter_column("lesson_notes", "user_id", nullable=True)
 
     # 5. Create new shared unique constraint and index
-    op.create_unique_constraint("uq_lesson_note_subject", "lesson_notes", ["subject_name"])
+    op.create_unique_constraint(
+        "uq_lesson_note_subject", "lesson_notes", ["subject_name"]
+    )
     op.create_index("ix_lesson_notes_lesson_date", "lesson_notes", ["lesson_date"])
 
 
