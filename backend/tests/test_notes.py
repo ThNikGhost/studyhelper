@@ -1,4 +1,4 @@
-"""Tests for lesson notes endpoints."""
+"""Tests for shared lesson notes endpoints."""
 
 from datetime import date, timedelta
 
@@ -49,6 +49,20 @@ async def _create_note(
     return resp.json()
 
 
+async def _register_and_login(client: AsyncClient, email: str, password: str, name: str) -> dict[str, str]:
+    """Register a new user and return auth headers."""
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": password, "name": name},
+    )
+    resp = await client.post(
+        "/api/v1/auth/login",
+        data={"username": email, "password": password},
+    )
+    token = resp.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
 class TestCreateNote:
     """Tests for POST /api/v1/notes/."""
 
@@ -72,6 +86,9 @@ class TestCreateNote:
         assert data["content"] == "Запомнить формулу F=ma"
         assert data["schedule_entry_id"] is None
         assert data["id"] is not None
+        # last_edited_by_name is present and set
+        assert "last_edited_by_name" in data
+        assert data["last_edited_by_name"] is not None
 
     @pytest.mark.asyncio
     async def test_create_note_for_entry(
@@ -324,8 +341,10 @@ class TestGetNoteForSubject:
             "/api/v1/notes/subject/Физика", headers=auth_headers
         )
         assert response.status_code == 200
-        assert response.json()["content"] == "Заметка по физике"
-        assert response.json()["subject_name"] == "Физика"
+        data = response.json()
+        assert data["content"] == "Заметка по физике"
+        assert data["subject_name"] == "Физика"
+        assert "last_edited_by_name" in data
 
     @pytest.mark.asyncio
     async def test_get_note_for_subject_not_found(
@@ -447,3 +466,115 @@ class TestDeleteNote:
         """Test 401 without authentication."""
         response = await client.delete("/api/v1/notes/1")
         assert response.status_code == 401
+
+
+class TestCrossUserNotes:
+    """Tests for cross-user shared note behaviour."""
+
+    @pytest.mark.asyncio
+    async def test_user_b_sees_note_created_by_user_a(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """User B should see the note created by User A in GET /notes/."""
+        # User A creates a note
+        await _create_note(client, auth_headers, subject_name="Физика", content="Заметка A")
+
+        # Register and login User B
+        headers_b = await _register_and_login(
+            client, "userb@example.com", "password456", "User B"
+        )
+
+        response = await client.get("/api/v1/notes/", headers=headers_b)
+        assert response.status_code == 200
+        notes = response.json()
+        assert len(notes) == 1
+        assert notes[0]["content"] == "Заметка A"
+        assert notes[0]["subject_name"] == "Физика"
+
+    @pytest.mark.asyncio
+    async def test_user_b_upsert_same_subject_returns_200(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """User B POSTing to the same subject as User A gets 200 (update, not 201)."""
+        await _create_note(client, auth_headers, subject_name="Физика", content="Заметка A")
+
+        headers_b = await _register_and_login(
+            client, "userb@example.com", "password456", "User B"
+        )
+
+        response = await client.post(
+            "/api/v1/notes/",
+            json={"subject_name": "Физика", "content": "Заметка B"},
+            headers=headers_b,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["content"] == "Заметка B"
+        # Only one note should exist
+        all_notes = await client.get("/api/v1/notes/", headers=headers_b)
+        assert len(all_notes.json()) == 1
+
+    @pytest.mark.asyncio
+    async def test_user_b_can_edit_note_created_by_user_a(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """User B can PUT on a note originally created by User A."""
+        note = await _create_note(
+            client, auth_headers, subject_name="Физика", content="Заметка A"
+        )
+
+        headers_b = await _register_and_login(
+            client, "userb@example.com", "password456", "User B"
+        )
+
+        response = await client.put(
+            f"/api/v1/notes/{note['id']}",
+            json={"content": "Отредактировал B"},
+            headers=headers_b,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["content"] == "Отредактировал B"
+
+    @pytest.mark.asyncio
+    async def test_last_edited_by_name_updates_after_cross_user_edit(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """last_edited_by_name changes to User B after User B edits the note."""
+        note = await _create_note(
+            client, auth_headers, subject_name="Физика", content="Заметка A"
+        )
+        assert note["last_edited_by_name"] == "Test User"
+
+        headers_b = await _register_and_login(
+            client, "userb@example.com", "password456", "User B"
+        )
+
+        updated = await client.put(
+            f"/api/v1/notes/{note['id']}",
+            json={"content": "Отредактировал B"},
+            headers=headers_b,
+        )
+        assert updated.json()["last_edited_by_name"] == "User B"
+
+    @pytest.mark.asyncio
+    async def test_user_b_can_delete_note_created_by_user_a(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """User B can DELETE a note originally created by User A."""
+        note = await _create_note(
+            client, auth_headers, subject_name="Физика", content="Заметка A"
+        )
+
+        headers_b = await _register_and_login(
+            client, "userb@example.com", "password456", "User B"
+        )
+
+        response = await client.delete(
+            f"/api/v1/notes/{note['id']}", headers=headers_b
+        )
+        assert response.status_code == 204
+
+        # Verify gone for everyone
+        verify = await client.get("/api/v1/notes/", headers=auth_headers)
+        assert len(verify.json()) == 0

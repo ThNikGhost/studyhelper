@@ -14,9 +14,10 @@ if TYPE_CHECKING:
 
 
 class LessonNote(Base, TimestampMixin):
-    """User note for a subject.
+    """Shared note for a subject.
 
-    Each user can have at most one note per subject (by subject_name).
+    One note per subject (by subject_name), visible and editable by all users.
+    user_id tracks the last editor (nullable in case the user is deleted).
     The schedule_entry_id and lesson_date are informational,
     tracking the last entry where the note was edited.
     """
@@ -24,10 +25,10 @@ class LessonNote(Base, TimestampMixin):
     __tablename__ = "lesson_notes"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
+    user_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
     )
     schedule_entry_id: Mapped[int | None] = mapped_column(
         Integer,
@@ -39,17 +40,17 @@ class LessonNote(Base, TimestampMixin):
     content: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Relationships
-    user: Mapped["User"] = relationship("User")
+    user: Mapped["User | None"] = relationship("User")
     schedule_entry: Mapped["ScheduleEntry | None"] = relationship("ScheduleEntry")
 
     __table_args__ = (
-        UniqueConstraint("user_id", "subject_name", name="uq_lesson_note_user_subject"),
-        Index("ix_lesson_notes_user_date", "user_id", "lesson_date"),
+        UniqueConstraint("subject_name", name="uq_lesson_note_subject"),
+        Index("ix_lesson_notes_lesson_date", "lesson_date"),
     )
 
     def __repr__(self) -> str:
         """String representation."""
         return (
-            f"<LessonNote(id={self.id}, user_id={self.user_id}, "
+            f"<LessonNote(id={self.id}, last_editor={self.user_id}, "
             f"subject={self.subject_name})>"
         )

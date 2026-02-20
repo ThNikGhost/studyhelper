@@ -26,7 +26,8 @@ class LessonNoteResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    user_id: int
+    user_id: int | None
+    last_edited_by_name: str | None = None
     schedule_entry_id: int | None
     subject_name: str
     lesson_date: date | None

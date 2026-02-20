@@ -480,6 +480,7 @@ export const testLessonNotes: LessonNote[] = [
   {
     id: 1,
     user_id: 1,
+    last_edited_by_name: 'Test User',
     schedule_entry_id: 10,
     subject_name: 'Физика',
     lesson_date: '2026-02-07',
@@ -490,6 +491,7 @@ export const testLessonNotes: LessonNote[] = [
   {
     id: 2,
     user_id: 1,
+    last_edited_by_name: 'Test User',
     schedule_entry_id: 1,
     subject_name: 'Математический анализ',
     lesson_date: '2026-02-07',
@@ -499,7 +501,8 @@ export const testLessonNotes: LessonNote[] = [
   },
   {
     id: 3,
-    user_id: 1,
+    user_id: null,
+    last_edited_by_name: null,
     schedule_entry_id: null,
     subject_name: 'Программирование',
     lesson_date: '2026-02-06',
@@ -766,6 +769,7 @@ export const handlers = [
     const newNote: LessonNote = {
       id: 100,
       user_id: 1,
+      last_edited_by_name: 'Test User',
       schedule_entry_id: body.schedule_entry_id ?? null,
       subject_name: body.subject_name,
       lesson_date: body.lesson_date ?? null,

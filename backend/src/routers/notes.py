@@ -1,4 +1,4 @@
-"""Notes router — CRUD for lesson notes."""
+"""Notes router — CRUD for shared lesson notes."""
 
 from datetime import date
 
@@ -7,11 +7,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
 from src.dependencies import get_current_user
+from src.models.note import LessonNote
 from src.models.user import User
 from src.schemas.note import LessonNoteCreate, LessonNoteResponse, LessonNoteUpdate
 from src.services import note as note_service
 
 router = APIRouter()
+
+
+def _to_response(note: LessonNote) -> LessonNoteResponse:
+    """Build LessonNoteResponse including last_edited_by_name from relationship."""
+    return LessonNoteResponse(
+        id=note.id,
+        user_id=note.user_id,
+        last_edited_by_name=note.user.name if note.user else None,
+        schedule_entry_id=note.schedule_entry_id,
+        subject_name=note.subject_name,
+        lesson_date=note.lesson_date,
+        content=note.content,
+        created_at=note.created_at,
+        updated_at=note.updated_at,
+    )
 
 
 @router.post(
@@ -24,7 +40,7 @@ async def create_note(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LessonNoteResponse:
-    """Create or update a lesson note (upsert by subject_name).
+    """Create or update a shared lesson note (upsert by subject_name).
 
     Returns 201 for new notes, 200 for updated existing notes.
 
@@ -48,7 +64,7 @@ async def create_note(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=msg) from e
 
     response.status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
-    return LessonNoteResponse.model_validate(note)
+    return _to_response(note)
 
 
 @router.get("/", response_model=list[LessonNoteResponse])
@@ -62,7 +78,7 @@ async def get_notes(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[LessonNoteResponse]:
-    """Get lesson notes with optional filters and pagination.
+    """Get shared lesson notes with optional filters and pagination.
 
     Args:
         date_from: Optional start date.
@@ -79,7 +95,6 @@ async def get_notes(
     """
     notes = await note_service.get_notes(
         db,
-        current_user.id,
         date_from,
         date_to,
         subject_name,
@@ -87,7 +102,7 @@ async def get_notes(
         limit=limit,
         offset=offset,
     )
-    return [LessonNoteResponse.model_validate(n) for n in notes]
+    return [_to_response(n) for n in notes]
 
 
 @router.get("/subject/{subject_name}", response_model=LessonNoteResponse)
@@ -96,7 +111,7 @@ async def get_note_for_subject(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LessonNoteResponse:
-    """Get note for a specific subject.
+    """Get shared note for a specific subject.
 
     Args:
         subject_name: Subject name (URL-encoded).
@@ -106,13 +121,13 @@ async def get_note_for_subject(
     Returns:
         Note for the subject.
     """
-    note = await note_service.get_note_for_subject(db, current_user.id, subject_name)
+    note = await note_service.get_note_for_subject(db, subject_name)
     if note is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note not found for this subject",
         )
-    return LessonNoteResponse.model_validate(note)
+    return _to_response(note)
 
 
 @router.get("/entry/{schedule_entry_id}", response_model=LessonNoteResponse)
@@ -121,7 +136,7 @@ async def get_note_for_entry(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LessonNoteResponse:
-    """Get note for a specific schedule entry.
+    """Get shared note for a specific schedule entry.
 
     Args:
         schedule_entry_id: Schedule entry ID.
@@ -131,13 +146,13 @@ async def get_note_for_entry(
     Returns:
         Note for the entry.
     """
-    note = await note_service.get_note_for_entry(db, current_user.id, schedule_entry_id)
+    note = await note_service.get_note_for_entry(db, schedule_entry_id)
     if note is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note not found for this entry",
         )
-    return LessonNoteResponse.model_validate(note)
+    return _to_response(note)
 
 
 @router.put("/{note_id}", response_model=LessonNoteResponse)
@@ -147,7 +162,7 @@ async def update_note(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> LessonNoteResponse:
-    """Update a lesson note.
+    """Update a shared lesson note.
 
     Args:
         note_id: Note ID.
@@ -164,7 +179,7 @@ async def update_note(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Note not found",
         )
-    return LessonNoteResponse.model_validate(note)
+    return _to_response(note)
 
 
 @router.delete("/{note_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -173,14 +188,14 @@ async def delete_note(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> None:
-    """Delete a lesson note.
+    """Delete a shared lesson note.
 
     Args:
         note_id: Note ID.
         db: Database session.
         current_user: Authenticated user.
     """
-    deleted = await note_service.delete_note(db, current_user.id, note_id)
+    deleted = await note_service.delete_note(db, note_id)
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

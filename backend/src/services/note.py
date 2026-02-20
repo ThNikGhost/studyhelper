@@ -1,12 +1,13 @@
-"""Lesson note service — CRUD for user notes on schedule entries."""
+"""Lesson note service — CRUD for shared notes on schedule entries."""
 
 from __future__ import annotations
 
 import logging
 from datetime import date
 
-from sqlalchemy import and_, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.models.note import LessonNote
 from src.models.schedule import ScheduleEntry
@@ -20,15 +21,15 @@ async def create_note(
     user_id: int,
     data: LessonNoteCreate,
 ) -> tuple[LessonNote, bool]:
-    """Create or update a lesson note (upsert by subject_name).
+    """Create or update a shared lesson note (upsert by subject_name).
 
     If schedule_entry_id is provided, auto-fills subject_name and lesson_date
-    from the entry. If a note for the same (user_id, subject_name) already
-    exists, updates its content (and optionally schedule_entry_id/lesson_date).
+    from the entry. If a note for the same subject_name already exists (from any
+    user), updates its content and records user_id as the last editor.
 
     Args:
         db: Database session.
-        user_id: Current user ID.
+        user_id: Current user ID (becomes last editor).
         data: Note creation data.
 
     Returns:
@@ -50,20 +51,18 @@ async def create_note(
         subject_name = entry.subject_name
         lesson_date = entry.lesson_date
 
-    # Check for existing note by (user_id, subject_name)
+    # Check for existing note by subject_name (shared across all users)
     existing = await db.execute(
-        select(LessonNote).where(
-            and_(
-                LessonNote.user_id == user_id,
-                LessonNote.subject_name == subject_name,
-            )
-        )
+        select(LessonNote)
+        .where(LessonNote.subject_name == subject_name)
+        .options(selectinload(LessonNote.user))
     )
     note = existing.scalar_one_or_none()
 
     if note is not None:
-        # Update existing note
+        # Update existing note, record last editor
         note.content = data.content
+        note.user_id = user_id
         if schedule_entry_id is not None:
             note.schedule_entry_id = schedule_entry_id
         if lesson_date is not None:
@@ -71,6 +70,8 @@ async def create_note(
         await db.flush()
         await db.commit()
         await db.refresh(note)
+        # Reload user relationship after refresh
+        await db.refresh(note, attribute_names=["user"])
         return note, False
 
     # Create new note
@@ -85,6 +86,7 @@ async def create_note(
     await db.flush()
     await db.commit()
     await db.refresh(note)
+    await db.refresh(note, attribute_names=["user"])
     return note, True
 
 
@@ -94,45 +96,50 @@ async def update_note(
     note_id: int,
     content: str,
 ) -> LessonNote | None:
-    """Update a lesson note content.
+    """Update a shared lesson note content.
+
+    Any authenticated user can update any note.
+    user_id is recorded as the last editor.
 
     Args:
         db: Database session.
-        user_id: Current user ID (ownership check).
+        user_id: Current user ID (becomes last editor).
         note_id: Note ID to update.
         content: New content.
 
     Returns:
-        Updated LessonNote or None if not found/not owned.
+        Updated LessonNote or None if not found.
     """
-    note = await db.get(LessonNote, note_id)
-    if note is None or note.user_id != user_id:
+    note = await db.get(LessonNote, note_id, options=[selectinload(LessonNote.user)])
+    if note is None:
         return None
 
     note.content = content
+    note.user_id = user_id
     await db.flush()
     await db.commit()
     await db.refresh(note)
+    await db.refresh(note, attribute_names=["user"])
     return note
 
 
 async def delete_note(
     db: AsyncSession,
-    user_id: int,
     note_id: int,
 ) -> bool:
-    """Delete a lesson note.
+    """Delete a shared lesson note.
+
+    Any authenticated user can delete any note.
 
     Args:
         db: Database session.
-        user_id: Current user ID (ownership check).
         note_id: Note ID to delete.
 
     Returns:
-        True if deleted, False if not found/not owned.
+        True if deleted, False if not found.
     """
     note = await db.get(LessonNote, note_id)
-    if note is None or note.user_id != user_id:
+    if note is None:
         return False
 
     await db.delete(note)
@@ -142,7 +149,6 @@ async def delete_note(
 
 async def get_notes(
     db: AsyncSession,
-    user_id: int,
     date_from: date | None = None,
     date_to: date | None = None,
     subject_name: str | None = None,
@@ -150,11 +156,10 @@ async def get_notes(
     limit: int = 50,
     offset: int = 0,
 ) -> list[LessonNote]:
-    """Get lesson notes with optional filters and pagination.
+    """Get shared lesson notes with optional filters and pagination.
 
     Args:
         db: Database session.
-        user_id: Current user ID.
         date_from: Optional start date filter.
         date_to: Optional end date filter.
         subject_name: Optional subject name filter.
@@ -167,7 +172,7 @@ async def get_notes(
     """
     query = (
         select(LessonNote)
-        .where(LessonNote.user_id == user_id)
+        .options(selectinload(LessonNote.user))
         .order_by(LessonNote.updated_at.desc())
     )
 
@@ -189,51 +194,45 @@ async def get_notes(
 
 async def get_note_for_subject(
     db: AsyncSession,
-    user_id: int,
     subject_name: str,
 ) -> LessonNote | None:
-    """Get a user's note for a specific subject.
+    """Get the shared note for a specific subject.
 
     Args:
         db: Database session.
-        user_id: Current user ID.
         subject_name: Subject name.
 
     Returns:
         LessonNote or None if not found.
     """
     result = await db.execute(
-        select(LessonNote).where(
-            and_(
-                LessonNote.user_id == user_id,
-                LessonNote.subject_name == subject_name,
-            )
-        )
+        select(LessonNote)
+        .where(LessonNote.subject_name == subject_name)
+        .options(selectinload(LessonNote.user))
     )
     return result.scalar_one_or_none()
 
 
 async def get_note_for_entry(
     db: AsyncSession,
-    user_id: int,
     schedule_entry_id: int,
 ) -> LessonNote | None:
-    """Get a user's note for a specific schedule entry.
+    """Get the shared note for a specific schedule entry (by subject_name).
 
     Args:
         db: Database session.
-        user_id: Current user ID.
         schedule_entry_id: Schedule entry ID.
 
     Returns:
         LessonNote or None if not found.
     """
+    entry = await db.get(ScheduleEntry, schedule_entry_id)
+    if entry is None:
+        return None
+
     result = await db.execute(
-        select(LessonNote).where(
-            and_(
-                LessonNote.user_id == user_id,
-                LessonNote.schedule_entry_id == schedule_entry_id,
-            )
-        )
+        select(LessonNote)
+        .where(LessonNote.subject_name == entry.subject_name)
+        .options(selectinload(LessonNote.user))
     )
     return result.scalar_one_or_none()

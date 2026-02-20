@@ -6,6 +6,7 @@ import type { LessonNote } from '@/types/note'
 const shortNote: LessonNote = {
   id: 1,
   user_id: 1,
+  last_edited_by_name: 'Test User',
   schedule_entry_id: 10,
   subject_name: 'Физика',
   lesson_date: '2026-02-07',
@@ -17,10 +18,23 @@ const shortNote: LessonNote = {
 const longNote: LessonNote = {
   id: 2,
   user_id: 1,
+  last_edited_by_name: 'Test User',
   schedule_entry_id: null,
   subject_name: 'Математический анализ',
   lesson_date: '2026-02-06',
   content: 'A'.repeat(200),
+  created_at: '2026-02-06T10:00:00Z',
+  updated_at: '2026-02-06T10:00:00Z',
+}
+
+const noteNoEditor: LessonNote = {
+  id: 3,
+  user_id: null,
+  last_edited_by_name: null,
+  schedule_entry_id: null,
+  subject_name: 'Программирование',
+  lesson_date: null,
+  content: 'Orphan note content',
   created_at: '2026-02-06T10:00:00Z',
   updated_at: '2026-02-06T10:00:00Z',
 }
@@ -69,5 +83,17 @@ describe('NoteCard', () => {
 
     fireEvent.click(screen.getByLabelText('Удалить заметку'))
     expect(onDelete).toHaveBeenCalledWith(1)
+  })
+
+  it('renders last_edited_by_name when present', () => {
+    render(<NoteCard note={shortNote} onDelete={vi.fn()} />)
+
+    expect(screen.getByText('Ред.: Test User')).toBeInTheDocument()
+  })
+
+  it('does not render editor line when last_edited_by_name is null', () => {
+    render(<NoteCard note={noteNoEditor} onDelete={vi.fn()} />)
+
+    expect(screen.queryByText(/Ред\.:/)).not.toBeInTheDocument()
   })
 })

@@ -2,7 +2,8 @@
 
 export interface LessonNote {
   id: number
-  user_id: number
+  user_id: number | null
+  last_edited_by_name: string | null
   schedule_entry_id: number | null
   subject_name: string
   lesson_date: string | null

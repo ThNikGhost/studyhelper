@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Calendar, BookOpen, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
+import { Calendar, BookOpen, ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import type { LessonNote } from '@/types/note'
@@ -39,6 +39,12 @@ export function NoteCard({ note, onDelete }: NoteCardProps) {
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
                 <Calendar className="h-3 w-3 flex-shrink-0" />
                 <span>{formattedDate}</span>
+              </div>
+            )}
+            {note.last_edited_by_name && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                <Pencil className="h-3 w-3 flex-shrink-0" />
+                <span>Ред.: {note.last_edited_by_name}</span>
               </div>
             )}
           </div>
