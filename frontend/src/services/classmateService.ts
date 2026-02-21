@@ -34,7 +34,7 @@ export const classmateService = {
   },
 
   async upsertDetails(id: number, data: ClassmateDetailUpsert): Promise<ClassmateDetail> {
-    const response = await api.put<ClassmateDetail>(`/classmates/${id}/details`, data)
+    const response = await api.patch<ClassmateDetail>(`/classmates/${id}/details`, data)
     return response.data
   },
 }

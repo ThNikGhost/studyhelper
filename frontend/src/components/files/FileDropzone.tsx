@@ -154,7 +154,7 @@ export function FileDropzone({ subjects, onUpload, disabled, uploadProgress }: F
       {selectedFiles.length > 0 && !isUploading && (
         <div className="space-y-1">
           {selectedFiles.map((file, index) => (
-            <div key={index} className="flex items-center gap-3 p-2 bg-muted rounded-lg">
+            <div key={`${file.name}-${file.lastModified}`} className="flex items-center gap-3 p-2 bg-muted rounded-lg">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{file.name}</p>
                 <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>

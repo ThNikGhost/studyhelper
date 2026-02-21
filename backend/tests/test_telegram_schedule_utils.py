@@ -83,10 +83,9 @@ async def schedule_today(
     db_session: AsyncSession, math_subject: Subject, physics_subject: Subject
 ) -> list[ScheduleEntry]:
     """Create schedule entries for today."""
-    import zoneinfo
+    from src.services.schedule import OMSK_TZ
 
-    omsk_tz = zoneinfo.ZoneInfo("Asia/Omsk")
-    today = datetime.now(omsk_tz).date()
+    today = datetime.now(OMSK_TZ).date()
     day_of_week = today.isoweekday()
 
     entries = [

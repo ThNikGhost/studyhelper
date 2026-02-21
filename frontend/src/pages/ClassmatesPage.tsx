@@ -192,7 +192,11 @@ export function ClassmatesPage() {
       // If any details fields filled, upsert them
       const hasDetails = Object.values(detailsFormData).some((v) => v !== null && v !== '')
       if (hasDetails) {
-        await classmateService.upsertDetails(classmate.id, detailsFormData)
+        try {
+          await classmateService.upsertDetails(classmate.id, detailsFormData)
+        } catch {
+          toast.error('Одногруппник добавлен, но контакты не сохранились')
+        }
       }
       queryClient.invalidateQueries({ queryKey: ['classmates'] })
       toast.success('Одногруппник добавлен')
@@ -209,7 +213,11 @@ export function ClassmatesPage() {
       classmateService.updateClassmate(id, data),
     onSuccess: async (classmate) => {
       // Always upsert details on edit (to allow clearing fields)
-      await classmateService.upsertDetails(classmate.id, detailsFormData)
+      try {
+        await classmateService.upsertDetails(classmate.id, detailsFormData)
+      } catch {
+        toast.error('Данные обновлены, но контакты не сохранились')
+      }
       queryClient.invalidateQueries({ queryKey: ['classmates'] })
       toast.success('Одногруппник обновлён')
       closeFormModal()

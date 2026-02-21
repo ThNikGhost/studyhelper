@@ -20,20 +20,6 @@ from src.services import classmate as classmate_service
 router = APIRouter()
 
 
-def _build_detailed_response(classmate, detail) -> ClassmateDetailedResponse:
-    """Build ClassmateDetailedResponse from model instances."""
-    data = {
-        "id": classmate.id,
-        "full_name": classmate.full_name,
-        "group_name": classmate.group_name,
-        "subgroup": classmate.subgroup,
-        "created_at": classmate.created_at,
-        "updated_at": classmate.updated_at,
-        "details": ClassmateDetailResponse.model_validate(detail) if detail else None,
-    }
-    return ClassmateDetailedResponse.model_validate(data)
-
-
 @router.get("", response_model=list[ClassmateListResponse])
 async def get_classmates(
     db: AsyncSession = Depends(get_db),
@@ -53,7 +39,7 @@ async def create_classmate(
 ) -> ClassmateDetailedResponse:
     """Create a new classmate."""
     classmate = await classmate_service.create_classmate(db, data)
-    return _build_detailed_response(classmate, None)
+    return ClassmateDetailedResponse.from_models(classmate, None)
 
 
 @router.get("/{classmate_id}", response_model=ClassmateDetailedResponse)
@@ -72,7 +58,7 @@ async def get_classmate(
             detail="Classmate not found",
         )
     classmate, detail = result
-    return _build_detailed_response(classmate, detail)
+    return ClassmateDetailedResponse.from_models(classmate, detail)
 
 
 @router.put("/{classmate_id}", response_model=ClassmateDetailedResponse)
@@ -93,7 +79,7 @@ async def update_classmate(
         )
     classmate, detail = result
     classmate = await classmate_service.update_classmate(db, classmate, data)
-    return _build_detailed_response(classmate, detail)
+    return ClassmateDetailedResponse.from_models(classmate, detail)
 
 
 @router.delete("/{classmate_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -112,7 +98,7 @@ async def delete_classmate(
     await classmate_service.delete_classmate(db, classmate)
 
 
-@router.put("/{classmate_id}/details", response_model=ClassmateDetailResponse)
+@router.patch("/{classmate_id}/details", response_model=ClassmateDetailResponse)
 async def upsert_classmate_details(
     classmate_id: int,
     data: ClassmateDetailUpsert,

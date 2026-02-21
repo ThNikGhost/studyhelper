@@ -130,14 +130,14 @@ async def upsert_classmate_details(
             phone=data.phone,
             telegram=data.telegram,
             vk=_url_to_str(data.vk),
-            photo_url=data.photo_url,
+            photo_url=_url_to_str(data.photo_url),
             notes=data.notes,
         )
         db.add(detail)
     else:
         update_data = data.model_dump(exclude_unset=True)
         for field, value in update_data.items():
-            if field == "vk":
+            if field in ("vk", "photo_url"):
                 value = _url_to_str(value)
             elif field == "email":
                 value = str(value) if value else None

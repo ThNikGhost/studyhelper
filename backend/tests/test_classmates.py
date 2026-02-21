@@ -216,7 +216,7 @@ class TestGetClassmate:
         )
         classmate_id = create_resp.json()["id"]
 
-        await client.put(
+        await client.patch(
             f"/api/v1/classmates/{classmate_id}/details",
             json=details_data,
             headers=auth_headers,
@@ -355,7 +355,7 @@ class TestDeleteClassmate:
 
 
 class TestUpsertDetails:
-    """Tests for PUT /api/v1/classmates/{id}/details."""
+    """Tests for PATCH /api/v1/classmates/{id}/details."""
 
     async def test_create_details_success(
         self,
@@ -372,7 +372,7 @@ class TestUpsertDetails:
         )
         classmate_id = create_resp.json()["id"]
 
-        response = await client.put(
+        response = await client.patch(
             f"/api/v1/classmates/{classmate_id}/details",
             json=details_data,
             headers=auth_headers,
@@ -394,7 +394,7 @@ class TestUpsertDetails:
         classmate_base_data: dict,
         details_data: dict,
     ):
-        """Test that repeated PUT upserts details (idempotent)."""
+        """Test that repeated PATCH upserts details (idempotent)."""
         create_resp = await client.post(
             "/api/v1/classmates",
             json=classmate_base_data,
@@ -402,12 +402,12 @@ class TestUpsertDetails:
         )
         classmate_id = create_resp.json()["id"]
 
-        await client.put(
+        await client.patch(
             f"/api/v1/classmates/{classmate_id}/details",
             json=details_data,
             headers=auth_headers,
         )
-        response = await client.put(
+        response = await client.patch(
             f"/api/v1/classmates/{classmate_id}/details",
             json={"phone": "+7-000-000-00-00"},
             headers=auth_headers,
@@ -420,7 +420,7 @@ class TestUpsertDetails:
         self, client: AsyncClient, auth_headers: dict, details_data: dict
     ):
         """Test upserting details for non-existent classmate fails."""
-        response = await client.put(
+        response = await client.patch(
             "/api/v1/classmates/99999/details",
             json=details_data,
             headers=auth_headers,
@@ -432,7 +432,7 @@ class TestUpsertDetails:
         self, client: AsyncClient, details_data: dict
     ):
         """Test upserting details without auth fails."""
-        response = await client.put("/api/v1/classmates/1/details", json=details_data)
+        response = await client.patch("/api/v1/classmates/1/details", json=details_data)
 
         assert response.status_code == 401
 
@@ -447,7 +447,7 @@ class TestUpsertDetails:
         )
         classmate_id = create_resp.json()["id"]
 
-        response = await client.put(
+        response = await client.patch(
             f"/api/v1/classmates/{classmate_id}/details",
             json={"email": "not-an-email"},
             headers=auth_headers,
@@ -472,7 +472,7 @@ class TestUpsertDetails:
         classmate_id = create_resp.json()["id"]
 
         # User 1 sets details
-        await client.put(
+        await client.patch(
             f"/api/v1/classmates/{classmate_id}/details",
             json=details_data,
             headers=auth_headers,
@@ -501,7 +501,7 @@ class TestUpsertDetails:
         )
         classmate_id = create_resp.json()["id"]
 
-        response = await client.put(
+        response = await client.patch(
             f"/api/v1/classmates/{classmate_id}/details",
             json={"phone": "+7-999-999-99-99"},
             headers=auth_headers,
