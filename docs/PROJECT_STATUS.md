@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-21 (fix: code review — 19 багов/предупреждений во всех слоях)
+- **Дата обновления**: 2026-02-21 (deploy: миграция k1l2m3n4o5p6 применена на проде, все контейнеры healthy)
 
 ## Backend модули
 
@@ -64,7 +64,7 @@ React.lazy() code splitting, PWA (offline fallback, update prompt with hourly SW
 - **URL**: https://studyhelper1.ru (89.110.93.63)
 - **SSL**: Let's Encrypt, certbot auto-renewal (12h)
 - **Контейнеры**: db, redis, backend, nginx, certbot (5 шт.)
-- **Миграции**: 26 применено локально (27-я `k1l2m3n4o5p6` — нужен деплой)
+- **Миграции**: 27 применено (все задеплоены, включая `k1l2m3n4o5p6`)
 - **Sync**: APScheduler каждые 6ч + Redis distributed lock
 - **Backups**: pg_dump daily cron (3:00 UTC), gzip, 7-day rotation
 
