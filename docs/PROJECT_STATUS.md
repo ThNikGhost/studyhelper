@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-21 (fix: code review P1/P2/W1-W4 — photo_url validation, PATCH semantics, error handling, from_models classmethod)
+- **Дата обновления**: 2026-02-21 (fix: code review — 19 багов/предупреждений во всех слоях)
 
 ## Backend модули
 
@@ -31,7 +31,23 @@
 
 13 страниц: Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Timeline, Settings, Grades. (Notes убрана из навигации, доступна через LessonDetailModal)
 
-**Последние UI-улучшения (2026-02-21):**
+**Code review fixes (2026-02-21):**
+- schedule_filters: `v is not None` — пустой `[]` больше не трактуется как "скрыть всё"
+- scheduler: Prometheus метка `failure` вместо `success` в else-ветке
+- attendance/omsu_parser: `date.today()` → `datetime.now(OMSK_TZ).date()`
+- crypto: `lru_cache` на `get_fernet()` — не блокирует event loop
+- retry: обработка `HTTPStatusError` 502/503/504 как retryable
+- notifications+scheduler: `send_schedule_changed_locked()` с Redis-замком
+- academics `/deadlines`: фильтрует hidden_subjects
+- work.py: `changed_by_id: Mapped[int | None]` (правильная nullable FK)
+- classmate: индекс `ix_classmate_details_classmate_id` + миграция `k1l2m3n4o5p6`
+- routers/lk: logger на уровень модуля; services/lk: `db.flush()` вместо промежуточных `db.commit()`
+- api.ts: `processQueue` перед редиректом (утечка памяти); fileService: `signal` параметр
+- WorksPage: batch modal остаётся открытым при частичной ошибке
+- Dockerfile + docker-compose.prod.yml: `localhost` → `127.0.0.1`
+- Android: executor в companion object; `>=` для занятия, начавшегося ровно сейчас
+
+**Предыдущие UI-улучшения (2026-02-21):**
 - FilesPage: multiple file upload — выбор нескольких файлов через dialog/drag-drop, очередь с удалением, кнопка "Загрузить (N)", суммарный прогресс, один toast
 
 **Предыдущие UI-улучшения (2026-02-19):**
@@ -48,7 +64,7 @@ React.lazy() code splitting, PWA (offline fallback, update prompt with hourly SW
 - **URL**: https://studyhelper1.ru (89.110.93.63)
 - **SSL**: Let's Encrypt, certbot auto-renewal (12h)
 - **Контейнеры**: db, redis, backend, nginx, certbot (5 шт.)
-- **Миграции**: 25 применено (все задеплоены)
+- **Миграции**: 26 применено локально (27-я `k1l2m3n4o5p6` — нужен деплой)
 - **Sync**: APScheduler каждые 6ч + Redis distributed lock
 - **Backups**: pg_dump daily cron (3:00 UTC), gzip, 7-day rotation
 
@@ -119,7 +135,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 | Покрытие | ~80% |
 | API endpoints | ~75 |
 | Моделей | 19 |
-| Миграций | 26 |
+| Миграций | 27 |
 | Frontend страниц | 13 |
 | Линтеры | Ruff + ESLint clean |
 | Build | TypeScript + Vite clean |
