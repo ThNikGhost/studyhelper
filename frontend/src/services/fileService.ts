@@ -6,10 +6,11 @@ export interface UploadFileParams {
   category: FileCategory
   subject_id?: number | null
   onProgress?: (percent: number) => void
+  signal?: AbortSignal
 }
 
 export const fileService = {
-  async uploadFile({ file, category, subject_id, onProgress }: UploadFileParams): Promise<StudyFile> {
+  async uploadFile({ file, category, subject_id, onProgress, signal }: UploadFileParams): Promise<StudyFile> {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('category', category)
@@ -19,6 +20,7 @@ export const fileService = {
 
     const response = await api.post<StudyFile>('/files/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      signal,
       onUploadProgress: (event) => {
         if (onProgress && event.total) {
           onProgress(Math.round((event.loaded * 100) / event.total))

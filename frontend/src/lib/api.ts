@@ -84,6 +84,7 @@ api.interceptors.response.use(
           isRefreshing = false
         }
       } else {
+        processQueue(new Error('No refresh token'), null)
         isRefreshing = false
         window.location.href = '/login'
       }

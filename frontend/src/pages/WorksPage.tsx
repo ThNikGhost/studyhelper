@@ -296,10 +296,11 @@ export function WorksPage() {
       queryClient.invalidateQueries({ queryKey: ['works'] })
       if (failed === 0) {
         toast.success(`Добавлено работ: ${succeeded}`)
+        closeModal()
       } else {
         toast.warning(`Добавлено: ${succeeded}, ошибок: ${failed}`)
+        // modal remains open so the user can retry failed rows
       }
-      closeModal()
     },
     onError: () => {
       toast.error('Не удалось добавить работы')

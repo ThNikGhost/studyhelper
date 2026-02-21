@@ -3,6 +3,8 @@
 API endpoints for LK credential management and data synchronization.
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,6 +21,7 @@ from src.schemas.lk import (
 )
 from src.services import lk as lk_service
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -93,9 +96,6 @@ async def sync_from_lk(
         400: If credentials not saved.
         502: If LK sync fails.
     """
-    import logging
-
-    logger = logging.getLogger(__name__)
     try:
         logger.info("Starting LK sync for user %d", current_user.id)
         grades_count, disciplines_count = await lk_service.sync_from_lk(

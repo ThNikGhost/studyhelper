@@ -97,7 +97,7 @@ object WidgetRepository {
             for ((index, lesson) in data.lessons.withIndex()) {
                 val lessonMinutes = parseTime(lesson.timeStart)
                 if (lessonMinutes < 0) continue // skip unparseable time
-                if (lessonMinutes > currentMinutes) {
+                if (lessonMinutes >= currentMinutes) {
                     val remaining = data.lessons
                         .drop(index + 1)
                         .take(3)

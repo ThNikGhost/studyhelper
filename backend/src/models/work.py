@@ -114,7 +114,7 @@ class WorkStatusHistory(Base):
     changed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
-    changed_by_id: Mapped[int] = mapped_column(
+    changed_by_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
@@ -122,7 +122,7 @@ class WorkStatusHistory(Base):
     work_status: Mapped["WorkStatus"] = relationship(
         "WorkStatus", back_populates="history"
     )
-    changed_by: Mapped["User"] = relationship("User")
+    changed_by: Mapped["User | None"] = relationship("User")
 
     def __repr__(self) -> str:
         """String representation."""

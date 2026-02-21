@@ -42,7 +42,10 @@ async def mark_absent(
         raise ValueError("Schedule entry not found")
 
     # Validate lesson_date is not in the future
-    if entry.lesson_date is not None and entry.lesson_date > date.today():
+    if (
+        entry.lesson_date is not None
+        and entry.lesson_date > datetime.now(ZoneInfo(settings.timezone)).date()
+    ):
         raise ValueError("Cannot mark future lessons as absent")
 
     # Check for duplicate

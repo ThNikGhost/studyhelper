@@ -4,6 +4,7 @@ Uses Fernet symmetric encryption with key derived from SECRET_KEY via PBKDF2HMAC
 """
 
 import base64
+import functools
 
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
@@ -22,6 +23,7 @@ class CryptoError(Exception):
     pass
 
 
+@functools.lru_cache(maxsize=1)
 def get_fernet() -> Fernet:
     """Get Fernet instance using SECRET_KEY + PBKDF2.
 

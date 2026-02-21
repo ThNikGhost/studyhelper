@@ -143,6 +143,30 @@ async def retry_async(
 
             return result
 
+        except httpx.HTTPStatusError as exc:
+            last_exception = exc
+
+            if not is_retryable_status(exc.response.status_code):
+                raise
+
+            if attempt < config.max_attempts - 1:
+                delay = calculate_delay(attempt, config)
+                logger.warning(
+                    "Retryable HTTP status %d, attempt %d/%d, waiting %.1fs",
+                    exc.response.status_code,
+                    attempt + 1,
+                    config.max_attempts,
+                    delay,
+                )
+                await asyncio.sleep(delay)
+            else:
+                logger.error(
+                    "All %d retry attempts failed with HTTP %d",
+                    config.max_attempts,
+                    exc.response.status_code,
+                )
+                raise
+
         except Exception as exc:
             last_exception = exc
 

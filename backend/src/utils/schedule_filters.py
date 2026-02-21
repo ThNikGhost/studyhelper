@@ -31,7 +31,7 @@ async def resolve_hidden_subjects(
     )
     id_to_name = {row.id: row.name for row in result.all()}
     return {
-        id_to_name[int(k)]: (set(v) if v else None)
+        id_to_name[int(k)]: (set(v) if v is not None else None)
         for k, v in user.hidden_subjects.items()
         if int(k) in id_to_name
     }

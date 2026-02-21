@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-21 (feat: split classmate details into per-user table)
+- **Дата обновления**: 2026-02-21 (fix: code review P1/P2/W1-W4 — photo_url validation, PATCH semantics, error handling, from_models classmethod)
 
 ## Backend модули
 

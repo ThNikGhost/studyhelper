@@ -92,13 +92,13 @@ async def _sync_schedule_with_lock() -> None:
             # Notify Telegram users about schedule changes
             if result.get("changed") and settings.telegram_bot_token:
                 try:
-                    from src.telegram.notifications import send_schedule_changed
+                    from src.telegram.notifications import send_schedule_changed_locked
 
-                    await send_schedule_changed()
+                    await send_schedule_changed_locked()
                 except Exception:
                     logger.warning("Failed to send schedule change notifications")
         else:
-            SCHEDULE_SYNC_TOTAL.labels(status="success").inc()
+            SCHEDULE_SYNC_TOTAL.labels(status="failure").inc()
             logger.warning(
                 "Schedule auto-sync finished with issues: %s",
                 result.get("message"),

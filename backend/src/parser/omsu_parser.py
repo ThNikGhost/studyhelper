@@ -7,6 +7,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import httpx
 
@@ -131,7 +132,10 @@ class OmsuScheduleParser:
         target_url = url or self.url
         logger.info("Parsing schedule from API: %s", target_url)
 
-        result = ParseResult(source_url=target_url, parsed_date=date.today())
+        result = ParseResult(
+            source_url=target_url,
+            parsed_date=datetime.now(ZoneInfo(settings.timezone)).date(),
+        )
 
         try:
             # Fetch JSON from API

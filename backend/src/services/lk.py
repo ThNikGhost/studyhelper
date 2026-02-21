@@ -224,7 +224,7 @@ async def _sync_grades(db: AsyncSession, user_id: int, data: LkStudentData) -> i
             await db.execute(stmt)
             count += 1
 
-    await db.commit()
+    await db.flush()
     return count
 
 
@@ -287,7 +287,7 @@ async def _sync_disciplines(db: AsyncSession, user_id: int, data: LkStudentData)
             await db.execute(stmt)
             count += 1
 
-    await db.commit()
+    await db.flush()
     return count
 
 

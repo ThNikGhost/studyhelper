@@ -52,7 +52,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 # Healthcheck using stdlib (no curl/wget needed)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD python -c "from urllib.request import urlopen; urlopen('http://localhost:8000/health')"
+    CMD python -c "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health')"
 
 USER appuser
 

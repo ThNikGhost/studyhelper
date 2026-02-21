@@ -13,8 +13,6 @@ import java.util.concurrent.Executors
  */
 class ScheduleWidgetProvider : AppWidgetProvider() {
 
-    private val executor = Executors.newSingleThreadExecutor()
-
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -71,5 +69,6 @@ class ScheduleWidgetProvider : AppWidgetProvider() {
 
     companion object {
         private const val TAG = "WidgetProvider"
+        private val executor = Executors.newSingleThreadExecutor()
     }
 }

@@ -181,23 +181,26 @@ class TestGetFilteredCurrentLesson:
         physics_subject: Subject,
     ):
         """Test next lesson is filtered if hidden."""
-        today = date.today()
+        from src.services.schedule import OMSK_TZ
+
+        now = datetime.now(OMSK_TZ)
+        today = now.date()
         day_of_week = today.isoweekday()
 
-        # Create future lesson (math at 9:00, physics at 10:45)
+        # Create future lessons (23:00 and 23:30) to avoid time-dependency
         math_entry = ScheduleEntry(
             lesson_date=today,
             day_of_week=day_of_week,
-            start_time=time(9, 0),
-            end_time=time(10, 30),
+            start_time=time(23, 0),
+            end_time=time(23, 30),
             subject_name="Математический анализ",
             lesson_type="lecture",
         )
         physics_entry = ScheduleEntry(
             lesson_date=today,
             day_of_week=day_of_week,
-            start_time=time(10, 45),
-            end_time=time(12, 15),
+            start_time=time(23, 30),
+            end_time=time(23, 59),
             subject_name=physics_subject.name,
             subject_id=physics_subject.id,
             lesson_type="lab",
@@ -211,12 +214,9 @@ class TestGetFilteredCurrentLesson:
 
         result = await get_filtered_current_lesson(db_session, test_user)
 
-        # Current lesson should be None (not happening now)
         # Next lesson should be math (physics is hidden)
-        # Note: This test depends on current time - math should be in future
-        assert (
-            result.next is None or result.next.subject_name == "Математический анализ"
-        )
+        assert result.next is not None
+        assert result.next.subject_name == "Математический анализ"
 
 
 @pytest.mark.asyncio

@@ -217,3 +217,12 @@ async def send_deadline_alerts_locked() -> int:
         Number of alerts sent, or 0 if another worker holds the lock.
     """
     return await _with_notification_lock("deadline_alerts_lock", send_deadline_alerts)
+
+
+async def send_schedule_changed_locked() -> int:
+    """Send schedule change notifications with Redis distributed lock.
+
+    Returns:
+        Number of users notified, or 0 if another worker holds the lock.
+    """
+    return await _with_notification_lock("schedule_changed_lock", send_schedule_changed)

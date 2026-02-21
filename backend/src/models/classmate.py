@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.models.base import Base, TimestampMixin
@@ -37,6 +37,7 @@ class ClassmateDetail(Base, TimestampMixin):
         UniqueConstraint(
             "classmate_id", "user_id", name="uq_classmate_details_classmate_user"
         ),
+        Index("ix_classmate_details_classmate_id", "classmate_id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)

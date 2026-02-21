@@ -10,8 +10,11 @@ from aiogram.types import Message
 
 from src.database import get_session_maker
 from src.services import telegram as tg_service
+from src.services.user import get_user_by_id
 from src.services.work import get_upcoming_works
 from src.telegram.formatters import format_deadlines
+from src.telegram.schedule_utils import filter_works_by_hidden_subjects
+from src.utils.schedule_filters import resolve_hidden_subjects
 
 logger = logging.getLogger(__name__)
 router = Router(name="academics")
@@ -40,6 +43,10 @@ async def cmd_deadlines(message: Message) -> None:
 
     session_maker = get_session_maker()
     async with session_maker() as db:
+        user = await get_user_by_id(db, user_id)
         works = await get_upcoming_works(db, user_id, limit=10)
+        if user is not None:
+            hidden_config = await resolve_hidden_subjects(db, user)
+            works = filter_works_by_hidden_subjects(works, hidden_config)
 
     await message.answer(format_deadlines(works))
