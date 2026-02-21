@@ -3,7 +3,7 @@
 from src.models.attendance import Absence
 from src.models.base import Base
 from src.models.calendar_feed import CalendarFeed
-from src.models.classmate import Classmate
+from src.models.classmate import Classmate, ClassmateDetail
 from src.models.file import File
 from src.models.lk import LkCredentials, SemesterDiscipline, SessionGrade
 from src.models.note import LessonNote
@@ -23,6 +23,7 @@ __all__ = [
     "Building",
     "CalendarFeed",
     "Classmate",
+    "ClassmateDetail",
     "Department",
     "File",
     "LessonNote",

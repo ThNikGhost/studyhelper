@@ -1,9 +1,16 @@
 import api from '@/lib/api'
-import type { Classmate, ClassmateCreate, ClassmateUpdate } from '@/types/classmate'
+import type {
+  Classmate,
+  ClassmateBase,
+  ClassmateCreate,
+  ClassmateDetail,
+  ClassmateDetailUpsert,
+  ClassmateUpdate,
+} from '@/types/classmate'
 
 export const classmateService = {
-  async getClassmates(signal?: AbortSignal): Promise<Classmate[]> {
-    const response = await api.get<Classmate[]>('/classmates', { signal })
+  async getClassmates(signal?: AbortSignal): Promise<ClassmateBase[]> {
+    const response = await api.get<ClassmateBase[]>('/classmates', { signal })
     return response.data
   },
 
@@ -24,6 +31,11 @@ export const classmateService = {
 
   async deleteClassmate(id: number): Promise<void> {
     await api.delete(`/classmates/${id}`)
+  },
+
+  async upsertDetails(id: number, data: ClassmateDetailUpsert): Promise<ClassmateDetail> {
+    const response = await api.put<ClassmateDetail>(`/classmates/${id}/details`, data)
+    return response.data
   },
 }
 

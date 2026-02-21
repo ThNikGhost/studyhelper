@@ -109,3 +109,23 @@ async def auth_tokens(client: AsyncClient, test_user_data: dict) -> dict:
 async def auth_headers(auth_tokens: dict) -> dict:
     """Get authorization headers with access token."""
     return {"Authorization": f"Bearer {auth_tokens['access_token']}"}
+
+
+@pytest.fixture
+async def auth_tokens_user2(client: AsyncClient, test_user_data_2: dict) -> dict:
+    """Register and login a second user, return tokens."""
+    await client.post("/api/v1/auth/register", json=test_user_data_2)
+    response = await client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": test_user_data_2["email"],
+            "password": test_user_data_2["password"],
+        },
+    )
+    return response.json()
+
+
+@pytest.fixture
+async def auth_headers_user2(auth_tokens_user2: dict) -> dict:
+    """Get authorization headers for the second test user."""
+    return {"Authorization": f"Bearer {auth_tokens_user2['access_token']}"}

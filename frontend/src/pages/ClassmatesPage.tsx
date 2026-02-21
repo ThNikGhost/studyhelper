@@ -23,7 +23,13 @@ import { Modal } from '@/components/ui/modal'
 import { toast } from 'sonner'
 import classmateService from '@/services/classmateService'
 import uploadService from '@/services/uploadService'
-import type { Classmate, ClassmateCreate } from '@/types/classmate'
+import type {
+  Classmate,
+  ClassmateBase,
+  ClassmateCreate,
+  ClassmateDetailUpsert,
+  ClassmateUpdate,
+} from '@/types/classmate'
 
 // Sanitize Telegram username for safe URL construction
 function sanitizeTelegram(value: string): string {
@@ -49,10 +55,12 @@ function sanitizeUrl(url: string): string {
 // Avatar component
 function Avatar({
   src,
+  initials,
   size = 'md',
   className = '',
 }: {
-  src: string | null | undefined
+  src?: string | null
+  initials?: string
   size?: 'sm' | 'md' | 'lg'
   className?: string
 }) {
@@ -66,6 +74,12 @@ function Avatar({
     sm: 'h-8 w-8 sm:h-10 sm:w-10',
     md: 'h-8 w-8 sm:h-10 sm:w-10',
     lg: 'h-12 w-12',
+  }
+
+  const textSizes = {
+    sm: 'text-lg',
+    md: 'text-lg',
+    lg: 'text-2xl',
   }
 
   if (src) {
@@ -82,22 +96,42 @@ function Avatar({
     <div
       className={`${sizeClasses[size]} rounded-full bg-primary/10 flex items-center justify-center ${className}`}
     >
-      <User className={`${iconSizes[size]} text-primary`} />
+      {initials ? (
+        <span className={`${textSizes[size]} font-semibold text-primary`}>{initials}</span>
+      ) : (
+        <User className={`${iconSizes[size]} text-primary`} />
+      )}
     </div>
   )
 }
 
+// Get initials from full name (first letters of first two words)
+function getInitials(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? ''
+  return (parts[0][0] + parts[1][0]).toUpperCase()
+}
+
+// Get display name from full_name (first name = second word, e.g. "Иванов Иван Иванович" -> "Иван")
+function getDisplayName(fullName: string): string {
+  const parts = fullName.split(' ')
+  return parts.length > 1 ? parts[1] : parts[0]
+}
+
 // Default form data
-const defaultFormData: ClassmateCreate = {
+const defaultBaseData: ClassmateCreate = {
   full_name: '',
+  group_name: null,
+  subgroup: null,
+}
+
+const defaultDetailsData: ClassmateDetailUpsert = {
   short_name: null,
   email: null,
   phone: null,
   telegram: null,
   vk: null,
   photo_url: null,
-  group_name: null,
-  subgroup: null,
   notes: null,
 }
 
@@ -108,25 +142,27 @@ export function ClassmatesPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [editingClassmate, setEditingClassmate] = useState<Classmate | null>(null)
   const [viewingClassmate, setViewingClassmate] = useState<Classmate | null>(null)
-  const [deleteConfirmClassmate, setDeleteConfirmClassmate] = useState<Classmate | null>(null)
-  const [formData, setFormData] = useState<ClassmateCreate>(defaultFormData)
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+  const [deleteConfirmClassmate, setDeleteConfirmClassmate] = useState<ClassmateBase | null>(null)
+  const [baseFormData, setBaseFormData] = useState<ClassmateCreate>(defaultBaseData)
+  const [detailsFormData, setDetailsFormData] = useState<ClassmateDetailUpsert>(defaultDetailsData)
   const [isUploading, setIsUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
-  // Fetch classmates
+  // Fetch classmates list (base fields only)
   const {
     data: classmates = [],
     isLoading,
     error,
     refetch,
-  } = useQuery<Classmate[]>({
+  } = useQuery<ClassmateBase[]>({
     queryKey: ['classmates'],
     queryFn: ({ signal }) => classmateService.getClassmates(signal),
   })
 
   // Group classmates by subgroup
   const groupedClassmates = useMemo(() => {
-    const groups: Record<string, Classmate[]> = {}
+    const groups: Record<string, ClassmateBase[]> = {}
 
     classmates.forEach((classmate) => {
       const key = classmate.subgroup ? String(classmate.subgroup) : 'none'
@@ -136,7 +172,6 @@ export function ClassmatesPage() {
       groups[key].push(classmate)
     })
 
-    // Sort groups: numbered first, then "none"
     const sortedKeys = Object.keys(groups).sort((a, b) => {
       if (a === 'none') return 1
       if (b === 'none') return -1
@@ -150,10 +185,15 @@ export function ClassmatesPage() {
     }))
   }, [classmates])
 
-  // Create mutation
+  // Create mutation (base fields)
   const createMutation = useMutation({
     mutationFn: (data: ClassmateCreate) => classmateService.createClassmate(data),
-    onSuccess: () => {
+    onSuccess: async (classmate) => {
+      // If any details fields filled, upsert them
+      const hasDetails = Object.values(detailsFormData).some((v) => v !== null && v !== '')
+      if (hasDetails) {
+        await classmateService.upsertDetails(classmate.id, detailsFormData)
+      }
       queryClient.invalidateQueries({ queryKey: ['classmates'] })
       toast.success('Одногруппник добавлен')
       closeFormModal()
@@ -163,11 +203,13 @@ export function ClassmatesPage() {
     },
   })
 
-  // Update mutation
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<ClassmateCreate> }) =>
+  // Update base fields mutation
+  const updateBaseMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: ClassmateUpdate }) =>
       classmateService.updateClassmate(id, data),
-    onSuccess: () => {
+    onSuccess: async (classmate) => {
+      // Always upsert details on edit (to allow clearing fields)
+      await classmateService.upsertDetails(classmate.id, detailsFormData)
       queryClient.invalidateQueries({ queryKey: ['classmates'] })
       toast.success('Одногруппник обновлён')
       closeFormModal()
@@ -191,35 +233,45 @@ export function ClassmatesPage() {
     },
   })
 
+  // Open view modal — fetch full classmate with details
+  const openViewModal = async (classmate: ClassmateBase) => {
+    setIsLoadingDetails(true)
+    setViewingClassmate({ ...classmate, details: null })
+    try {
+      const full = await classmateService.getClassmate(classmate.id)
+      setViewingClassmate(full)
+    } catch {
+      toast.error('Не удалось загрузить данные')
+    } finally {
+      setIsLoadingDetails(false)
+    }
+  }
+
   // Handle file selection
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate file type
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       toast.error('Допустимые форматы: JPEG, PNG, WebP')
       return
     }
 
-    // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Максимальный размер файла: 5MB')
       return
     }
 
-    // Show preview
     const reader = new FileReader()
     reader.onload = (e) => {
       setPreviewUrl(e.target?.result as string)
     }
     reader.readAsDataURL(file)
 
-    // Upload file
     setIsUploading(true)
     try {
       const response = await uploadService.uploadAvatar(file)
-      setFormData((prev) => ({ ...prev, photo_url: response.url }))
+      setDetailsFormData((prev) => ({ ...prev, photo_url: response.url }))
     } catch {
       toast.error('Ошибка загрузки файла')
       setPreviewUrl(null)
@@ -230,27 +282,30 @@ export function ClassmatesPage() {
 
   // Modal handlers
   const openAddModal = () => {
-    setFormData(defaultFormData)
+    setBaseFormData(defaultBaseData)
+    setDetailsFormData(defaultDetailsData)
     setEditingClassmate(null)
     setPreviewUrl(null)
     setIsAddModalOpen(true)
   }
 
   const openEditModal = (classmate: Classmate) => {
-    setFormData({
+    setBaseFormData({
       full_name: classmate.full_name,
-      short_name: classmate.short_name,
-      email: classmate.email,
-      phone: classmate.phone,
-      telegram: classmate.telegram,
-      vk: classmate.vk,
-      photo_url: classmate.photo_url,
       group_name: classmate.group_name,
       subgroup: classmate.subgroup,
-      notes: classmate.notes,
+    })
+    setDetailsFormData({
+      short_name: classmate.details?.short_name ?? null,
+      email: classmate.details?.email ?? null,
+      phone: classmate.details?.phone ?? null,
+      telegram: classmate.details?.telegram ?? null,
+      vk: classmate.details?.vk ?? null,
+      photo_url: classmate.details?.photo_url ?? null,
+      notes: classmate.details?.notes ?? null,
     })
     setEditingClassmate(classmate)
-    setPreviewUrl(classmate.photo_url)
+    setPreviewUrl(classmate.details?.photo_url ?? null)
     setViewingClassmate(null)
     setIsAddModalOpen(true)
   }
@@ -258,39 +313,40 @@ export function ClassmatesPage() {
   const closeFormModal = () => {
     setIsAddModalOpen(false)
     setEditingClassmate(null)
-    setFormData(defaultFormData)
+    setBaseFormData(defaultBaseData)
+    setDetailsFormData(defaultDetailsData)
     setPreviewUrl(null)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Clean up empty strings to null
-    const cleanedData: ClassmateCreate = {
-      full_name: formData.full_name.trim(),
-      short_name: formData.short_name?.trim() || null,
-      email: formData.email?.trim() || null,
-      phone: formData.phone?.trim() || null,
-      telegram: formData.telegram?.trim() || null,
-      vk: formData.vk?.trim() || null,
-      photo_url: formData.photo_url || null,
-      group_name: formData.group_name?.trim() || null,
-      subgroup: formData.subgroup,
-      notes: formData.notes?.trim() || null,
+
+    const cleanedBase: ClassmateCreate = {
+      full_name: baseFormData.full_name.trim(),
+      group_name: baseFormData.group_name?.trim() || null,
+      subgroup: baseFormData.subgroup,
     }
+
+    const cleanedDetails: ClassmateDetailUpsert = {
+      short_name: detailsFormData.short_name?.trim() || null,
+      email: detailsFormData.email?.trim() || null,
+      phone: detailsFormData.phone?.trim() || null,
+      telegram: detailsFormData.telegram?.trim() || null,
+      vk: detailsFormData.vk?.trim() || null,
+      photo_url: detailsFormData.photo_url || null,
+      notes: detailsFormData.notes?.trim() || null,
+    }
+    setDetailsFormData(cleanedDetails)
 
     if (editingClassmate) {
-      updateMutation.mutate({ id: editingClassmate.id, data: cleanedData })
+      updateBaseMutation.mutate({ id: editingClassmate.id, data: cleanedBase })
     } else {
-      createMutation.mutate(cleanedData)
+      createMutation.mutate(cleanedBase)
     }
-  }
-
-  const handleInputChange = (field: keyof ClassmateCreate, value: string | number | null) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   const removeAvatar = () => {
-    setFormData((prev) => ({ ...prev, photo_url: null }))
+    setDetailsFormData((prev) => ({ ...prev, photo_url: null }))
     setPreviewUrl(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
@@ -298,15 +354,7 @@ export function ClassmatesPage() {
   }
 
   const isMutating =
-    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending
-
-  // Get display name (short_name or first name from full_name)
-  const getDisplayName = (classmate: Classmate): string => {
-    if (classmate.short_name) return classmate.short_name
-    // Get first name from full_name (e.g., "Иванов Иван Иванович" -> "Иван")
-    const parts = classmate.full_name.split(' ')
-    return parts.length > 1 ? parts[1] : parts[0]
-  }
+    createMutation.isPending || updateBaseMutation.isPending || deleteMutation.isPending
 
   // Loading state
   if (isLoading) {
@@ -370,12 +418,17 @@ export function ClassmatesPage() {
               {group.classmates.map((classmate) => (
                 <button
                   key={classmate.id}
-                  onClick={() => setViewingClassmate(classmate)}
+                  onClick={() => openViewModal(classmate)}
                   className="aspect-square rounded-lg border bg-card hover:bg-accent hover:border-primary transition-colors flex flex-col items-center justify-center p-2 text-center cursor-pointer"
                 >
-                  <Avatar src={classmate.photo_url} size="sm" className="mb-1" />
+                  {/* Cards show initials only — photo is in details (not in list response) */}
+                  <Avatar
+                    initials={getInitials(classmate.full_name)}
+                    size="sm"
+                    className="mb-1"
+                  />
                   <span className="text-sm font-medium truncate w-full">
-                    {getDisplayName(classmate)}
+                    {getDisplayName(classmate.full_name)}
                   </span>
                 </button>
               ))}
@@ -406,82 +459,96 @@ export function ClassmatesPage() {
         >
           {viewingClassmate && (
             <div className="space-y-4">
-              {/* Avatar and info */}
-              <div className="flex items-center gap-4">
-                <Avatar src={viewingClassmate.photo_url} size="md" />
-                <div>
-                  {viewingClassmate.short_name && (
-                    <p className="text-sm text-muted-foreground">{viewingClassmate.short_name}</p>
-                  )}
-                  {viewingClassmate.subgroup && (
-                    <p className="text-sm text-muted-foreground">
-                      {viewingClassmate.subgroup} подгруппа
-                    </p>
-                  )}
+              {isLoadingDetails ? (
+                <div className="flex justify-center py-6">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* Avatar and info */}
+                  <div className="flex items-center gap-4">
+                    <Avatar
+                      src={viewingClassmate.details?.photo_url}
+                      initials={getInitials(viewingClassmate.full_name)}
+                      size="md"
+                    />
+                    <div>
+                      {viewingClassmate.details?.short_name && (
+                        <p className="text-sm text-muted-foreground">
+                          {viewingClassmate.details.short_name}
+                        </p>
+                      )}
+                      {viewingClassmate.subgroup && (
+                        <p className="text-sm text-muted-foreground">
+                          {viewingClassmate.subgroup} подгруппа
+                        </p>
+                      )}
+                    </div>
+                  </div>
 
-              {/* Contacts */}
-              <div className="space-y-2">
-                {viewingClassmate.phone && (
-                  <a
-                    href={`tel:${viewingClassmate.phone}`}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
-                  >
-                    <Phone className="h-5 w-5 text-green-500" />
-                    <span>{viewingClassmate.phone}</span>
-                  </a>
-                )}
-                {viewingClassmate.email && (
-                  <a
-                    href={`mailto:${viewingClassmate.email}`}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
-                  >
-                    <Mail className="h-5 w-5 text-blue-500" />
-                    <span>{viewingClassmate.email}</span>
-                  </a>
-                )}
-                {viewingClassmate.telegram && (
-                  <a
-                    href={`https://t.me/${sanitizeTelegram(viewingClassmate.telegram)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
-                  >
-                    <Send className="h-5 w-5 text-sky-500" />
-                    <span>{viewingClassmate.telegram}</span>
-                  </a>
-                )}
-                {viewingClassmate.vk && (
-                  <a
-                    href={sanitizeUrl(viewingClassmate.vk)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
-                  >
-                    <span className="w-5 h-5 flex items-center justify-center text-blue-600 font-bold text-sm">
-                      VK
-                    </span>
-                    <span className="truncate">{viewingClassmate.vk}</span>
-                  </a>
-                )}
-              </div>
+                  {/* Contacts */}
+                  <div className="space-y-2">
+                    {viewingClassmate.details?.phone && (
+                      <a
+                        href={`tel:${viewingClassmate.details.phone}`}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
+                      >
+                        <Phone className="h-5 w-5 text-green-500" />
+                        <span>{viewingClassmate.details.phone}</span>
+                      </a>
+                    )}
+                    {viewingClassmate.details?.email && (
+                      <a
+                        href={`mailto:${viewingClassmate.details.email}`}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
+                      >
+                        <Mail className="h-5 w-5 text-blue-500" />
+                        <span>{viewingClassmate.details.email}</span>
+                      </a>
+                    )}
+                    {viewingClassmate.details?.telegram && (
+                      <a
+                        href={`https://t.me/${sanitizeTelegram(viewingClassmate.details.telegram)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
+                      >
+                        <Send className="h-5 w-5 text-sky-500" />
+                        <span>{viewingClassmate.details.telegram}</span>
+                      </a>
+                    )}
+                    {viewingClassmate.details?.vk && (
+                      <a
+                        href={sanitizeUrl(viewingClassmate.details.vk)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors"
+                      >
+                        <span className="w-5 h-5 flex items-center justify-center text-blue-600 font-bold text-sm">
+                          VK
+                        </span>
+                        <span className="truncate">{viewingClassmate.details.vk}</span>
+                      </a>
+                    )}
+                  </div>
 
-              {/* No contacts message */}
-              {!viewingClassmate.phone &&
-                !viewingClassmate.email &&
-                !viewingClassmate.telegram &&
-                !viewingClassmate.vk && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Контакты не указаны
-                  </p>
-                )}
+                  {/* No contacts message */}
+                  {!viewingClassmate.details?.phone &&
+                    !viewingClassmate.details?.email &&
+                    !viewingClassmate.details?.telegram &&
+                    !viewingClassmate.details?.vk && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Контакты не указаны
+                      </p>
+                    )}
 
-              {/* Notes */}
-              {viewingClassmate.notes && (
-                <div className="p-3 rounded-lg bg-muted">
-                  <p className="text-sm text-muted-foreground">{viewingClassmate.notes}</p>
-                </div>
+                  {/* Notes */}
+                  {viewingClassmate.details?.notes && (
+                    <div className="p-3 rounded-lg bg-muted">
+                      <p className="text-sm text-muted-foreground">{viewingClassmate.details.notes}</p>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Actions */}
@@ -490,7 +557,7 @@ export function ClassmatesPage() {
                   variant="outline"
                   className="flex-1"
                   onClick={() => openEditModal(viewingClassmate)}
-                  disabled={!isOnline}
+                  disabled={!isOnline || isLoadingDetails}
                 >
                   <Pencil className="h-4 w-4 mr-2" />
                   Редактировать
@@ -515,69 +582,15 @@ export function ClassmatesPage() {
           title={editingClassmate ? 'Редактировать' : 'Новый одногруппник'}
         >
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Avatar upload */}
-            <div className="flex flex-col items-center gap-2">
-              <div className="relative">
-                {previewUrl || formData.photo_url ? (
-                  <img
-                    src={previewUrl || formData.photo_url || ''}
-                    alt="Avatar preview"
-                    className="w-24 h-24 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-12 w-12 text-primary" />
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
-                >
-                  {isUploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Camera className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-              {(previewUrl || formData.photo_url) && (
-                <button
-                  type="button"
-                  onClick={removeAvatar}
-                  className="text-xs text-destructive hover:underline"
-                >
-                  Удалить фото
-                </button>
-              )}
-            </div>
-
+            {/* Base fields */}
             <div>
               <Label htmlFor="full_name">Полное имя *</Label>
               <Input
                 id="full_name"
-                value={formData.full_name}
-                onChange={(e) => handleInputChange('full_name', e.target.value)}
+                value={baseFormData.full_name}
+                onChange={(e) => setBaseFormData((prev) => ({ ...prev, full_name: e.target.value }))}
                 placeholder="Иванов Иван Иванович"
                 required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="short_name">Краткое имя</Label>
-              <Input
-                id="short_name"
-                value={formData.short_name || ''}
-                onChange={(e) => handleInputChange('short_name', e.target.value)}
-                placeholder="Ваня"
               />
             </div>
 
@@ -586,8 +599,10 @@ export function ClassmatesPage() {
                 <Label htmlFor="group_name">Группа</Label>
                 <Input
                   id="group_name"
-                  value={formData.group_name || ''}
-                  onChange={(e) => handleInputChange('group_name', e.target.value)}
+                  value={baseFormData.group_name || ''}
+                  onChange={(e) =>
+                    setBaseFormData((prev) => ({ ...prev, group_name: e.target.value }))
+                  }
                   placeholder="ИВТ-101"
                 />
               </div>
@@ -598,67 +613,146 @@ export function ClassmatesPage() {
                   type="number"
                   min={1}
                   max={10}
-                  value={formData.subgroup || ''}
+                  value={baseFormData.subgroup || ''}
                   onChange={(e) =>
-                    handleInputChange('subgroup', e.target.value ? Number(e.target.value) : null)
+                    setBaseFormData((prev) => ({
+                      ...prev,
+                      subgroup: e.target.value ? Number(e.target.value) : null,
+                    }))
                   }
                   placeholder="1"
                 />
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="phone">Телефон</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone || ''}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="+7 (999) 123-45-67"
-              />
-            </div>
+            {/* Divider */}
+            <div className="border-t pt-3">
+              <p className="text-sm font-medium text-muted-foreground mb-3">
+                Мои контакты (видны только вам)
+              </p>
 
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email || ''}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="email@example.com"
-              />
-            </div>
+              {/* Avatar upload */}
+              <div className="flex flex-col items-center gap-2 mb-4">
+                <div className="relative">
+                  {previewUrl || detailsFormData.photo_url ? (
+                    <img
+                      src={previewUrl || detailsFormData.photo_url || ''}
+                      alt="Avatar preview"
+                      className="w-24 h-24 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="h-12 w-12 text-primary" />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Camera className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                {(previewUrl || detailsFormData.photo_url) && (
+                  <button
+                    type="button"
+                    onClick={removeAvatar}
+                    className="text-xs text-destructive hover:underline"
+                  >
+                    Удалить фото
+                  </button>
+                )}
+              </div>
 
-            <div>
-              <Label htmlFor="telegram">Telegram</Label>
-              <Input
-                id="telegram"
-                value={formData.telegram || ''}
-                onChange={(e) => handleInputChange('telegram', e.target.value)}
-                placeholder="@username"
-              />
-            </div>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="short_name">Краткое имя</Label>
+                  <Input
+                    id="short_name"
+                    value={detailsFormData.short_name || ''}
+                    onChange={(e) =>
+                      setDetailsFormData((prev) => ({ ...prev, short_name: e.target.value }))
+                    }
+                    placeholder="Ваня"
+                  />
+                </div>
 
-            <div>
-              <Label htmlFor="vk">VK (ссылка)</Label>
-              <Input
-                id="vk"
-                type="url"
-                value={formData.vk || ''}
-                onChange={(e) => handleInputChange('vk', e.target.value)}
-                placeholder="https://vk.com/username"
-              />
-            </div>
+                <div>
+                  <Label htmlFor="phone">Телефон</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={detailsFormData.phone || ''}
+                    onChange={(e) =>
+                      setDetailsFormData((prev) => ({ ...prev, phone: e.target.value }))
+                    }
+                    placeholder="+7 (999) 123-45-67"
+                  />
+                </div>
 
-            <div>
-              <Label htmlFor="notes">Заметки</Label>
-              <textarea
-                id="notes"
-                value={formData.notes || ''}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                placeholder="Дополнительная информация..."
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={detailsFormData.email || ''}
+                    onChange={(e) =>
+                      setDetailsFormData((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                    placeholder="email@example.com"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="telegram">Telegram</Label>
+                  <Input
+                    id="telegram"
+                    value={detailsFormData.telegram || ''}
+                    onChange={(e) =>
+                      setDetailsFormData((prev) => ({ ...prev, telegram: e.target.value }))
+                    }
+                    placeholder="@username"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="vk">VK (ссылка)</Label>
+                  <Input
+                    id="vk"
+                    type="url"
+                    value={detailsFormData.vk || ''}
+                    onChange={(e) =>
+                      setDetailsFormData((prev) => ({ ...prev, vk: e.target.value }))
+                    }
+                    placeholder="https://vk.com/username"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="notes">Заметки</Label>
+                  <textarea
+                    id="notes"
+                    value={detailsFormData.notes || ''}
+                    onChange={(e) =>
+                      setDetailsFormData((prev) => ({ ...prev, notes: e.target.value }))
+                    }
+                    placeholder="Дополнительная информация..."
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-2 pt-2">

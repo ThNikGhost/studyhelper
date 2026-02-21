@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-21 (feat: multiple file upload support)
+- **Дата обновления**: 2026-02-21 (feat: split classmate details into per-user table)
 
 ## Backend модули
 
@@ -15,7 +15,7 @@
 | Works | Work (+deadline_has_time, +diff_credit/colloquium types), WorkStatus, WorkStatusHistory | — | — | — | 23 |
 | Teachers | — | — | — | — | 20 |
 | University | Department, Building | — | — | — | 28 |
-| Classmates | — | — | — | — | 20 |
+| Classmates | +ClassmateDetail (per-user) | +ClassmateDetailUpsert/Response | +upsert_details | +PUT /{id}/details | 26 |
 | Schedule | ScheduleEntry, ScheduleSnapshot | — | — | — | 35 |
 | Parser | +subgroup parsing, +ауд. prefix | — | — | CLI | 84 |
 | Uploads | — | — | — | — | 11 |
@@ -114,7 +114,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 659 |
+| Backend тестов | 665 |
 | Frontend тестов | 390 |
 | Покрытие | ~80% |
 | API endpoints | ~75 |
