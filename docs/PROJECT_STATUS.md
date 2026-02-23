@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-21 (deploy: миграция k1l2m3n4o5p6 применена на проде, все контейнеры healthy)
+- **Дата обновления**: 2026-02-23 (feat: file category editing + open-in-browser, коммит aaa4d8e)
 
 ## Backend модули
 
@@ -19,7 +19,7 @@
 | Schedule | ScheduleEntry, ScheduleSnapshot | — | — | — | 35 |
 | Parser | +subgroup parsing, +ауд. prefix | — | — | CLI | 84 |
 | Uploads | — | — | — | — | 11 |
-| Files | File | — | — | — | 21 |
+| Files | File | +FileUpdateRequest | +update_file_category | +PATCH /{id} | 24 |
 | Attendance | Absence | +total_planned/completed | semester filter | — | 29 |
 | Notes | LessonNote | — | upsert | — | 26 |
 | LK | LkCredentials, SessionGrade, SemesterDiscipline | +LkImportResult | +import_to_app | +/import | 51 |
@@ -30,6 +30,13 @@
 ## Frontend
 
 13 страниц: Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Timeline, Settings, Grades. (Notes убрана из навигации, доступна через LessonDetailModal)
+
+**UI-улучшения (2026-02-23):**
+- FilesPage: inline редактирование категории — карандаш при hover, select, Escape/blur для отмены
+- FilesPage: кнопка "Открыть в браузере" (ExternalLink) для PDF и изображений без принудительного скачивания
+- fileService: `updateFileCategory()`, `openFile()` (blob → `window.open`)
+- fileUtils: `canOpenInBrowser()` для PDF + image/*
+- Backend: `PATCH /files/{id}` (owner-only), 3 новых теста, итого 668 тестов
 
 **Code review fixes (2026-02-21):**
 - schedule_filters: `v is not None` — пустой `[]` больше не трактуется как "скрыть всё"
@@ -130,10 +137,10 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 665 |
+| Backend тестов | 668 |
 | Frontend тестов | 390 |
 | Покрытие | ~80% |
-| API endpoints | ~75 |
+| API endpoints | ~76 |
 | Моделей | 19 |
 | Миграций | 27 |
 | Frontend страниц | 13 |
