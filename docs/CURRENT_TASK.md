@@ -13,10 +13,17 @@
 - Логика зеркалит `schedule_filters.py` на Python
 - FileList.test.tsx: добавлена обёртка `QueryClientProvider` — тест падал т.к. `FileList` использует `useQueryClient()`
 - Все 16 тестов затронутых файлов прошли
-- Задеплоено через CI/CD на https://studyhelper1.ru (d0ef93b на сервере)
+- Задеплоено через CI/CD на https://studyhelper1.ru (d0ef93b на сервере, nginx перезапущен)
+
+### Замечание по деплою:
+Пользователь сообщил, что всё равно видит скрытые предметы во вкладке Attendance.
+Деплой прошёл корректно (коммит d0ef93b на сервере, nginx healthy).
+Вероятная причина — кэш браузера / PWA service worker.
+**Решение для пользователя:** Ctrl+Shift+R или DevTools → Application → Service Workers → Update + Skip waiting.
 
 ## Следующие шаги (по приоритету)
-- (Фаза 3) httpOnly cookies — access in memory, refresh in httpOnly cookie
+- Убедиться, что фильтрация посещаемости работает у пользователя (после сброса кэша)
+- (Фаза 3) httpOnly cookies — access token в памяти, refresh в httpOnly cookie
 - (Фаза 3) JWT blacklist через Redis
 - (Будущее) CSP: убрать `unsafe-inline` (hash-based или vite-csp-guard)
 
