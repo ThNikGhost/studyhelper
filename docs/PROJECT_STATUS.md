@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-23 (feat: file category editing + open-in-browser, коммит aaa4d8e)
+- **Дата обновления**: 2026-02-23 (fix: attendance partial hidden subjects + PE teacher filter, коммит d0ef93b)
 
 ## Backend модули
 
@@ -37,6 +37,8 @@
 - fileService: `updateFileCategory()`, `openFile()` (blob → `window.open`)
 - fileUtils: `canOpenInBrowser()` для PDF + image/*
 - Backend: `PATCH /files/{id}` (owner-only), 3 новых теста, итого 668 тестов
+- AttendancePage: фильтр журнала по частично скрытым типам занятий (hiddenSubjects per-type) и преподавателю физкультуры (peTeacher) — коммит d0ef93b
+- FileList.test.tsx: обёртка в QueryClientProvider (useQueryClient появился после добавления редактирования категории)
 
 **Code review fixes (2026-02-21):**
 - schedule_filters: `v is not None` — пустой `[]` больше не трактуется как "скрыть всё"
