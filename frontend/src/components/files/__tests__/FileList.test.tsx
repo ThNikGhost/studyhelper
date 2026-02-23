@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { FileList } from '../FileList'
 import { testFiles } from '@/test/mocks/handlers'
 import { fileService } from '@/services/fileService'
@@ -7,16 +8,23 @@ import { fileService } from '@/services/fileService'
 vi.mock('@/services/fileService', () => ({
   fileService: {
     downloadFile: vi.fn(),
+    openFile: vi.fn(),
+    updateFileCategory: vi.fn(),
   },
 }))
 
 vi.mock('sonner', () => ({
-  toast: { error: vi.fn() },
+  toast: { error: vi.fn(), success: vi.fn() },
 }))
+
+function renderWithClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>)
+}
 
 describe('FileList', () => {
   it('renders file list', () => {
-    render(<FileList files={testFiles} onDelete={vi.fn()} />)
+    renderWithClient(<FileList files={testFiles} onDelete={vi.fn()} />)
 
     expect(screen.getByText('Лекция_01.pdf')).toBeInTheDocument()
     expect(screen.getByText('Задачник.docx')).toBeInTheDocument()
@@ -24,20 +32,20 @@ describe('FileList', () => {
   })
 
   it('shows empty state when no files', () => {
-    render(<FileList files={[]} onDelete={vi.fn()} />)
+    renderWithClient(<FileList files={[]} onDelete={vi.fn()} />)
 
     expect(screen.getByText('Файлов пока нет')).toBeInTheDocument()
   })
 
   it('displays file size', () => {
-    render(<FileList files={testFiles} onDelete={vi.fn()} />)
+    renderWithClient(<FileList files={testFiles} onDelete={vi.fn()} />)
 
     expect(screen.getByText('2 MB')).toBeInTheDocument()
     expect(screen.getByText('512 KB')).toBeInTheDocument()
   })
 
   it('displays category badge', () => {
-    render(<FileList files={testFiles} onDelete={vi.fn()} />)
+    renderWithClient(<FileList files={testFiles} onDelete={vi.fn()} />)
 
     expect(screen.getByText('Лекция')).toBeInTheDocument()
     expect(screen.getByText('Задачник')).toBeInTheDocument()
@@ -45,7 +53,7 @@ describe('FileList', () => {
   })
 
   it('displays subject name when available', () => {
-    render(<FileList files={testFiles} onDelete={vi.fn()} />)
+    renderWithClient(<FileList files={testFiles} onDelete={vi.fn()} />)
 
     expect(screen.getByText('Математический анализ')).toBeInTheDocument()
     expect(screen.getByText('Физика')).toBeInTheDocument()
@@ -53,7 +61,7 @@ describe('FileList', () => {
 
   it('calls downloadFile when download button is clicked', async () => {
     vi.mocked(fileService.downloadFile).mockResolvedValue()
-    render(<FileList files={testFiles} onDelete={vi.fn()} />)
+    renderWithClient(<FileList files={testFiles} onDelete={vi.fn()} />)
 
     const downloadButtons = screen.getAllByLabelText(/Скачать/)
     expect(downloadButtons).toHaveLength(3)
@@ -71,7 +79,7 @@ describe('FileList', () => {
   it('shows error toast on download failure', async () => {
     const { toast } = await import('sonner')
     vi.mocked(fileService.downloadFile).mockRejectedValue(new Error('Network error'))
-    render(<FileList files={testFiles} onDelete={vi.fn()} />)
+    renderWithClient(<FileList files={testFiles} onDelete={vi.fn()} />)
 
     const downloadButtons = screen.getAllByLabelText(/Скачать/)
     fireEvent.click(downloadButtons[0])
@@ -83,7 +91,7 @@ describe('FileList', () => {
 
   it('calls onDelete when delete button is clicked', () => {
     const onDelete = vi.fn()
-    render(<FileList files={testFiles} onDelete={onDelete} />)
+    renderWithClient(<FileList files={testFiles} onDelete={onDelete} />)
 
     const deleteButtons = screen.getAllByLabelText(/Удалить/)
     fireEvent.click(deleteButtons[0])

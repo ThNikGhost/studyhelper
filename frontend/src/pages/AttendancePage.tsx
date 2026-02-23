@@ -133,9 +133,25 @@ export function AttendancePage() {
   }, [stats, fullyHiddenIds])
 
   const filteredEntries = useMemo(() => {
-    if (fullyHiddenIds.size === 0) return entries
-    return entries.filter((e) => e.subject_id === null || !fullyHiddenIds.has(e.subject_id))
-  }, [entries, fullyHiddenIds])
+    return entries.filter((e) => {
+      // Hidden subjects filter (fully or partially hidden by lesson type)
+      if (e.subject_id !== null) {
+        const hiddenTypes = settings.hiddenSubjects[String(e.subject_id)]
+        if (hiddenTypes === null) return false
+        if (Array.isArray(hiddenTypes) && hiddenTypes.includes(e.lesson_type)) return false
+      }
+      // PE teacher filter (mirrors schedule_filters.py logic)
+      if (
+        settings.peTeacher &&
+        e.subject_name?.toLowerCase().includes('физическ') &&
+        e.teacher_name &&
+        e.teacher_name !== settings.peTeacher
+      ) {
+        return false
+      }
+      return true
+    })
+  }, [entries, settings.hiddenSubjects, settings.peTeacher])
 
   const isLoading = semestersLoading || (hasDates && (statsLoading || entriesLoading))
   const error = statsError || entriesError
