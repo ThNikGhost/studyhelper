@@ -34,6 +34,12 @@ class FileResponse(BaseModel):
     created_at: datetime
 
 
+class FileUpdateRequest(BaseModel):
+    """Request schema for updating file category."""
+
+    category: FileCategory
+
+
 class FileListResponse(BaseModel):
     """Response schema for file list items."""
 

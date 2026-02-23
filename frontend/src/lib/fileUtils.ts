@@ -67,6 +67,19 @@ export function getFileIcon(mimeType: string): LucideIcon {
   return File
 }
 
+const INLINE_VIEWABLE_TYPES = new Set([
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+])
+
+/** Check if a file with the given MIME type can be opened inline in the browser. */
+export function canOpenInBrowser(mimeType: string): boolean {
+  return INLINE_VIEWABLE_TYPES.has(mimeType)
+}
+
 /** Check if a File object has an allowed type. */
 export function isAllowedFileType(file: File): boolean {
   // Check MIME type

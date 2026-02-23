@@ -416,6 +416,78 @@ class TestDownloadFile:
         assert response.status_code == 401
 
 
+class TestUpdateFileCategory:
+    """Tests for PATCH /api/v1/files/{file_id}."""
+
+    @pytest.mark.asyncio
+    async def test_update_file_category_success(
+        self, client: AsyncClient, auth_headers: dict[str, str], tmp_path: Path
+    ) -> None:
+        """Test that owner can update file category."""
+        with patch.object(settings, "upload_dir", str(tmp_path)):
+            upload_resp = await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": ("notes.pdf", io.BytesIO(_pdf_content()), "application/pdf")
+                },
+                data={"category": "lecture"},
+                headers=auth_headers,
+            )
+            file_id = upload_resp.json()["id"]
+
+            response = await client.patch(
+                f"/api/v1/files/{file_id}",
+                json={"category": "textbook"},
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["category"] == "textbook"
+        assert data["id"] == file_id
+
+    @pytest.mark.asyncio
+    async def test_update_file_category_forbidden(
+        self,
+        client: AsyncClient,
+        auth_headers: dict[str, str],
+        auth_headers_user2: dict[str, str],
+        tmp_path: Path,
+    ) -> None:
+        """Test that another user cannot update file category (403)."""
+        with patch.object(settings, "upload_dir", str(tmp_path)):
+            upload_resp = await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": ("notes.pdf", io.BytesIO(_pdf_content()), "application/pdf")
+                },
+                data={"category": "lecture"},
+                headers=auth_headers,
+            )
+            file_id = upload_resp.json()["id"]
+
+            response = await client.patch(
+                f"/api/v1/files/{file_id}",
+                json={"category": "lab"},
+                headers=auth_headers_user2,
+            )
+
+        assert response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_update_file_category_not_found(
+        self, client: AsyncClient, auth_headers: dict[str, str]
+    ) -> None:
+        """Test updating a non-existent file returns 404."""
+        response = await client.patch(
+            "/api/v1/files/99999",
+            json={"category": "textbook"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 404
+
+
 class TestDeleteFile:
     """Tests for DELETE /api/v1/files/{file_id}."""
 

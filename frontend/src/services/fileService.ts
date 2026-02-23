@@ -43,6 +43,11 @@ export const fileService = {
     return response.data
   },
 
+  async updateFileCategory(id: number, category: string): Promise<StudyFile> {
+    const response = await api.patch<StudyFile>(`/files/${id}`, { category })
+    return response.data
+  },
+
   async deleteFile(id: number): Promise<void> {
     await api.delete(`/files/${id}`)
   },
@@ -59,6 +64,15 @@ export const fileService = {
     link.click()
     link.remove()
     URL.revokeObjectURL(url)
+  },
+
+  async openFile(id: number): Promise<void> {
+    const response = await api.get(`/files/${id}/download`, {
+      responseType: 'blob',
+    })
+    const url = URL.createObjectURL(response.data as Blob)
+    window.open(url, '_blank')
+    setTimeout(() => URL.revokeObjectURL(url), 10000)
   },
 }
 

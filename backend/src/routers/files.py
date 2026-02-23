@@ -14,13 +14,19 @@ from src.database import get_db
 from src.dependencies import get_current_user
 from src.models.subject import Subject
 from src.models.user import User
-from src.schemas.file import FileCategory, FileListResponse, FileResponse
+from src.schemas.file import (
+    FileCategory,
+    FileListResponse,
+    FileResponse,
+    FileUpdateRequest,
+)
 from src.services.file import (
     delete_file,
     get_file_by_id,
     get_file_path,
     get_files,
     save_file,
+    update_file_category,
     upload_file,
 )
 from src.services.upload import read_upload_streaming, validate_file_content
@@ -216,6 +222,53 @@ async def download_file(
             "Content-Disposition": f"attachment; filename=\"{safe_filename}\"; filename*=UTF-8''{encoded_filename}",
             "Content-Length": str(file_record.size),
         },
+    )
+
+
+@router.patch("/{file_id}", response_model=FileResponse)
+async def update_file(
+    file_id: int,
+    payload: FileUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> FileResponse:
+    """Update a file's category.
+
+    Args:
+        file_id: File ID.
+        payload: Update request with new category.
+        db: Database session.
+        current_user: Authenticated user.
+
+    Returns:
+        Updated FileResponse.
+    """
+    file_record = await get_file_by_id(db, file_id)
+    if file_record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found",
+        )
+
+    if file_record.uploaded_by != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only edit your own files",
+        )
+
+    file_record = await update_file_category(db, file_record, payload.category)
+
+    return FileResponse(
+        id=file_record.id,
+        filename=file_record.filename,
+        stored_filename=file_record.stored_filename,
+        mime_type=file_record.mime_type,
+        size=file_record.size,
+        category=file_record.category,
+        subject_id=file_record.subject_id,
+        subject_name=file_record.subject.name if file_record.subject else None,
+        uploaded_by=file_record.uploaded_by,
+        created_at=file_record.created_at,
     )
 
 

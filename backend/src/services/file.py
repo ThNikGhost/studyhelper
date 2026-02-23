@@ -11,6 +11,7 @@ from sqlalchemy.orm import joinedload
 
 from src.config import settings
 from src.models.file import File
+from src.schemas.file import FileCategory
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +159,25 @@ async def get_file_by_id(db: AsyncSession, file_id: int) -> File | None:
         select(File).options(joinedload(File.subject)).where(File.id == file_id)
     )
     return result.scalar_one_or_none()
+
+
+async def update_file_category(
+    db: AsyncSession, file: File, category: FileCategory
+) -> File:
+    """Update the category of an existing file.
+
+    Args:
+        db: Database session.
+        file: File record to update.
+        category: New file category.
+
+    Returns:
+        Updated File record.
+    """
+    file.category = category
+    await db.commit()
+    await db.refresh(file, attribute_names=["subject"])
+    return file
 
 
 async def delete_file(db: AsyncSession, file: File) -> None:
