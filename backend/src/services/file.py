@@ -11,7 +11,7 @@ from sqlalchemy.orm import joinedload
 
 from src.config import settings
 from src.models.file import File
-from src.schemas.file import FileCategory
+from src.schemas.file import FileCategory, FileUpdateRequest
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +79,7 @@ async def upload_file(
     category: str,
     subject_id: int | None,
     user_id: int,
+    work_id: int | None = None,
 ) -> File:
     """Create a file record in the database.
 
@@ -91,6 +92,7 @@ async def upload_file(
         category: File category.
         subject_id: Optional subject FK.
         user_id: Uploader user ID.
+        work_id: Optional work FK.
 
     Returns:
         Created File record.
@@ -102,18 +104,20 @@ async def upload_file(
         size=size,
         category=category,
         subject_id=subject_id,
+        work_id=work_id,
         uploaded_by=user_id,
     )
     db.add(file_record)
     await db.flush()
     await db.commit()
-    await db.refresh(file_record, attribute_names=["subject"])
+    await db.refresh(file_record, attribute_names=["subject", "work"])
     return file_record
 
 
 async def get_files(
     db: AsyncSession,
     subject_id: int | None = None,
+    work_id: int | None = None,
     category: str | None = None,
     limit: int = 50,
     offset: int = 0,
@@ -123,19 +127,24 @@ async def get_files(
     Args:
         db: Database session.
         subject_id: Filter by subject ID.
+        work_id: Filter by work ID.
         category: Filter by category.
         limit: Maximum number of results.
         offset: Number of results to skip.
 
     Returns:
-        List of File records with subject relationship loaded.
+        List of File records with subject and work relationships loaded.
     """
     query = (
-        select(File).options(joinedload(File.subject)).order_by(File.created_at.desc())
+        select(File)
+        .options(joinedload(File.subject), joinedload(File.work))
+        .order_by(File.created_at.desc())
     )
 
     if subject_id is not None:
         query = query.where(File.subject_id == subject_id)
+    if work_id is not None:
+        query = query.where(File.work_id == work_id)
     if category is not None:
         query = query.where(File.category == category)
 
@@ -156,9 +165,39 @@ async def get_file_by_id(db: AsyncSession, file_id: int) -> File | None:
         File record or None.
     """
     result = await db.execute(
-        select(File).options(joinedload(File.subject)).where(File.id == file_id)
+        select(File)
+        .options(joinedload(File.subject), joinedload(File.work))
+        .where(File.id == file_id)
     )
     return result.scalar_one_or_none()
+
+
+async def update_file(
+    db: AsyncSession,
+    file: File,
+    data: FileUpdateRequest,
+) -> File:
+    """Update file metadata (category and/or work attachment).
+
+    Args:
+        db: Database session.
+        file: File record to update.
+        data: Update payload with optional category and work_id.
+            category is guaranteed non-null by schema validator when present.
+            work_id=null means detach; work existence must be validated by caller.
+
+    Returns:
+        Updated File record.
+    """
+    if "category" in data.model_fields_set:
+        file.category = data.category  # type: ignore[assignment]
+
+    if "work_id" in data.model_fields_set:
+        file.work_id = data.work_id
+
+    await db.commit()
+    await db.refresh(file, attribute_names=["subject", "work"])
+    return file
 
 
 async def update_file_category(
@@ -176,7 +215,7 @@ async def update_file_category(
     """
     file.category = category
     await db.commit()
-    await db.refresh(file, attribute_names=["subject"])
+    await db.refresh(file, attribute_names=["subject", "work"])
     return file
 
 

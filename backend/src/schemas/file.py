@@ -3,7 +3,7 @@
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class FileCategory(StrEnum):
@@ -30,14 +30,28 @@ class FileResponse(BaseModel):
     category: str
     subject_id: int | None
     subject_name: str | None = None
+    work_id: int | None = None
+    work_title: str | None = None
     uploaded_by: int
     created_at: datetime
 
 
 class FileUpdateRequest(BaseModel):
-    """Request schema for updating file category."""
+    """Request schema for updating file metadata (category and/or work attachment)."""
 
-    category: FileCategory
+    category: FileCategory | None = None
+    work_id: int | None = None
+
+    @model_validator(mode="after")
+    def require_at_least_one_field(self) -> "FileUpdateRequest":
+        """Ensure at least one valid field is provided in the request."""
+        if not self.model_fields_set:
+            raise ValueError("At least one field required")
+        if "category" in self.model_fields_set and self.category is None:
+            raise ValueError(
+                "category cannot be null; omit the field to leave it unchanged"
+            )
+        return self
 
 
 class FileListResponse(BaseModel):
@@ -52,5 +66,7 @@ class FileListResponse(BaseModel):
     category: str
     subject_id: int | None
     subject_name: str | None = None
+    work_id: int | None = None
+    work_title: str | None = None
     uploaded_by: int
     created_at: datetime

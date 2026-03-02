@@ -4,20 +4,24 @@ import { Button } from '@/components/ui/button'
 import { ProgressBar } from '@/components/ui/progress-bar'
 import { FileCategory, fileCategoryLabels } from '@/types/file'
 import type { Subject } from '@/types/subject'
+import type { WorkWithStatus } from '@/types/work'
+import { workTypeLabels } from '@/types/work'
 import { isAllowedFileType, formatFileSize, MAX_FILE_SIZE_BYTES, ALLOWED_EXTENSIONS } from '@/lib/fileUtils'
 
 interface FileDropzoneProps {
   subjects: Subject[]
-  onUpload: (files: File[], category: FileCategory, subjectId: number | null) => Promise<void>
+  works?: WorkWithStatus[]
+  onUpload: (files: File[], category: FileCategory, subjectId: number | null, workId: number | null) => Promise<void>
   disabled?: boolean
   uploadProgress: number | null
 }
 
-export function FileDropzone({ subjects, onUpload, disabled, uploadProgress }: FileDropzoneProps) {
+export function FileDropzone({ subjects, works = [], onUpload, disabled, uploadProgress }: FileDropzoneProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [category, setCategory] = useState<FileCategory>(FileCategory.LECTURE)
   const [subjectId, setSubjectId] = useState<string>('')
+  const [workId, setWorkId] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -88,10 +92,16 @@ export function FileDropzone({ subjects, onUpload, disabled, uploadProgress }: F
     if (!selectedFiles.length) return
     setError(null)
     try {
-      await onUpload(selectedFiles, category, subjectId ? Number(subjectId) : null)
+      await onUpload(
+        selectedFiles,
+        category,
+        subjectId ? Number(subjectId) : null,
+        workId ? Number(workId) : null,
+      )
       setSelectedFiles([])
       setCategory(FileCategory.LECTURE)
       setSubjectId('')
+      setWorkId('')
     } catch {
       // Error handled by parent via toast
     }
@@ -201,6 +211,22 @@ export function FileDropzone({ subjects, onUpload, disabled, uploadProgress }: F
               </option>
             ))}
           </select>
+
+          {works.length > 0 && (
+            <select
+              value={workId}
+              onChange={(e) => setWorkId(e.target.value)}
+              className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              aria-label="Работа"
+            >
+              <option value="">Без работы</option>
+              {works.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {workTypeLabels[w.work_type]} — {w.title}
+                </option>
+              ))}
+            </select>
+          )}
 
           <Button onClick={handleUpload} disabled={disabled} className="whitespace-nowrap">
             <Upload className="h-4 w-4 mr-1" />

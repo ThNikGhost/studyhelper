@@ -5,13 +5,27 @@
 
 Последний коммит (2026-03-02): fix(frontend): fix deadline off-by-one, PE stats, and dashboard 7-day filter (b4348b2).
 
-### Что сделано в этой сессии (2026-03-02):
-- **Bug 1 — Attendance PE stats:** `filteredStats` теперь пересчитывает строку по физкультуре из `filteredEntries` (уже отфильтрованных по `peTeacher`). `filteredEntries` перенесён перед `filteredStats`. Условие short-circuit изменено: `!settings.peTeacher && fullyHiddenIds.size === 0`. При `filterSubjectId === null` и активном `peTeacher` — пересчитывает `total_classes/absences/attended/attendance_percent` по физкультуре из записей журнала.
-- **Bug 2 — Deadline off-by-one:** `formatDeadline` и `getDeadlineColor` в `dateUtils.ts` используют calendar-day сравнение (`new Date(y, m, d)`) вместо `Math.ceil(diffMs/24h)`. Дедлайн сегодня в 23:59 при просмотре в 08:00 → "Сегодня" (было "Завтра"). +2 регрессионных теста.
-- **Bug 3 — Dashboard 7-day filter:** `getUrgency` в `DeadlinesWidget` возвращает `null` при `diffDays > 7`. Нули фильтруются перед группировкой. Тест "shows max 8 items" переписан с fake timers (3 overdue + 7 within 7 days = 10, обрезается до 8). Добавлен тест "does not show works with deadline beyond 7 days".
+### Что сделано в этой сессии (feat: work file attachments + code review fixes):
+
+**Фича: Work File Attachments** (не закоммичено)
+- Backend: migration `l2m3n4o5p6q7` — `work_id` FK на `files` таблице (SET NULL on delete)
+- Backend: модель `File` + схемы `FileResponse/FileListResponse/FileUpdateRequest` + сервис + роутер обновлены
+- Frontend: `StudyFile` type + `fileService` + `WorkFilesModal` (новый компонент) + `FileDropzone` (works prop) + `FileList` (detach button) + `FilesPage` + `WorksPage` (paperclip button)
+
+**Code review fixes (применены):**
+- `FileUpdateRequest`: `{"category": null}` теперь возвращает 422 (было silent no-op)
+- `update_file()` service: убран `HTTPException` — проверка work перенесена в роутер (паттерн проекта)
+- Tests: `test_patch_empty_body_returns_422` + `test_patch_category_null_returns_422` добавлены
+- `FileList`: `📎` → `<Paperclip aria-hidden>`, `×`/`…` → `<X>`/`<Loader2>` lucide-иконки
+- `FileDropzone.test.tsx`: 2 новых теста для `works` prop (selector renders, workId в onUpload)
+
+**Метрики после сессии:**
+- Backend: 675 тестов
+- Frontend: 408 тестов (3 pre-existing SchedulePage failures)
 
 ## Следующие шаги (по приоритету)
-- Задеплоить b4348b2 на prod (если нужно — `git pull && docker compose -f docker-compose.prod.yml up -d --build backend`)
+- Закоммитить work file attachments feature (все тесты зелёные)
+- Задеплоить на prod
 - (Фаза 3) httpOnly cookies — access token в памяти, refresh в httpOnly cookie
 - (Фаза 3) JWT blacklist через Redis
 - (Будущее) CSP: убрать `unsafe-inline` (hash-based или vite-csp-guard)

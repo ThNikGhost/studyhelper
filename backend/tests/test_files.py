@@ -37,6 +37,19 @@ async def _create_subject(
     return resp.json()["id"]
 
 
+async def _create_work(
+    client: AsyncClient, headers: dict[str, str], subject_id: int
+) -> tuple[int, str]:
+    """Helper to create a work and return its (id, title)."""
+    title = "Лаб. работа №1"
+    resp = await client.post(
+        "/api/v1/works",
+        json={"title": title, "work_type": "lab", "subject_id": subject_id},
+        headers=headers,
+    )
+    return resp.json()["id"], title
+
+
 def _pdf_content() -> bytes:
     """Minimal valid PDF magic bytes."""
     return b"%PDF-1.4 test content" + b"\x00" * 100
@@ -487,6 +500,54 @@ class TestUpdateFileCategory:
 
         assert response.status_code == 404
 
+    @pytest.mark.asyncio
+    async def test_patch_empty_body_returns_422(
+        self, client: AsyncClient, auth_headers: dict[str, str], tmp_path: Path
+    ) -> None:
+        """Test that PATCH with empty body returns 422."""
+        with patch.object(settings, "upload_dir", str(tmp_path)):
+            upload_resp = await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": ("notes.pdf", io.BytesIO(_pdf_content()), "application/pdf")
+                },
+                data={"category": "lecture"},
+                headers=auth_headers,
+            )
+            file_id = upload_resp.json()["id"]
+
+            response = await client.patch(
+                f"/api/v1/files/{file_id}",
+                json={},
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_patch_category_null_returns_422(
+        self, client: AsyncClient, auth_headers: dict[str, str], tmp_path: Path
+    ) -> None:
+        """Test that PATCH with category=null returns 422 (not a silent no-op)."""
+        with patch.object(settings, "upload_dir", str(tmp_path)):
+            upload_resp = await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": ("notes.pdf", io.BytesIO(_pdf_content()), "application/pdf")
+                },
+                data={"category": "lecture"},
+                headers=auth_headers,
+            )
+            file_id = upload_resp.json()["id"]
+
+            response = await client.patch(
+                f"/api/v1/files/{file_id}",
+                json={"category": None},
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 422
+
 
 class TestDeleteFile:
     """Tests for DELETE /api/v1/files/{file_id}."""
@@ -541,3 +602,161 @@ class TestDeleteFile:
         response = await client.delete("/api/v1/files/1")
 
         assert response.status_code == 401
+
+
+class TestWorkAttachment:
+    """Tests for work_id attachment on files."""
+
+    @pytest.mark.asyncio
+    async def test_upload_with_work_id(
+        self, client: AsyncClient, auth_headers: dict[str, str], tmp_path: Path
+    ) -> None:
+        """Test upload linked to a work returns work_id and work_title."""
+        semester_id = await _create_semester(client, auth_headers)
+        subject_id = await _create_subject(client, auth_headers, semester_id)
+        work_id, work_title = await _create_work(client, auth_headers, subject_id)
+
+        with patch.object(settings, "upload_dir", str(tmp_path)):
+            response = await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": ("lab1.pdf", io.BytesIO(_pdf_content()), "application/pdf")
+                },
+                data={"category": "lab", "work_id": str(work_id)},
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 201
+        data = response.json()
+        assert data["work_id"] == work_id
+        assert data["work_title"] == work_title
+
+    @pytest.mark.asyncio
+    async def test_upload_nonexistent_work(
+        self, client: AsyncClient, auth_headers: dict[str, str], tmp_path: Path
+    ) -> None:
+        """Test upload with non-existent work ID returns 404."""
+        with patch.object(settings, "upload_dir", str(tmp_path)):
+            response = await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": ("lab1.pdf", io.BytesIO(_pdf_content()), "application/pdf")
+                },
+                data={"category": "lab", "work_id": "99999"},
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 404
+        assert "Work not found" in response.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_list_filter_by_work_id(
+        self, client: AsyncClient, auth_headers: dict[str, str], tmp_path: Path
+    ) -> None:
+        """Test GET /files/?work_id={id} returns only files attached to that work."""
+        semester_id = await _create_semester(client, auth_headers)
+        subject_id = await _create_subject(client, auth_headers, semester_id)
+        work_id, _ = await _create_work(client, auth_headers, subject_id)
+
+        with patch.object(settings, "upload_dir", str(tmp_path)):
+            # Upload one file attached to the work
+            await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": (
+                        "attached.pdf",
+                        io.BytesIO(_pdf_content()),
+                        "application/pdf",
+                    )
+                },
+                data={"category": "lab", "work_id": str(work_id)},
+                headers=auth_headers,
+            )
+            # Upload one file without work
+            await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": (
+                        "nowork.pdf",
+                        io.BytesIO(_pdf_content()),
+                        "application/pdf",
+                    )
+                },
+                data={"category": "other"},
+                headers=auth_headers,
+            )
+
+        response = await client.get(
+            f"/api/v1/files/?work_id={work_id}", headers=auth_headers
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["filename"] == "attached.pdf"
+        assert data[0]["work_id"] == work_id
+
+    @pytest.mark.asyncio
+    async def test_patch_attach_work(
+        self, client: AsyncClient, auth_headers: dict[str, str], tmp_path: Path
+    ) -> None:
+        """Test PATCH /files/{id} with work_id attaches file to work."""
+        semester_id = await _create_semester(client, auth_headers)
+        subject_id = await _create_subject(client, auth_headers, semester_id)
+        work_id, work_title = await _create_work(client, auth_headers, subject_id)
+
+        with patch.object(settings, "upload_dir", str(tmp_path)):
+            upload_resp = await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": ("rep.pdf", io.BytesIO(_pdf_content()), "application/pdf")
+                },
+                data={"category": "lab"},
+                headers=auth_headers,
+            )
+            file_id = upload_resp.json()["id"]
+
+            response = await client.patch(
+                f"/api/v1/files/{file_id}",
+                json={"work_id": work_id},
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["work_id"] == work_id
+        assert data["work_title"] == work_title
+
+    @pytest.mark.asyncio
+    async def test_patch_detach_work(
+        self, client: AsyncClient, auth_headers: dict[str, str], tmp_path: Path
+    ) -> None:
+        """Test PATCH /files/{id} with work_id=null detaches file from work."""
+        semester_id = await _create_semester(client, auth_headers)
+        subject_id = await _create_subject(client, auth_headers, semester_id)
+        work_id, _ = await _create_work(client, auth_headers, subject_id)
+
+        with patch.object(settings, "upload_dir", str(tmp_path)):
+            # Upload attached to work
+            upload_resp = await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": ("rep.pdf", io.BytesIO(_pdf_content()), "application/pdf")
+                },
+                data={"category": "lab", "work_id": str(work_id)},
+                headers=auth_headers,
+            )
+            file_id = upload_resp.json()["id"]
+            assert upload_resp.json()["work_id"] == work_id
+
+            # Detach
+            response = await client.patch(
+                f"/api/v1/files/{file_id}",
+                json={"work_id": None},
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["work_id"] is None
+        assert data["work_title"] is None

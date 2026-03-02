@@ -14,6 +14,7 @@ from src.database import get_db
 from src.dependencies import get_current_user
 from src.models.subject import Subject
 from src.models.user import User
+from src.models.work import Work
 from src.schemas.file import (
     FileCategory,
     FileListResponse,
@@ -26,7 +27,7 @@ from src.services.file import (
     get_file_path,
     get_files,
     save_file,
-    update_file_category,
+    update_file,
     upload_file,
 )
 from src.services.upload import read_upload_streaming, validate_file_content
@@ -43,6 +44,7 @@ async def upload_study_file(
     file: UploadFile,
     category: FileCategory = Form(...),
     subject_id: int | None = Form(None),
+    work_id: int | None = Form(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> FileResponse:
@@ -52,6 +54,7 @@ async def upload_study_file(
         file: The file to upload (multipart/form-data).
         category: File category (textbook, lecture, etc.).
         subject_id: Optional subject ID to associate with.
+        work_id: Optional work ID to associate with.
         db: Database session.
         current_user: Authenticated user.
 
@@ -82,6 +85,15 @@ async def upload_study_file(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Subject not found",
+            )
+
+    # Validate work exists if provided
+    if work_id is not None:
+        result = await db.execute(select(Work).where(Work.id == work_id))
+        if result.scalar_one_or_none() is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Work not found",
             )
 
     # Read file with streaming size check
@@ -119,6 +131,7 @@ async def upload_study_file(
         category=category,
         subject_id=subject_id,
         user_id=current_user.id,
+        work_id=work_id,
     )
 
     return FileResponse(
@@ -130,6 +143,8 @@ async def upload_study_file(
         category=file_record.category,
         subject_id=file_record.subject_id,
         subject_name=file_record.subject.name if file_record.subject else None,
+        work_id=file_record.work_id,
+        work_title=file_record.work.title if file_record.work else None,
         uploaded_by=file_record.uploaded_by,
         created_at=file_record.created_at,
     )
@@ -138,6 +153,7 @@ async def upload_study_file(
 @router.get("/", response_model=list[FileListResponse])
 async def list_files(
     subject_id: int | None = None,
+    work_id: int | None = Query(None),
     category: str | None = None,
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
@@ -148,6 +164,7 @@ async def list_files(
 
     Args:
         subject_id: Filter by subject ID.
+        work_id: Filter by work ID.
         category: Filter by category.
         limit: Maximum number of results (default 50, max 200).
         offset: Number of results to skip.
@@ -158,7 +175,12 @@ async def list_files(
         List of files.
     """
     files = await get_files(
-        db, subject_id=subject_id, category=category, limit=limit, offset=offset
+        db,
+        subject_id=subject_id,
+        work_id=work_id,
+        category=category,
+        limit=limit,
+        offset=offset,
     )
     return [
         FileListResponse(
@@ -169,6 +191,8 @@ async def list_files(
             category=f.category,
             subject_id=f.subject_id,
             subject_name=f.subject.name if f.subject else None,
+            work_id=f.work_id,
+            work_title=f.work.title if f.work else None,
             uploaded_by=f.uploaded_by,
             created_at=f.created_at,
         )
@@ -226,17 +250,17 @@ async def download_file(
 
 
 @router.patch("/{file_id}", response_model=FileResponse)
-async def update_file(
+async def patch_file(
     file_id: int,
     payload: FileUpdateRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> FileResponse:
-    """Update a file's category.
+    """Update a file's category and/or work attachment.
 
     Args:
         file_id: File ID.
-        payload: Update request with new category.
+        payload: Update request with optional category and/or work_id.
         db: Database session.
         current_user: Authenticated user.
 
@@ -256,7 +280,16 @@ async def update_file(
             detail="You can only edit your own files",
         )
 
-    file_record = await update_file_category(db, file_record, payload.category)
+    # Validate work exists if being attached
+    if "work_id" in payload.model_fields_set and payload.work_id is not None:
+        result = await db.execute(select(Work).where(Work.id == payload.work_id))
+        if result.scalar_one_or_none() is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Work not found",
+            )
+
+    file_record = await update_file(db, file_record, payload)
 
     return FileResponse(
         id=file_record.id,
@@ -267,6 +300,8 @@ async def update_file(
         category=file_record.category,
         subject_id=file_record.subject_id,
         subject_name=file_record.subject.name if file_record.subject else None,
+        work_id=file_record.work_id,
+        work_title=file_record.work.title if file_record.work else None,
         uploaded_by=file_record.uploaded_by,
         created_at=file_record.created_at,
     )

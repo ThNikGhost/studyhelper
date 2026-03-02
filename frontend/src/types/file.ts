@@ -33,6 +33,8 @@ export interface StudyFile {
   category: FileCategory
   subject_id: number | null
   subject_name: string | null
+  work_id: number | null
+  work_title: string | null
   uploaded_by: number
   created_at: string
 }

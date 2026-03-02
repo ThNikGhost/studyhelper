@@ -10,13 +10,17 @@ import { FileDropzone } from '@/components/files/FileDropzone'
 import { FileList } from '@/components/files/FileList'
 import fileService from '@/services/fileService'
 import subjectService from '@/services/subjectService'
+import workService from '@/services/workService'
+import { useAuthStore } from '@/stores/authStore'
 import type { StudyFile, FileCategory } from '@/types/file'
 import { fileCategoryLabels } from '@/types/file'
 import type { Subject, Semester } from '@/types/subject'
+import type { WorkWithStatus } from '@/types/work'
 
 export function FilesPage() {
   const isOnline = useNetworkStatus()
   const queryClient = useQueryClient()
+  const currentUserId = useAuthStore((s) => s.user?.id)
 
   const [filterSubjectId, setFilterSubjectId] = useState<string>('')
   const [filterCategory, setFilterCategory] = useState<string>('')
@@ -34,6 +38,12 @@ export function FilesPage() {
     queryKey: ['subjects', currentSemester?.id],
     queryFn: ({ signal }) => subjectService.getSubjects(currentSemester?.id, signal),
     enabled: semesterLoaded,
+  })
+
+  // Fetch works for the work selector in the dropzone
+  const { data: works = [] } = useQuery<WorkWithStatus[]>({
+    queryKey: ['works'],
+    queryFn: ({ signal }) => workService.getWorks({}, signal),
   })
 
   // Fetch files
@@ -62,17 +72,20 @@ export function FilesPage() {
       file,
       category,
       subjectId,
+      workId,
       onProgress,
     }: {
       file: File
       category: FileCategory
       subjectId: number | null
+      workId: number | null
       onProgress: (p: number) => void
     }) =>
       fileService.uploadFile({
         file,
         category,
         subject_id: subjectId,
+        work_id: workId,
         onProgress,
       }),
     onSuccess: () => {
@@ -101,6 +114,7 @@ export function FilesPage() {
     files: File[],
     category: FileCategory,
     subjectId: number | null,
+    workId: number | null,
   ) => {
     try {
       for (let i = 0; i < files.length; i++) {
@@ -108,6 +122,7 @@ export function FilesPage() {
           file: files[i],
           category,
           subjectId,
+          workId,
           onProgress: (p) =>
             setUploadProgress(Math.round((i / files.length) * 100 + p / files.length)),
         })
@@ -156,6 +171,7 @@ export function FilesPage() {
       <div className="mb-6">
         <FileDropzone
           subjects={subjects}
+          works={works}
           onUpload={handleUpload}
           disabled={!isOnline}
           uploadProgress={uploadProgress}
@@ -207,6 +223,7 @@ export function FilesPage() {
           files={files}
           onDelete={(file) => setDeleteTarget(file)}
           disabled={!isOnline}
+          currentUserId={currentUserId}
         />
       )}
 

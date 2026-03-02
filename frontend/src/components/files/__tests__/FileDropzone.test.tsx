@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { FileDropzone } from '../FileDropzone'
 import type { Subject } from '@/types/subject'
+import type { WorkWithStatus } from '@/types/work'
 
 const testSubjects: Subject[] = [
   {
@@ -12,6 +13,22 @@ const testSubjects: Subject[] = [
     semester_id: 1,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
+  },
+]
+
+const testWorks: WorkWithStatus[] = [
+  {
+    id: 10,
+    title: 'Лаб. работа №1',
+    description: null,
+    work_type: 'lab',
+    deadline: null,
+    deadline_has_time: false,
+    max_grade: null,
+    subject_id: 1,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    my_status: null,
   },
 ]
 
@@ -81,7 +98,7 @@ describe('FileDropzone', () => {
     fireEvent.click(screen.getByText('Загрузить'))
 
     await vi.waitFor(() => {
-      expect(onUpload).toHaveBeenCalledWith([file], expect.any(String), null)
+      expect(onUpload).toHaveBeenCalledWith([file], expect.any(String), null, null)
     })
   })
 
@@ -149,5 +166,32 @@ describe('FileDropzone', () => {
 
     fireEvent.click(screen.getByLabelText('Убрать файл test.pdf'))
     expect(screen.queryByText('test.pdf')).not.toBeInTheDocument()
+  })
+
+  it('shows work selector when works are provided', () => {
+    renderDropzone({ works: testWorks })
+
+    const input = screen.getByTestId('file-input')
+    const file = new window.File(['test'], 'test.pdf', { type: 'application/pdf' })
+    fireEvent.change(input, { target: { files: [file] } })
+
+    expect(screen.getByLabelText('Работа')).toBeInTheDocument()
+    expect(screen.getByText('Лабораторная — Лаб. работа №1')).toBeInTheDocument()
+  })
+
+  it('passes selected workId to onUpload', async () => {
+    const onUpload = vi.fn().mockResolvedValue(undefined)
+    renderDropzone({ works: testWorks, onUpload })
+
+    const input = screen.getByTestId('file-input')
+    const file = new window.File(['test'], 'test.pdf', { type: 'application/pdf' })
+    fireEvent.change(input, { target: { files: [file] } })
+
+    fireEvent.change(screen.getByLabelText('Работа'), { target: { value: '10' } })
+    fireEvent.click(screen.getByText('Загрузить'))
+
+    await vi.waitFor(() => {
+      expect(onUpload).toHaveBeenCalledWith([file], expect.any(String), null, 10)
+    })
   })
 })

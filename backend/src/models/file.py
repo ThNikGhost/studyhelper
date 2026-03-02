@@ -11,6 +11,7 @@ from src.models.base import Base
 if TYPE_CHECKING:
     from src.models.subject import Subject
     from src.models.user import User
+    from src.models.work import Work
 
 
 class File(Base):
@@ -31,6 +32,11 @@ class File(Base):
         ForeignKey("subjects.id", ondelete="SET NULL"),
         nullable=True,
     )
+    work_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("works.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     uploaded_by: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("users.id", ondelete="CASCADE"),
@@ -44,10 +50,12 @@ class File(Base):
 
     # Relationships
     subject: Mapped["Subject | None"] = relationship("Subject")
+    work: Mapped["Work | None"] = relationship("Work")
     uploader: Mapped["User"] = relationship("User")
 
     __table_args__ = (
         Index("ix_files_subject_id", "subject_id"),
+        Index("ix_files_work_id", "work_id"),
         Index("ix_files_category", "category"),
         Index("ix_files_uploaded_by", "uploaded_by"),
     )

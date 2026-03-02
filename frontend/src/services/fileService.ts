@@ -5,17 +5,21 @@ export interface UploadFileParams {
   file: File
   category: FileCategory
   subject_id?: number | null
+  work_id?: number | null
   onProgress?: (percent: number) => void
   signal?: AbortSignal
 }
 
 export const fileService = {
-  async uploadFile({ file, category, subject_id, onProgress, signal }: UploadFileParams): Promise<StudyFile> {
+  async uploadFile({ file, category, subject_id, work_id, onProgress, signal }: UploadFileParams): Promise<StudyFile> {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('category', category)
     if (subject_id != null) {
       formData.append('subject_id', String(subject_id))
+    }
+    if (work_id != null) {
+      formData.append('work_id', String(work_id))
     }
 
     const response = await api.post<StudyFile>('/files/upload', formData, {
@@ -34,10 +38,12 @@ export const fileService = {
     subjectId?: number | null,
     category?: string | null,
     signal?: AbortSignal,
+    workId?: number | null,
   ): Promise<StudyFile[]> {
     const params: Record<string, string | number> = {}
     if (subjectId != null) params.subject_id = subjectId
     if (category) params.category = category
+    if (workId != null) params.work_id = workId
 
     const response = await api.get<StudyFile[]>('/files/', { params, signal })
     return response.data
@@ -45,6 +51,11 @@ export const fileService = {
 
   async updateFileCategory(id: number, category: string): Promise<StudyFile> {
     const response = await api.patch<StudyFile>(`/files/${id}`, { category })
+    return response.data
+  },
+
+  async updateFile(id: number, data: { category?: string; work_id?: number | null }): Promise<StudyFile> {
+    const response = await api.patch<StudyFile>(`/files/${id}`, data)
     return response.data
   },
 

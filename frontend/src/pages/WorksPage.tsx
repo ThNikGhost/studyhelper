@@ -13,6 +13,7 @@ import {
   Loader2,
   X,
   Clock,
+  Paperclip,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -30,6 +31,7 @@ import {
 import { useUserSettings } from '@/hooks/useUserSettings'
 import workService from '@/services/workService'
 import subjectService from '@/services/subjectService'
+import { WorkFilesModal } from '@/components/WorkFilesModal'
 import type {
   WorkWithStatus,
   WorkCreate,
@@ -64,6 +66,7 @@ export function WorksPage() {
   const [editingWork, setEditingWork] = useState<WorkWithStatus | null>(null)
   const [deleteConfirmWork, setDeleteConfirmWork] = useState<WorkWithStatus | null>(null)
   const [statusModalWork, setStatusModalWork] = useState<WorkWithStatus | null>(null)
+  const [filesModalWork, setFilesModalWork] = useState<WorkWithStatus | null>(null)
 
   // Form state for work
   const [formData, setFormData] = useState<WorkCreate>({
@@ -517,6 +520,14 @@ export function WorksPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => setFilesModalWork(work)}
+                      title="Файлы работы"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => openEditModal(work)}
                       disabled={!isOnline}
                       title="Редактировать"
@@ -860,6 +871,14 @@ export function WorksPage() {
             </div>
           </form>
         </Modal>
+
+        {/* Work files modal */}
+        {filesModalWork && (
+          <WorkFilesModal
+            work={filesModalWork}
+            onClose={() => setFilesModalWork(null)}
+          />
+        )}
 
         {/* Delete confirmation modal */}
         <Modal

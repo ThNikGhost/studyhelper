@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Download, ExternalLink, Loader2, Pencil, Trash2 } from 'lucide-react'
+import { Download, ExternalLink, Loader2, Paperclip, Pencil, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
@@ -13,16 +13,18 @@ interface FileListProps {
   files: StudyFile[]
   onDelete: (file: StudyFile) => void
   disabled?: boolean
+  currentUserId?: number
 }
 
 const ALL_CATEGORIES = Object.values(FileCategory)
 
-export function FileList({ files, onDelete, disabled }: FileListProps) {
+export function FileList({ files, onDelete, disabled, currentUserId }: FileListProps) {
   const queryClient = useQueryClient()
   const [downloadingId, setDownloadingId] = useState<number | null>(null)
   const [openingId, setOpeningId] = useState<number | null>(null)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [savingId, setSavingId] = useState<number | null>(null)
+  const [detachingId, setDetachingId] = useState<number | null>(null)
   const selectRef = useRef<HTMLSelectElement>(null)
 
   async function handleDownload(file: StudyFile) {
@@ -74,6 +76,18 @@ export function FileList({ files, onDelete, disabled }: FileListProps) {
     }
   }
 
+  async function handleDetachWork(file: StudyFile) {
+    setDetachingId(file.id)
+    try {
+      await fileService.updateFile(file.id, { work_id: null })
+      await queryClient.invalidateQueries({ queryKey: ['files'] })
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setDetachingId(null)
+    }
+  }
+
   if (files.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -97,7 +111,9 @@ export function FileList({ files, onDelete, disabled }: FileListProps) {
         const isOpening = openingId === file.id
         const isEditing = editingId === file.id
         const isSaving = savingId === file.id
+        const isDetaching = detachingId === file.id
         const openable = canOpenInBrowser(file.mime_type)
+        const isOwner = currentUserId !== undefined && file.uploaded_by === currentUserId
 
         return (
           <div
@@ -141,6 +157,30 @@ export function FileList({ files, onDelete, disabled }: FileListProps) {
                   </span>
                 )}
                 {file.subject_name && <span>{file.subject_name}</span>}
+                {file.work_title && (
+                  <span className="inline-flex items-center gap-0.5">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                      <Paperclip aria-hidden className="h-3 w-3 shrink-0" />
+                      {file.work_title}
+                    </span>
+                    {isOwner && (
+                      <button
+                        type="button"
+                        aria-label="Открепить от работы"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:text-foreground text-muted-foreground"
+                        onClick={() => handleDetachWork(file)}
+                        disabled={disabled || isDetaching}
+                        title="Открепить от работы"
+                      >
+                        {isDetaching ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <X className="h-3 w-3" />
+                        )}
+                      </button>
+                    )}
+                  </span>
+                )}
                 <span>{formatFileSize(file.size)}</span>
                 <span>{date}</span>
               </div>
