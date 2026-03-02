@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-02-23 (fix: attendance partial hidden subjects + PE teacher filter, коммит d0ef93b)
+- **Дата обновления**: 2026-03-02 (fix: deadline off-by-one + PE stats + dashboard 7-day filter, коммит b4348b2)
 
 ## Backend модули
 
@@ -30,6 +30,12 @@
 ## Frontend
 
 13 страниц: Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Timeline, Settings, Grades. (Notes убрана из навигации, доступна через LessonDetailModal)
+
+**Bugfixes (2026-03-02, коммит b4348b2):**
+- dateUtils: `formatDeadline` + `getDeadlineColor` — calendar-day сравнение вместо `Math.ceil(diffMs/24h)`, фикс "Завтра" вместо "Сегодня" для дедлайнов 23:59 (date-only)
+- AttendancePage: `filteredStats` пересчитывает строку физкультуры из `filteredEntries` при активном `peTeacher` — статистика показывает ~6 занятий вместо 20
+- DeadlinesWidget: `getUrgency` возвращает `null` при `diffDays > 7`, работы дальше 7 дней не попадают в "На неделе"
+- Тесты: +2 регрессионных в `dateUtils.test.ts`; обновлён "max 8 items" + добавлен "beyond 7 days" в `DeadlinesWidget.test.tsx`; итого 406 frontend тестов (3 pre-existing SchedulePage failures)
 
 **UI-улучшения (2026-02-23):**
 - FilesPage: inline редактирование категории — карандаш при hover, select, Escape/blur для отмены

@@ -3,26 +3,15 @@
 ## Статус
 **Проект в режиме поддержки. Все фичи реализованы и задеплоены.**
 
-Последний коммит (2026-02-23): fix(attendance): apply partial hidden subjects and PE teacher filter to journal (d0ef93b).
+Последний коммит (2026-03-02): fix(frontend): fix deadline off-by-one, PE stats, and dashboard 7-day filter (b4348b2).
 
-### Что сделано в этой сессии (2026-02-23):
-- AttendancePage: `filteredEntries` теперь фильтрует журнал по трём условиям:
-  1. Полностью скрытый предмет (`hiddenTypes === null`)
-  2. Частично скрытый тип занятия (`hiddenTypes.includes(e.lesson_type)`)
-  3. Несовпадение преподавателя физкультуры (`peTeacher` ≠ `teacher_name`)
-- Логика зеркалит `schedule_filters.py` на Python
-- FileList.test.tsx: добавлена обёртка `QueryClientProvider` — тест падал т.к. `FileList` использует `useQueryClient()`
-- Все 16 тестов затронутых файлов прошли
-- Задеплоено через CI/CD на https://studyhelper1.ru (d0ef93b на сервере, nginx перезапущен)
-
-### Замечание по деплою:
-Пользователь сообщил, что всё равно видит скрытые предметы во вкладке Attendance.
-Деплой прошёл корректно (коммит d0ef93b на сервере, nginx healthy).
-Вероятная причина — кэш браузера / PWA service worker.
-**Решение для пользователя:** Ctrl+Shift+R или DevTools → Application → Service Workers → Update + Skip waiting.
+### Что сделано в этой сессии (2026-03-02):
+- **Bug 1 — Attendance PE stats:** `filteredStats` теперь пересчитывает строку по физкультуре из `filteredEntries` (уже отфильтрованных по `peTeacher`). `filteredEntries` перенесён перед `filteredStats`. Условие short-circuit изменено: `!settings.peTeacher && fullyHiddenIds.size === 0`. При `filterSubjectId === null` и активном `peTeacher` — пересчитывает `total_classes/absences/attended/attendance_percent` по физкультуре из записей журнала.
+- **Bug 2 — Deadline off-by-one:** `formatDeadline` и `getDeadlineColor` в `dateUtils.ts` используют calendar-day сравнение (`new Date(y, m, d)`) вместо `Math.ceil(diffMs/24h)`. Дедлайн сегодня в 23:59 при просмотре в 08:00 → "Сегодня" (было "Завтра"). +2 регрессионных теста.
+- **Bug 3 — Dashboard 7-day filter:** `getUrgency` в `DeadlinesWidget` возвращает `null` при `diffDays > 7`. Нули фильтруются перед группировкой. Тест "shows max 8 items" переписан с fake timers (3 overdue + 7 within 7 days = 10, обрезается до 8). Добавлен тест "does not show works with deadline beyond 7 days".
 
 ## Следующие шаги (по приоритету)
-- Убедиться, что фильтрация посещаемости работает у пользователя (после сброса кэша)
+- Задеплоить b4348b2 на prod (если нужно — `git pull && docker compose -f docker-compose.prod.yml up -d --build backend`)
 - (Фаза 3) httpOnly cookies — access token в памяти, refresh в httpOnly cookie
 - (Фаза 3) JWT blacklist через Redis
 - (Будущее) CSP: убрать `unsafe-inline` (hash-based или vite-csp-guard)
