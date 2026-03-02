@@ -28,15 +28,17 @@ interface GroupedWork {
   work: UpcomingWork
 }
 
-/** Classify a work item by deadline urgency. */
-function getUrgency(deadline: string): UrgencyGroup {
+/** Classify a work item by deadline urgency. Returns null for deadlines beyond 7 days. */
+function getUrgency(deadline: string): UrgencyGroup | null {
   const date = new Date(deadline)
   const now = new Date()
-  const diffMs = date.getTime() - now.getTime()
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const deadlineDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const diffDays = Math.round((deadlineDay.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24))
 
   if (diffDays < 0) return 'overdue'
   if (diffDays <= 1) return 'soon'
+  if (diffDays > 7) return null
   return 'week'
 }
 
@@ -67,9 +69,10 @@ interface DeadlinesWidgetProps {
 }
 
 export function DeadlinesWidget({ data, isLoading, isError }: DeadlinesWidgetProps) {
-  // Group and sort works by urgency
+  // Group and sort works by urgency; filter out works beyond 7 days
   const grouped: GroupedWork[] = (data ?? [])
     .map((work) => ({ urgency: getUrgency(work.deadline), work }))
+    .filter((item): item is GroupedWork => item.urgency !== null)
     .sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency])
 
   const overdueCount = grouped.filter((g) => g.urgency === 'overdue').length

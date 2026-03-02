@@ -41,8 +41,9 @@ export function toLocalDatetimeString(isoString: string): string {
 export function formatDeadline(deadline: string, hasTime: boolean = true): string {
   const date = new Date(deadline)
   const now = new Date()
-  const diffMs = date.getTime() - now.getTime()
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const deadlineDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const diffDays = Math.round((deadlineDay.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24))
 
   const timeStr = hasTime
     ? ` ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
@@ -71,8 +72,9 @@ export function formatDeadline(deadline: string, hasTime: boolean = true): strin
 export function getDeadlineColor(deadline: string): string {
   const date = new Date(deadline)
   const now = new Date()
-  const diffMs = date.getTime() - now.getTime()
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const deadlineDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const diffDays = Math.round((deadlineDay.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24))
 
   if (diffDays < 0) {
     return 'text-red-600 dark:text-red-400'

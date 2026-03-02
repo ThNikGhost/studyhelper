@@ -84,6 +84,20 @@ describe('formatDeadline', () => {
     expect(result).toMatch(/мар/i)
     expect(result).not.toContain('12:00')
   })
+
+  it('returns "Сегодня" for date-only deadline later the same day', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T08:00:00'))
+
+    expect(formatDeadline('2026-02-07T23:59:00', false)).toBe('Сегодня')
+  })
+
+  it('returns "Завтра" for date-only deadline tomorrow viewed late today', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T22:00:00'))
+
+    expect(formatDeadline('2026-02-08T06:00:00', false)).toBe('Завтра')
+  })
 })
 
 describe('getDeadlineColor', () => {

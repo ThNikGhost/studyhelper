@@ -113,25 +113,6 @@ export function AttendancePage() {
     }
   }
 
-  // Filter stats and entries by hidden subjects
-  const filteredStats = useMemo(() => {
-    if (!stats || fullyHiddenIds.size === 0) return stats
-    const filteredBySubject = stats.by_subject.filter(
-      (s) => s.subject_id === null || !fullyHiddenIds.has(s.subject_id),
-    )
-    const totalClasses = filteredBySubject.reduce((sum, s) => sum + s.total_classes, 0)
-    const absences = filteredBySubject.reduce((sum, s) => sum + s.absences, 0)
-    const attended = totalClasses - absences
-    return {
-      ...stats,
-      total_classes: totalClasses,
-      absences,
-      attended,
-      attendance_percent: totalClasses > 0 ? Math.round((attended / totalClasses) * 100) : 100,
-      by_subject: filteredBySubject,
-    }
-  }, [stats, fullyHiddenIds])
-
   const filteredEntries = useMemo(() => {
     return entries.filter((e) => {
       // Hidden subjects filter (fully or partially hidden by lesson type)
@@ -152,6 +133,49 @@ export function AttendancePage() {
       return true
     })
   }, [entries, settings.hiddenSubjects, settings.peTeacher])
+
+  // Filter stats by hidden subjects and recalculate PE stats from filteredEntries
+  const filteredStats = useMemo(() => {
+    if (!stats || (!settings.peTeacher && fullyHiddenIds.size === 0)) return stats
+
+    // Remove fully hidden subjects
+    let filteredBySubject = stats.by_subject.filter(
+      (s) => s.subject_id === null || !fullyHiddenIds.has(s.subject_id),
+    )
+
+    // Recalculate PE subject totals from filteredEntries (already filtered by peTeacher).
+    // Only when no subject filter is active so filteredEntries covers all subjects.
+    if (settings.peTeacher && filterSubjectId === null) {
+      filteredBySubject = filteredBySubject.map((s) => {
+        if (!s.subject_name.toLowerCase().includes('физическ')) return s
+        const peEntries = filteredEntries.filter((e) =>
+          s.subject_id !== null ? e.subject_id === s.subject_id : e.subject_name.toLowerCase().includes('физическ'),
+        )
+        const total_classes = peEntries.length
+        const absences = peEntries.filter((e) => e.is_absent).length
+        const attended = total_classes - absences
+        return {
+          ...s,
+          total_classes,
+          absences,
+          attended,
+          attendance_percent: total_classes > 0 ? Math.round((attended / total_classes) * 100) : 100,
+        }
+      })
+    }
+
+    const totalClasses = filteredBySubject.reduce((sum, s) => sum + s.total_classes, 0)
+    const absences = filteredBySubject.reduce((sum, s) => sum + s.absences, 0)
+    const attended = totalClasses - absences
+    return {
+      ...stats,
+      total_classes: totalClasses,
+      absences,
+      attended,
+      attendance_percent: totalClasses > 0 ? Math.round((attended / totalClasses) * 100) : 100,
+      by_subject: filteredBySubject,
+    }
+  }, [stats, fullyHiddenIds, settings.peTeacher, filteredEntries, filterSubjectId])
 
   const isLoading = semestersLoading || (hasDates && (statsLoading || entriesLoading))
   const error = statsError || entriesError

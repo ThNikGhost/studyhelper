@@ -141,21 +141,44 @@ describe('DeadlinesWidget', () => {
   })
 
   it('shows max 8 items', () => {
-    const works: UpcomingWork[] = Array.from({ length: 10 }, (_, i) =>
-      createWork({
-        id: i + 1,
-        title: `Работа ${i + 1}`,
-        deadline: new Date(Date.now() + (i + 1) * 24 * 60 * 60 * 1000).toISOString(),
-      }),
-    )
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T12:00:00'))
+
+    // 3 overdue + 7 within 7 days = 10 visible; capped at 8
+    const works: UpcomingWork[] = [
+      createWork({ id: 1, title: 'Работа 1', deadline: '2026-02-01T12:00:00' }),
+      createWork({ id: 2, title: 'Работа 2', deadline: '2026-02-02T12:00:00' }),
+      createWork({ id: 3, title: 'Работа 3', deadline: '2026-02-03T12:00:00' }),
+      createWork({ id: 4, title: 'Работа 4', deadline: '2026-02-08T12:00:00' }),
+      createWork({ id: 5, title: 'Работа 5', deadline: '2026-02-09T12:00:00' }),
+      createWork({ id: 6, title: 'Работа 6', deadline: '2026-02-10T12:00:00' }),
+      createWork({ id: 7, title: 'Работа 7', deadline: '2026-02-11T12:00:00' }),
+      createWork({ id: 8, title: 'Работа 8', deadline: '2026-02-12T12:00:00' }),
+      createWork({ id: 9, title: 'Работа 9', deadline: '2026-02-13T12:00:00' }),
+      createWork({ id: 10, title: 'Работа 10', deadline: '2026-02-14T12:00:00' }),
+    ]
     renderWidget({ data: works })
 
-    // Should show first 8
+    // Sorted: overdue (1-3), soon (4), week (5-10); first 8 visible
     expect(screen.getByText('Работа 1')).toBeInTheDocument()
     expect(screen.getByText('Работа 8')).toBeInTheDocument()
-    // Should not show 9th and 10th
+    // 9th and 10th cut off by MAX_VISIBLE
     expect(screen.queryByText('Работа 9')).not.toBeInTheDocument()
     expect(screen.queryByText('Работа 10')).not.toBeInTheDocument()
+  })
+
+  it('does not show works with deadline beyond 7 days', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T12:00:00'))
+
+    const works: UpcomingWork[] = [
+      createWork({ id: 1, title: 'Работа 7 дней', deadline: '2026-02-14T12:00:00' }), // exactly 7 → shown
+      createWork({ id: 2, title: 'Работа 8 дней', deadline: '2026-02-15T12:00:00' }), // 8 days → hidden
+    ]
+    renderWidget({ data: works })
+
+    expect(screen.getByText('Работа 7 дней')).toBeInTheDocument()
+    expect(screen.queryByText('Работа 8 дней')).not.toBeInTheDocument()
   })
 
   it('shows completed check icon for completed works', () => {
