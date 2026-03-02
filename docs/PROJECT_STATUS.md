@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-03-02 (fix: deadline off-by-one + PE stats + dashboard 7-day filter, коммит b4348b2)
+- **Дата обновления**: 2026-03-02 (feat: work file attachments + code review fixes, коммит 216c1b2)
 
 ## Backend модули
 
@@ -145,8 +145,8 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 
 | Метрика | Значение |
 |---------|----------|
-| Backend тестов | 668 |
-| Frontend тестов | 390 |
+| Backend тестов | 675 |
+| Frontend тестов | 408 |
 | Покрытие | ~80% |
 | API endpoints | ~76 |
 | Моделей | 19 |
