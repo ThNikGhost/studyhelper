@@ -1376,3 +1376,8 @@ widget_api_keys      — API-ключи для виджетов (per user)
 | 2026-02-20 | Telegram bot: hidden_subjects filtering | Фильтрация через schedule_utils: get_filtered_day_schedule/current_lesson/works; работы скрываются только при полном скрытии (null), per-type не применяется к работам |
 | 2026-02-20 | Notes: shared model вместо per-user | Одна заметка на предмет для всей группы; user_id = last editor (nullable при удалении); upsert по subject_name |
 | 2026-02-20 | Notes: last_edited_by_name через selectinload | Загрузка User relationship через selectinload; _to_response() helper в роутере вместо model_validate |
+| 2026-03-02 | work_id FK с SET NULL в files | Файл не удаляется при удалении работы — только отвязывается; совместимо с "orphan files" политикой |
+| 2026-03-02 | WorkFilesModal без FileDropzone переиспользования | Модальный контекст не требует селектора предметов (subject берётся из работы); проще кастомный inline upload |
+| 2026-03-02 | model_fields_set для различения null vs omit | Pydantic v2: `"field" in model_fields_set` → поле явно передано; без этого невозможно различить "не менять" vs "установить null" (detach) |
+| 2026-03-02 | category: null → 422, не silent no-op | Категория обязательна для файла; null не имеет смысла → явный 422 вместо игнорирования |
+| 2026-03-02 | HTTPException только в роутерах, не сервисах | Сервис должен быть независим от HTTP; work existence check перенесён из update_file() в patch_file() |
