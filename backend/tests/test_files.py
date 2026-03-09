@@ -198,8 +198,8 @@ class TestUploadFile:
     async def test_upload_too_large(
         self, client: AsyncClient, auth_headers: dict[str, str], tmp_path: Path
     ) -> None:
-        """Test that files over 50MB are rejected."""
-        large_content = b"%PDF-1.4" + b"\x00" * (51 * 1024 * 1024)
+        """Test that files over 100MB are rejected."""
+        large_content = b"%PDF-1.4" + b"\x00" * (101 * 1024 * 1024)
 
         with patch.object(settings, "upload_dir", str(tmp_path)):
             response = await client.post(

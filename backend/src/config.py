@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     allowed_image_types: list[str] = ["image/jpeg", "image/png", "image/webp"]
 
     # Study file uploads
-    max_file_size_mb: int = 50
+    max_file_size_mb: int = 100
     allowed_file_extensions: list[str] = [
         "pdf",
         "doc",

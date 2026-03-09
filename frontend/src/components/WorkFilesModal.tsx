@@ -9,7 +9,7 @@ import { useAuthStore } from '@/stores/authStore'
 import type { WorkWithStatus } from '@/types/work'
 import type { StudyFile } from '@/types/file'
 import { FileCategory, fileCategoryLabels } from '@/types/file'
-import { canOpenInBrowser, formatFileSize, isAllowedFileType, MAX_FILE_SIZE_BYTES, ALLOWED_EXTENSIONS } from '@/lib/fileUtils'
+import { canOpenInBrowser, formatFileSize, isAllowedFileType, MAX_FILE_SIZE_BYTES, MAX_FILE_SIZE_MB, ALLOWED_EXTENSIONS } from '@/lib/fileUtils'
 import { getErrorMessage } from '@/lib/errorUtils'
 
 interface WorkFilesModalProps {
@@ -76,7 +76,7 @@ export function WorkFilesModal({ work, onClose }: WorkFilesModalProps) {
       if (!isAllowedFileType(f)) {
         errors.push(`${f.name}: недопустимый тип`)
       } else if (f.size > MAX_FILE_SIZE_BYTES) {
-        errors.push(`${f.name}: превышен размер 50 MB`)
+        errors.push(`${f.name}: превышен размер ${MAX_FILE_SIZE_MB} MB`)
       } else {
         valid.push(f)
       }
