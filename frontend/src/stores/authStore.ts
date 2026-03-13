@@ -69,7 +69,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       Sentry.setUser(null)
-      set({ user: null, isAuthenticated: false })
+      set({ user: null, isAuthenticated: false, isLoading: false })
     }
   },
 

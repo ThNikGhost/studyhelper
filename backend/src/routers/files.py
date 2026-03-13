@@ -68,16 +68,6 @@ async def upload_study_file(
             detail=f"File type not allowed. Allowed: {', '.join(settings.allowed_file_extensions)}",
         )
 
-    # Validate category
-    try:
-        FileCategory(category)
-    except ValueError as err:
-        valid = [c.value for c in FileCategory]
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid category. Valid: {', '.join(valid)}",
-        ) from err
-
     # Validate subject exists if provided
     if subject_id is not None:
         result = await db.execute(select(Subject).where(Subject.id == subject_id))
@@ -119,7 +109,7 @@ async def upload_study_file(
         )
 
     # Save to disk
-    stored_filename = save_file(content, extension)
+    stored_filename = await save_file(content, extension)
 
     # Save to DB
     file_record = await upload_file(

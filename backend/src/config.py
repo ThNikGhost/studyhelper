@@ -101,6 +101,10 @@ class Settings(BaseSettings):
             raise ValueError(
                 "TELEGRAM_WEBHOOK_SECRET is required when TELEGRAM_BOT_TOKEN is set"
             )
+        if self.telegram_bot_token and not self.telegram_webhook_url:
+            raise ValueError(
+                "TELEGRAM_WEBHOOK_URL is required when TELEGRAM_BOT_TOKEN is set"
+            )
         return self
 
 

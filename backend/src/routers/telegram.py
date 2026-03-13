@@ -90,9 +90,11 @@ async def generate_link_code(
         bot_info = await bot.me()
         bot_username = bot_info.username or ""
 
+    assert link.link_code is not None
+    assert link.link_code_expires_at is not None
     return TelegramLinkCodeResponse(
-        link_code=link.link_code,  # type: ignore[arg-type]
-        expires_at=link.link_code_expires_at,  # type: ignore[arg-type]
+        link_code=link.link_code,
+        expires_at=link.link_code_expires_at,
         bot_username=bot_username,
     )
 

@@ -85,6 +85,8 @@ async def create_work(
         users_result = await db.execute(select(User))
         users = users_result.scalars().all()
 
+        # Batch-create statuses for all users (single flush)
+        statuses = []
         for user in users:
             work_status = WorkStatus(
                 work_id=work.id,
@@ -92,14 +94,17 @@ async def create_work(
                 status=WorkStatusEnum.NOT_STARTED.value,
             )
             db.add(work_status)
-            await db.flush()
+            statuses.append(work_status)
 
-            # Create initial history entry
+        await db.flush()  # single round-trip — assigns IDs to all statuses
+
+        now = datetime.now(UTC)
+        for work_status in statuses:
             history = WorkStatusHistory(
                 work_status_id=work_status.id,
                 old_status=None,
                 new_status=WorkStatusEnum.NOT_STARTED.value,
-                changed_at=datetime.now(UTC),
+                changed_at=now,
                 changed_by_id=created_by.id,
             )
             db.add(history)
@@ -108,7 +113,6 @@ async def create_work(
         await db.refresh(work)
         return work
     except Exception:
-        await db.rollback()
         logger.exception("Failed to create work '%s'", work_data.title)
         raise
 

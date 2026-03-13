@@ -6,7 +6,7 @@ import { FileCategory, fileCategoryLabels } from '@/types/file'
 import type { Subject } from '@/types/subject'
 import type { WorkWithStatus } from '@/types/work'
 import { workTypeLabels } from '@/types/work'
-import { isAllowedFileType, formatFileSize, MAX_FILE_SIZE_BYTES, ALLOWED_EXTENSIONS } from '@/lib/fileUtils'
+import { isAllowedFileType, formatFileSize, MAX_FILE_SIZE_BYTES, MAX_FILE_SIZE_MB, ALLOWED_EXTENSIONS } from '@/lib/fileUtils'
 
 interface FileDropzoneProps {
   subjects: Subject[]
@@ -140,7 +140,7 @@ export function FileDropzone({ subjects, works = [], onUpload, disabled, uploadP
           Перетащите файлы сюда или нажмите для выбора
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          {ALLOWED_EXTENSIONS.join(', ')} — до 50 MB
+          {ALLOWED_EXTENSIONS.join(', ')} — до {MAX_FILE_SIZE_MB} MB
         </p>
         <input
           ref={inputRef}

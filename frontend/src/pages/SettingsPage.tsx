@@ -64,7 +64,7 @@ export default function SettingsPage() {
 
   const { data: currentSubjects = [] } = useQuery<Subject[]>({
     queryKey: ['subjects', currentSemester?.id],
-    queryFn: ({ signal }) => subjectService.getSubjects(currentSemester!.id, signal),
+    queryFn: ({ signal }) => subjectService.getSubjects(currentSemester?.id ?? 0, signal),
     enabled: !!currentSemester?.id,
     staleTime: 5 * 60 * 1000,
   })

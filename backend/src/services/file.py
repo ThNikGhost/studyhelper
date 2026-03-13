@@ -1,5 +1,6 @@
 """File service for study material management."""
 
+import asyncio
 import logging
 import uuid
 from pathlib import Path
@@ -11,7 +12,7 @@ from sqlalchemy.orm import joinedload
 
 from src.config import settings
 from src.models.file import File
-from src.schemas.file import FileCategory, FileUpdateRequest
+from src.schemas.file import FileUpdateRequest
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +52,8 @@ def get_file_path(stored_filename: str) -> Path:
     return file_path
 
 
-def save_file(content: bytes, extension: str) -> str:
-    """Save file content to disk.
+def _save_file_sync(content: bytes, extension: str) -> str:
+    """Save file content to disk (synchronous).
 
     Args:
         content: File bytes to save.
@@ -68,6 +69,19 @@ def save_file(content: bytes, extension: str) -> str:
         f.write(content)
 
     return stored_filename
+
+
+async def save_file(content: bytes, extension: str) -> str:
+    """Save file content to disk without blocking the event loop.
+
+    Args:
+        content: File bytes to save.
+        extension: File extension (e.g. '.pdf').
+
+    Returns:
+        Generated unique stored filename.
+    """
+    return await asyncio.to_thread(_save_file_sync, content, extension)
 
 
 async def upload_file(
@@ -108,7 +122,6 @@ async def upload_file(
         uploaded_by=user_id,
     )
     db.add(file_record)
-    await db.flush()
     await db.commit()
     await db.refresh(file_record, attribute_names=["subject", "work"])
     return file_record
@@ -190,7 +203,8 @@ async def update_file(
         Updated File record.
     """
     if "category" in data.model_fields_set:
-        file.category = data.category  # type: ignore[assignment]
+        assert data.category is not None
+        file.category = data.category
 
     if "work_id" in data.model_fields_set:
         file.work_id = data.work_id
@@ -200,23 +214,20 @@ async def update_file(
     return file
 
 
-async def update_file_category(
-    db: AsyncSession, file: File, category: FileCategory
-) -> File:
-    """Update the category of an existing file.
+def _delete_file_from_disk(stored_filename: str) -> bool:
+    """Delete a file from disk (synchronous).
 
     Args:
-        db: Database session.
-        file: File record to update.
-        category: New file category.
+        stored_filename: The stored filename to delete.
 
     Returns:
-        Updated File record.
+        True if file was deleted, False if not found.
     """
-    file.category = category
-    await db.commit()
-    await db.refresh(file, attribute_names=["subject", "work"])
-    return file
+    file_path = get_file_path(stored_filename)
+    if file_path.exists():
+        file_path.unlink()
+        return True
+    return False
 
 
 async def delete_file(db: AsyncSession, file: File) -> None:
@@ -226,10 +237,9 @@ async def delete_file(db: AsyncSession, file: File) -> None:
         db: Database session.
         file: File record to delete.
     """
-    # Delete from disk
-    file_path = get_file_path(file.stored_filename)
-    if file_path.exists():
-        file_path.unlink()
+    # Delete from disk (non-blocking)
+    deleted = await asyncio.to_thread(_delete_file_from_disk, file.stored_filename)
+    if deleted:
         logger.info("Deleted file from disk: %s", file.stored_filename)
 
     # Delete from DB

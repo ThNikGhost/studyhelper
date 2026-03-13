@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import * as Sentry from '@sentry/react'
 import { useAuthStore } from '@/stores/authStore'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -25,6 +25,18 @@ const TimelinePage = lazy(() => import('@/pages/TimelinePage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const GradesPage = lazy(() => import('@/pages/GradesPage'))
 
+function ProtectedLayout() {
+  return (
+    <ProtectedRoute>
+      <AppLayout>
+        <Suspense fallback={<PageSkeleton />}>
+          <Outlet />
+        </Suspense>
+      </AppLayout>
+    </ProtectedRoute>
+  )
+}
+
 function App() {
   const { isAuthenticated } = useAuthStore()
 
@@ -42,140 +54,19 @@ function App() {
           isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />
         }
       />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Suspense fallback={<PageSkeleton />}>
-                <DashboardPage />
-              </Suspense>
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      {/* Schedule page */}
-      <Route
-        path="/schedule"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Suspense fallback={<PageSkeleton />}>
-                <SchedulePage />
-              </Suspense>
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      {/* Placeholder routes for future pages */}
-      <Route
-        path="/subjects"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Suspense fallback={<PageSkeleton />}>
-                <SubjectsPage />
-              </Suspense>
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/semesters"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Suspense fallback={<PageSkeleton />}>
-                <SemestersPage />
-              </Suspense>
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/works"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Suspense fallback={<PageSkeleton />}>
-                <WorksPage />
-              </Suspense>
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/classmates"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Suspense fallback={<PageSkeleton />}>
-                <ClassmatesPage />
-              </Suspense>
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/files"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Suspense fallback={<PageSkeleton />}>
-                <FilesPage />
-              </Suspense>
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/attendance"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Suspense fallback={<PageSkeleton />}>
-                <AttendancePage />
-              </Suspense>
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/timeline"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Suspense fallback={<PageSkeleton />}>
-                <TimelinePage />
-              </Suspense>
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Suspense fallback={<PageSkeleton />}>
-                <SettingsPage />
-              </Suspense>
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/grades"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <Suspense fallback={<PageSkeleton />}>
-                <GradesPage />
-              </Suspense>
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+      <Route element={<ProtectedLayout />}>
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/schedule" element={<SchedulePage />} />
+        <Route path="/subjects" element={<SubjectsPage />} />
+        <Route path="/semesters" element={<SemestersPage />} />
+        <Route path="/works" element={<WorksPage />} />
+        <Route path="/classmates" element={<ClassmatesPage />} />
+        <Route path="/files" element={<FilesPage />} />
+        <Route path="/attendance" element={<AttendancePage />} />
+        <Route path="/timeline" element={<TimelinePage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/grades" element={<GradesPage />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </SentryRoutes>
   )

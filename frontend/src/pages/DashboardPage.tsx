@@ -106,7 +106,7 @@ export default function DashboardPage() {
     isError: timelineError,
   } = useQuery({
     queryKey: ['timeline', currentSemester?.id],
-    queryFn: ({ signal }) => subjectService.getSemesterTimeline(currentSemester!.id, signal),
+    queryFn: ({ signal }) => subjectService.getSemesterTimeline(currentSemester?.id ?? 0, signal),
     enabled: !!currentSemester?.start_date && !!currentSemester?.end_date,
     staleTime: 5 * 60 * 1000, // 5 min
     gcTime: 30 * 60 * 1000, // 30 min cache

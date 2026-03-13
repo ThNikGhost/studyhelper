@@ -1,5 +1,6 @@
 """Upload service for file management."""
 
+import asyncio
 import uuid
 from pathlib import Path
 
@@ -119,8 +120,8 @@ async def read_upload_streaming(
     return b"".join(chunks)
 
 
-def save_avatar(content: bytes, extension: str) -> str:
-    """Save avatar content to disk.
+def _save_avatar_sync(content: bytes, extension: str) -> str:
+    """Save avatar content to disk (synchronous).
 
     Args:
         content: Image bytes to save.
@@ -137,6 +138,19 @@ def save_avatar(content: bytes, extension: str) -> str:
         f.write(content)
 
     return unique_filename
+
+
+async def save_avatar(content: bytes, extension: str) -> str:
+    """Save avatar content to disk without blocking the event loop.
+
+    Args:
+        content: Image bytes to save.
+        extension: File extension (e.g. '.jpg').
+
+    Returns:
+        Generated unique filename.
+    """
+    return await asyncio.to_thread(_save_avatar_sync, content, extension)
 
 
 def delete_avatar_file(filename: str) -> bool:

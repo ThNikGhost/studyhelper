@@ -70,7 +70,8 @@ async def send_schedule_changed() -> int:
     sent = 0
     for link in links:
         try:
-            await bot.send_message(link.telegram_id, text)  # type: ignore[arg-type]
+            assert link.telegram_id is not None
+            await bot.send_message(link.telegram_id, text)
             sent += 1
         except Exception:
             logger.warning(
@@ -126,7 +127,8 @@ async def send_morning_summaries() -> int:
                 works = filter_works_by_hidden_subjects(works, hidden_config)
 
             text = format_morning_summary(day, works)
-            await bot.send_message(link.telegram_id, text)  # type: ignore[arg-type]
+            assert link.telegram_id is not None
+            await bot.send_message(link.telegram_id, text)
             sent += 1
         except Exception:
             logger.warning(
@@ -189,7 +191,8 @@ async def send_deadline_alerts() -> int:
             ]
             for w in urgent:
                 text = format_deadline_alert(w)
-                await bot.send_message(link.telegram_id, text)  # type: ignore[arg-type]
+                assert link.telegram_id is not None
+                await bot.send_message(link.telegram_id, text)
                 sent += 1
         except Exception:
             logger.warning(

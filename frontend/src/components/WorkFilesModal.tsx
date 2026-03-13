@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, type DragEvent, type ChangeEvent } from 'react'
+import { useRef, useState, useCallback, useEffect, type DragEvent, type ChangeEvent } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Download, ExternalLink, Loader2, Paperclip, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -35,8 +35,16 @@ export function WorkFilesModal({ work, onClose }: WorkFilesModalProps) {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [detachingId, setDetachingId] = useState<number | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const isUploading = uploadProgress !== null
+
+  // Abort in-flight uploads on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+    }
+  }, [])
 
   // File action handlers
   async function handleDownload(file: StudyFile) {
@@ -108,25 +116,34 @@ export function WorkFilesModal({ work, onClose }: WorkFilesModalProps) {
   const handleUpload = async () => {
     if (!selectedFiles.length) return
     setUploadError(null)
+    const filesToUpload = selectedFiles
+    const controller = new AbortController()
+    abortRef.current = controller
     try {
-      for (let i = 0; i < selectedFiles.length; i++) {
+      for (let i = 0; i < filesToUpload.length; i++) {
         await fileService.uploadFile({
-          file: selectedFiles[i],
+          file: filesToUpload[i],
           category,
           subject_id: work.subject_id,
           work_id: work.id,
           onProgress: (p) =>
-            setUploadProgress(Math.round((i / selectedFiles.length) * 100 + p / selectedFiles.length)),
+            setUploadProgress(Math.round((i / filesToUpload.length) * 100 + p / filesToUpload.length)),
+          signal: controller.signal,
         })
       }
       setSelectedFiles([])
       setCategory(FileCategory.LAB)
       setUploadProgress(null)
       await queryClient.invalidateQueries({ queryKey: ['files'] })
-      toast.success(selectedFiles.length === 1 ? 'Файл прикреплён' : `Прикреплено файлов: ${selectedFiles.length}`)
+      const count = filesToUpload.length
+      toast.success(count === 1 ? 'Файл прикреплён' : `Прикреплено файлов: ${count}`)
     } catch (error) {
       setUploadProgress(null)
-      toast.error(getErrorMessage(error))
+      if (!controller.signal.aborted) {
+        toast.error(getErrorMessage(error))
+      }
+    } finally {
+      abortRef.current = null
     }
   }
 
@@ -234,7 +251,7 @@ export function WorkFilesModal({ work, onClose }: WorkFilesModalProps) {
               Перетащите файлы или нажмите для выбора
             </p>
             <p className="text-xs text-muted-foreground/70 mt-0.5">
-              {ALLOWED_EXTENSIONS.join(', ')} — до 50 MB
+              {ALLOWED_EXTENSIONS.join(', ')} — до {MAX_FILE_SIZE_MB} MB
             </p>
             <input
               ref={inputRef}

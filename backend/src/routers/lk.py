@@ -107,10 +107,11 @@ async def sync_from_lk(
             disciplines_count,
         )
         creds = await lk_service.get_credentials(db, current_user.id)
+        assert creds is not None
         return LkSyncResponse(
             grades_synced=grades_count,
             disciplines_synced=disciplines_count,
-            last_sync_at=creds.last_sync_at,  # type: ignore
+            last_sync_at=creds.last_sync_at,
         )
     except Exception as e:
         logger.exception("LK sync failed: %s", e)

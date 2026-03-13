@@ -61,7 +61,7 @@ async def upload_avatar(
         )
 
     # Save file
-    unique_filename = save_avatar(content, detected_ext)
+    unique_filename = await save_avatar(content, detected_ext)
     url = f"/uploads/avatars/{unique_filename}"
 
     return UploadResponse(url=url, filename=unique_filename)
