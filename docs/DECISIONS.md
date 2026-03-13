@@ -1381,3 +1381,8 @@ widget_api_keys      — API-ключи для виджетов (per user)
 | 2026-03-02 | model_fields_set для различения null vs omit | Pydantic v2: `"field" in model_fields_set` → поле явно передано; без этого невозможно различить "не менять" vs "установить null" (detach) |
 | 2026-03-02 | category: null → 422, не silent no-op | Категория обязательна для файла; null не имеет смысла → явный 422 вместо игнорирования |
 | 2026-03-02 | HTTPException только в роутерах, не сервисах | Сервис должен быть независим от HTTP; work existence check перенесён из update_file() в patch_file() |
+| 2026-03-14 | asyncio.to_thread для файлового I/O | save_file/save_avatar/delete_file блокировали event loop при 100MB файлах; to_thread безопасен для sync disk I/O |
+| 2026-03-14 | Batch flush в create_work | N flush-ов в цикле → 1 flush + 1 commit; WorkStatus.id присваивается для всех объектов одним round-trip |
+| 2026-03-14 | App.tsx: ProtectedLayout + Outlet | 13 идентичных обёрток ProtectedRoute→AppLayout→Suspense → один layout route; -120 строк |
+| 2026-03-14 | assert is not None вместо type: ignore | Явный assert лучше подавления ошибки; при нарушении инварианта — AssertionError вместо тихого бага |
+| 2026-03-14 | Frontend тесты в CI | 408 тестов не запускались в CI (только lint+build); добавлен `npm run test -- --run` |

@@ -3,7 +3,7 @@
 ## Общий прогресс
 - **Фаза**: Production
 - **Прогресс**: MVP 100%. Все post-MVP фичи реализованы. Production с SSL на https://studyhelper1.ru.
-- **Дата обновления**: 2026-03-02 (feat: work file attachments + code review fixes, коммит 216c1b2)
+- **Дата обновления**: 2026-03-14 (fix: full code review audit — 22 fixes, коммит 7850ab3)
 
 ## Backend модули
 
@@ -19,7 +19,7 @@
 | Schedule | ScheduleEntry, ScheduleSnapshot | — | — | — | 35 |
 | Parser | +subgroup parsing, +ауд. prefix | — | — | CLI | 84 |
 | Uploads | — | — | — | — | 11 |
-| Files | File | +FileUpdateRequest | +update_file_category | +PATCH /{id} | 24 |
+| Files | File | +FileUpdateRequest | +update_file (async I/O) | +PATCH /{id} | 24 |
 | Attendance | Absence | +total_planned/completed | semester filter | — | 29 |
 | Notes | LessonNote | — | upsert | — | 26 |
 | LK | LkCredentials, SessionGrade, SemesterDiscipline | +LkImportResult | +import_to_app | +/import | 51 |
@@ -30,6 +30,21 @@
 ## Frontend
 
 13 страниц: Login, Register, Dashboard, Schedule, Subjects, Works, Semesters, Classmates, Files, Attendance, Timeline, Settings, Grades. (Notes убрана из навигации, доступна через LessonDetailModal)
+
+**Full code review audit (2026-03-14, коммит 7850ab3):**
+- CORS: добавлен `PATCH` в allow_methods + `expose_headers: ["X-Request-ID"]`
+- Файловый I/O: `save_file`/`save_avatar`/`delete_file` → `asyncio.to_thread()` (non-blocking)
+- `create_work`: batch flush (1 DB round-trip вместо N)
+- Dead code: удалён `update_file_category()`, убрана двойная валидация FileCategory enum
+- 5x `type: ignore` → `assert is not None` (proper narrowing)
+- App.tsx: DRY рефактор — `ProtectedLayout` с `<Outlet />` (-120 строк)
+- WorkFilesModal: AbortController (cancel on unmount) + stale closure fix
+- authStore: `isLoading: false` при logout
+- Config: валидация `telegram_webhook_url`; database: `pool_recycle=3600`
+- CI: frontend тесты добавлены, Node.js 20→22
+- Infra: Redis healthcheck `$$REDIS_PASSWORD`, nginx healthcheck `127.0.0.1`
+- "до 50 MB" → динамический `MAX_FILE_SIZE_MB` в двух компонентах
+- Non-null assertions убраны (3 страницы)
 
 **Bugfixes (2026-03-02, коммит b4348b2):**
 - dateUtils: `formatDeadline` + `getDeadlineColor` — calendar-day сравнение вместо `Math.ceil(diffMs/24h)`, фикс "Завтра" вместо "Сегодня" для дедлайнов 23:59 (date-only)
@@ -79,7 +94,7 @@ React.lazy() code splitting, PWA (offline fallback, update prompt with hourly SW
 - **URL**: https://studyhelper1.ru (89.110.93.63)
 - **SSL**: Let's Encrypt, certbot auto-renewal (12h)
 - **Контейнеры**: db, redis, backend, nginx, certbot (5 шт.)
-- **Миграции**: 27 применено (все задеплоены, включая `k1l2m3n4o5p6`)
+- **Миграции**: 28 применено (все задеплоены, включая `l2m3n4o5p6q7`)
 - **Sync**: APScheduler каждые 6ч + Redis distributed lock
 - **Backups**: pg_dump daily cron (3:00 UTC), gzip, 7-day rotation
 
@@ -138,7 +153,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 - **Calendar Feed**: icalendar 7.x, per-user token URL auth, schedule + deadline events, subgroup/PE filtering, REFRESH-INTERVAL 6h
 - **Widget API**: per-user token query param auth, next lesson + today schedule JSON endpoints, 7-day lookahead, subgroup/PE filtering, Scriptable JS widget with offline cache
 - **Observability**: structlog (JSON prod / ConsoleRenderer dev), X-Request-ID, Prometheus metrics (/metrics), Sentry error tracking (optional, DSN-gated)
-- **CI**: GitHub Actions (backend lint+test, frontend lint+build, Android conditional release/debug build on tag)
+- **CI**: GitHub Actions (backend lint+test, frontend lint+test+build, Android conditional release/debug build on tag)
 - **Android Widget**: Native APK v1.3.2 (AGP 9.0.0, Kotlin built-in, Gradle 9.3.1), 4×2 AppWidgetProvider + RemoteViews, system Chronometer real-time countdown + AlarmManager exact refresh at lesson start, WorkManager 30min refresh, HttpURLConnection + org.json (no external deps), SharedPreferences (API key + 24h JSON cache), release-signed APK via GitHub Releases (`android/v*` tags), Gradle-native signing with base64 keystore Secret
 
 ## Метрики
@@ -146,7 +161,7 @@ IPv6/IPv4 резолвинг. **Решение**: `host: '127.0.0.1'` в vite.co
 | Метрика | Значение |
 |---------|----------|
 | Backend тестов | 675 |
-| Frontend тестов | 408 |
+| Frontend тестов | 408 (3 pre-existing SchedulePage failures) |
 | Покрытие | ~80% |
 | API endpoints | ~76 |
 | Моделей | 19 |
