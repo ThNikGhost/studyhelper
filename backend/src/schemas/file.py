@@ -3,7 +3,7 @@
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class FileCategory(StrEnum):
@@ -37,9 +37,10 @@ class FileResponse(BaseModel):
 
 
 class FileUpdateRequest(BaseModel):
-    """Request schema for updating file metadata (category and/or work attachment)."""
+    """Request schema for updating file metadata (category, filename, work attachment)."""
 
     category: FileCategory | None = None
+    filename: str | None = Field(default=None, min_length=1, max_length=255)
     work_id: int | None = None
 
     @model_validator(mode="after")
@@ -50,6 +51,10 @@ class FileUpdateRequest(BaseModel):
         if "category" in self.model_fields_set and self.category is None:
             raise ValueError(
                 "category cannot be null; omit the field to leave it unchanged"
+            )
+        if "filename" in self.model_fields_set and self.filename is None:
+            raise ValueError(
+                "filename cannot be null; omit the field to leave it unchanged"
             )
         return self
 

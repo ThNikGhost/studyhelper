@@ -491,10 +491,10 @@ export function WorksPage() {
                     {/* Deadline */}
                     {work.deadline && (
                       <div
-                        className={`flex items-center gap-1 text-sm mt-2 ${getDeadlineColor(work.deadline)}`}
+                        className={`flex items-center gap-1 text-sm mt-2 ${getDeadlineColor(work.deadline, work.my_status?.status)}`}
                       >
                         <Calendar className="h-3.5 w-3.5" />
-                        <span>{formatDeadline(work.deadline, work.deadline_has_time)}</span>
+                        <span>{formatDeadline(work.deadline, work.deadline_has_time, work.my_status?.status)}</span>
                       </div>
                     )}
 

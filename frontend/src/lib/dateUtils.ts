@@ -38,7 +38,7 @@ export function toLocalDatetimeString(isoString: string): string {
   return `${year}-${month}-${day}T${hours}:${mins}`
 }
 
-export function formatDeadline(deadline: string, hasTime: boolean = true): string {
+export function formatDeadline(deadline: string, hasTime: boolean = true, status?: string): string {
   const date = new Date(deadline)
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -50,6 +50,14 @@ export function formatDeadline(deadline: string, hasTime: boolean = true): strin
     : ''
 
   if (diffDays < 0) {
+    // Show "Просрочено" only for not_started (or when status is unknown)
+    if (status && status !== 'not_started') {
+      const dateStr = date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'short',
+      })
+      return hasTime ? `${dateStr}${timeStr}` : dateStr
+    }
     return 'Просрочено'
   }
   if (diffDays === 0) {
@@ -69,7 +77,7 @@ export function formatDeadline(deadline: string, hasTime: boolean = true): strin
   return hasTime ? `${dateStr}${timeStr}` : dateStr
 }
 
-export function getDeadlineColor(deadline: string): string {
+export function getDeadlineColor(deadline: string, status?: string): string {
   const date = new Date(deadline)
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -77,6 +85,9 @@ export function getDeadlineColor(deadline: string): string {
   const diffDays = Math.round((deadlineDay.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24))
 
   if (diffDays < 0) {
+    if (status && status !== 'not_started') {
+      return 'text-muted-foreground'
+    }
     return 'text-red-600 dark:text-red-400'
   }
   if (diffDays <= 1) {

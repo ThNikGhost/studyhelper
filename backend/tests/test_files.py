@@ -548,6 +548,106 @@ class TestUpdateFileCategory:
 
         assert response.status_code == 422
 
+    @pytest.mark.asyncio
+    async def test_rename_file_success(
+        self, client: AsyncClient, auth_headers: dict[str, str], tmp_path: Path
+    ) -> None:
+        """Test successful file rename via PATCH."""
+        with patch.object(settings, "upload_dir", str(tmp_path)):
+            upload_resp = await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": ("notes.pdf", io.BytesIO(_pdf_content()), "application/pdf")
+                },
+                data={"category": "lecture"},
+                headers=auth_headers,
+            )
+            file_id = upload_resp.json()["id"]
+            stored = upload_resp.json()["stored_filename"]
+
+            response = await client.patch(
+                f"/api/v1/files/{file_id}",
+                json={"filename": "renamed.pdf"},
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 200
+        assert response.json()["filename"] == "renamed.pdf"
+        assert response.json()["stored_filename"] == stored  # stored_filename unchanged
+
+    @pytest.mark.asyncio
+    async def test_rename_file_empty_string_returns_422(
+        self, client: AsyncClient, auth_headers: dict[str, str], tmp_path: Path
+    ) -> None:
+        """Test that PATCH with empty filename returns 422."""
+        with patch.object(settings, "upload_dir", str(tmp_path)):
+            upload_resp = await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": ("notes.pdf", io.BytesIO(_pdf_content()), "application/pdf")
+                },
+                data={"category": "lecture"},
+                headers=auth_headers,
+            )
+            file_id = upload_resp.json()["id"]
+
+            response = await client.patch(
+                f"/api/v1/files/{file_id}",
+                json={"filename": ""},
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_rename_file_null_returns_422(
+        self, client: AsyncClient, auth_headers: dict[str, str], tmp_path: Path
+    ) -> None:
+        """Test that PATCH with filename=null returns 422."""
+        with patch.object(settings, "upload_dir", str(tmp_path)):
+            upload_resp = await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": ("notes.pdf", io.BytesIO(_pdf_content()), "application/pdf")
+                },
+                data={"category": "lecture"},
+                headers=auth_headers,
+            )
+            file_id = upload_resp.json()["id"]
+
+            response = await client.patch(
+                f"/api/v1/files/{file_id}",
+                json={"filename": None},
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_rename_file_strips_whitespace(
+        self, client: AsyncClient, auth_headers: dict[str, str], tmp_path: Path
+    ) -> None:
+        """Test that filename is stripped of leading/trailing whitespace."""
+        with patch.object(settings, "upload_dir", str(tmp_path)):
+            upload_resp = await client.post(
+                "/api/v1/files/upload",
+                files={
+                    "file": ("notes.pdf", io.BytesIO(_pdf_content()), "application/pdf")
+                },
+                data={"category": "lecture"},
+                headers=auth_headers,
+            )
+            file_id = upload_resp.json()["id"]
+
+            response = await client.patch(
+                f"/api/v1/files/{file_id}",
+                json={"filename": "  trimmed.pdf  "},
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 200
+        assert response.json()["filename"] == "trimmed.pdf"
+
 
 class TestDeleteFile:
     """Tests for DELETE /api/v1/files/{file_id}."""

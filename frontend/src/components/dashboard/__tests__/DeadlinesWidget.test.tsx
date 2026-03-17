@@ -181,6 +181,26 @@ describe('DeadlinesWidget', () => {
     expect(screen.queryByText('Работа 8 дней')).not.toBeInTheDocument()
   })
 
+  it('does not classify in_progress overdue work as overdue group', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T12:00:00'))
+
+    const works: UpcomingWork[] = [
+      createWork({
+        id: 1,
+        title: 'Работа в процессе',
+        deadline: '2026-02-05T12:00:00',
+        my_status: 'in_progress',
+      }),
+    ]
+    renderWidget({ data: works })
+
+    // Should not show the overdue badge count
+    expect(screen.queryByText(/просроч/)).not.toBeInTheDocument()
+    // But should still show the work
+    expect(screen.getByText('Работа в процессе')).toBeInTheDocument()
+  })
+
   it('shows completed check icon for completed works', () => {
     const works: UpcomingWork[] = [
       createWork({

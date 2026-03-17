@@ -29,14 +29,18 @@ interface GroupedWork {
 }
 
 /** Classify a work item by deadline urgency. Returns null for deadlines beyond 7 days. */
-function getUrgency(deadline: string): UrgencyGroup | null {
+function getUrgency(deadline: string, status?: string | null): UrgencyGroup | null {
   const date = new Date(deadline)
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const deadlineDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
   const diffDays = Math.round((deadlineDay.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24))
 
-  if (diffDays < 0) return 'overdue'
+  if (diffDays < 0) {
+    // Only classify as overdue if not_started (or no status)
+    if (status && status !== 'not_started') return 'soon'
+    return 'overdue'
+  }
   if (diffDays <= 1) return 'soon'
   if (diffDays > 7) return null
   return 'week'
@@ -71,7 +75,7 @@ interface DeadlinesWidgetProps {
 export function DeadlinesWidget({ data, isLoading, isError }: DeadlinesWidgetProps) {
   // Group and sort works by urgency; filter out works beyond 7 days
   const grouped: GroupedWork[] = (data ?? [])
-    .map((work) => ({ urgency: getUrgency(work.deadline), work }))
+    .map((work) => ({ urgency: getUrgency(work.deadline, work.my_status), work }))
     .filter((item): item is GroupedWork => item.urgency !== null)
     .sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency])
 
@@ -149,9 +153,9 @@ export function DeadlinesWidget({ data, isLoading, isError }: DeadlinesWidgetPro
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div
-                        className={`text-xs font-medium ${getDeadlineColor(work.deadline)}`}
+                        className={`text-xs font-medium ${getDeadlineColor(work.deadline, work.my_status ?? undefined)}`}
                       >
-                        {formatDeadline(work.deadline, work.deadline_has_time)}
+                        {formatDeadline(work.deadline, work.deadline_has_time, work.my_status ?? undefined)}
                       </div>
                       {work.my_status === WorkStatus.COMPLETED ||
                       work.my_status === WorkStatus.SUBMITTED ||

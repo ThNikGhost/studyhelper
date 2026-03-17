@@ -85,6 +85,41 @@ describe('formatDeadline', () => {
     expect(result).not.toContain('12:00')
   })
 
+  it('returns "Просрочено" for past dates with not_started status', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T12:00:00'))
+
+    expect(formatDeadline('2026-02-05', true, 'not_started')).toBe('Просрочено')
+  })
+
+  it('returns "Просрочено" for past dates with no status', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T12:00:00'))
+
+    expect(formatDeadline('2026-02-05')).toBe('Просрочено')
+    expect(formatDeadline('2026-02-05', true, undefined)).toBe('Просрочено')
+  })
+
+  it('returns date instead of "Просрочено" for in_progress status', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T12:00:00'))
+
+    const result = formatDeadline('2026-02-05T14:00:00', true, 'in_progress')
+    expect(result).not.toBe('Просрочено')
+    expect(result).toContain('5')
+    expect(result).toMatch(/февр/i)
+    expect(result).toContain('14:00')
+  })
+
+  it('returns date instead of "Просрочено" for completed status', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T12:00:00'))
+
+    const result = formatDeadline('2026-02-05T14:00:00', false, 'completed')
+    expect(result).not.toBe('Просрочено')
+    expect(result).toContain('5')
+  })
+
   it('returns "Сегодня" for date-only deadline later the same day', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-02-07T08:00:00'))
@@ -128,6 +163,23 @@ describe('getDeadlineColor', () => {
 
     expect(getDeadlineColor('2026-02-09T12:00:00')).toContain('yellow')
     expect(getDeadlineColor('2026-02-10T12:00:00')).toContain('yellow')
+  })
+
+  it('returns muted for overdue with in_progress status', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T12:00:00'))
+
+    expect(getDeadlineColor('2026-02-05', 'in_progress')).toContain('muted')
+    expect(getDeadlineColor('2026-02-05', 'completed')).toContain('muted')
+    expect(getDeadlineColor('2026-02-05', 'submitted')).toContain('muted')
+  })
+
+  it('returns red for overdue with not_started status', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-02-07T12:00:00'))
+
+    expect(getDeadlineColor('2026-02-05', 'not_started')).toContain('red')
+    expect(getDeadlineColor('2026-02-05')).toContain('red')
   })
 
   it('returns muted classes for 7+ days away', () => {

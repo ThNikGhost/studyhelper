@@ -54,7 +54,7 @@ export const fileService = {
     return response.data
   },
 
-  async updateFile(id: number, data: { category?: string; work_id?: number | null }): Promise<StudyFile> {
+  async updateFile(id: number, data: { category?: string; filename?: string; work_id?: number | null }): Promise<StudyFile> {
     const response = await api.patch<StudyFile>(`/files/${id}`, data)
     return response.data
   },

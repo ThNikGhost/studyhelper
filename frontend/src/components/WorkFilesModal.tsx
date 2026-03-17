@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback, useEffect, type DragEvent, type ChangeEvent } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Download, ExternalLink, Loader2, Paperclip, Upload, X } from 'lucide-react'
+import { Download, ExternalLink, Link2, Loader2, Paperclip, Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ import type { StudyFile } from '@/types/file'
 import { FileCategory, fileCategoryLabels } from '@/types/file'
 import { canOpenInBrowser, formatFileSize, isAllowedFileType, MAX_FILE_SIZE_BYTES, MAX_FILE_SIZE_MB, ALLOWED_EXTENSIONS } from '@/lib/fileUtils'
 import { getErrorMessage } from '@/lib/errorUtils'
+import { FilePickerModal } from '@/components/files/FilePickerModal'
 
 interface WorkFilesModalProps {
   work: WorkWithStatus
@@ -34,6 +35,8 @@ export function WorkFilesModal({ work, onClose }: WorkFilesModalProps) {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [detachingId, setDetachingId] = useState<number | null>(null)
+  const [showFilePicker, setShowFilePicker] = useState(false)
+  const [isAttaching, setIsAttaching] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -72,6 +75,23 @@ export function WorkFilesModal({ work, onClose }: WorkFilesModalProps) {
       toast.error(getErrorMessage(error))
     } finally {
       setDetachingId(null)
+    }
+  }
+
+  async function handleAttachExisting(fileIds: number[]) {
+    setIsAttaching(true)
+    try {
+      await Promise.all(
+        fileIds.map((id) => fileService.updateFile(id, { work_id: work.id })),
+      )
+      await queryClient.invalidateQueries({ queryKey: ['files'] })
+      const count = fileIds.length
+      toast.success(count === 1 ? 'Файл прикреплён' : `Прикреплено файлов: ${count}`)
+      setShowFilePicker(false)
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setIsAttaching(false)
     }
   }
 
@@ -224,6 +244,16 @@ export function WorkFilesModal({ work, onClose }: WorkFilesModalProps) {
 
         {/* Upload section */}
         <div className="border-t pt-4 space-y-3">
+          {/* Attach existing file button */}
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setShowFilePicker(true)}
+          >
+            <Link2 className="h-4 w-4 mr-2" />
+            Прикрепить существующий файл
+          </Button>
+
           {/* Drop zone */}
           <div
             data-testid="work-files-dropzone"
@@ -317,6 +347,16 @@ export function WorkFilesModal({ work, onClose }: WorkFilesModalProps) {
           )}
         </div>
       </div>
+
+      {/* File picker modal */}
+      {showFilePicker && (
+        <FilePickerModal
+          onSelect={handleAttachExisting}
+          onClose={() => setShowFilePicker(false)}
+          excludeFileIds={files.map((f) => f.id)}
+          isAttaching={isAttaching}
+        />
+      )}
     </Modal>
   )
 }

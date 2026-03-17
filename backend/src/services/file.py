@@ -206,6 +206,10 @@ async def update_file(
         assert data.category is not None
         file.category = data.category
 
+    if "filename" in data.model_fields_set:
+        assert data.filename is not None
+        file.filename = data.filename.strip()
+
     if "work_id" in data.model_fields_set:
         file.work_id = data.work_id
 

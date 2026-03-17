@@ -24,8 +24,11 @@ export function FileList({ files, onDelete, disabled, currentUserId }: FileListP
   const [openingId, setOpeningId] = useState<number | null>(null)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [savingId, setSavingId] = useState<number | null>(null)
+  const [editingNameId, setEditingNameId] = useState<number | null>(null)
+  const [savingNameId, setSavingNameId] = useState<number | null>(null)
   const [detachingId, setDetachingId] = useState<number | null>(null)
   const selectRef = useRef<HTMLSelectElement>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   async function handleDownload(file: StudyFile) {
     setDownloadingId(file.id)
@@ -88,6 +91,36 @@ export function FileList({ files, onDelete, disabled, currentUserId }: FileListP
     }
   }
 
+  function startEditingName(file: StudyFile) {
+    setEditingNameId(file.id)
+    setTimeout(() => {
+      nameInputRef.current?.focus()
+      nameInputRef.current?.select()
+    }, 0)
+  }
+
+  function cancelEditingName() {
+    setEditingNameId(null)
+  }
+
+  async function handleNameChange(file: StudyFile, newName: string) {
+    const trimmed = newName.trim()
+    if (!trimmed || trimmed === file.filename) {
+      setEditingNameId(null)
+      return
+    }
+    setSavingNameId(file.id)
+    setEditingNameId(null)
+    try {
+      await fileService.updateFile(file.id, { filename: trimmed })
+      await queryClient.invalidateQueries({ queryKey: ['files'] })
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setSavingNameId(null)
+    }
+  }
+
   if (files.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -111,6 +144,8 @@ export function FileList({ files, onDelete, disabled, currentUserId }: FileListP
         const isOpening = openingId === file.id
         const isEditing = editingId === file.id
         const isSaving = savingId === file.id
+        const isEditingName = editingNameId === file.id
+        const isSavingName = savingNameId === file.id
         const isDetaching = detachingId === file.id
         const openable = canOpenInBrowser(file.mime_type)
         const isOwner = currentUserId !== undefined && file.uploaded_by === currentUserId
@@ -123,7 +158,33 @@ export function FileList({ files, onDelete, disabled, currentUserId }: FileListP
             <Icon className="h-8 w-8 text-muted-foreground shrink-0" />
 
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{file.filename}</p>
+              {isEditingName ? (
+                <input
+                  ref={nameInputRef}
+                  type="text"
+                  defaultValue={file.filename}
+                  className="text-sm font-medium w-full bg-background border rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-ring"
+                  onBlur={(e) => handleNameChange(file, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleNameChange(file, e.currentTarget.value)
+                    if (e.key === 'Escape') cancelEditingName()
+                  }}
+                />
+              ) : (
+                <p className="text-sm font-medium truncate inline-flex items-center gap-1">
+                  {isSavingName ? <Loader2 className="h-3 w-3 animate-spin inline" /> : null}
+                  {file.filename}
+                  <button
+                    type="button"
+                    aria-label="Переименовать файл"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:text-foreground text-muted-foreground"
+                    onClick={() => startEditingName(file)}
+                    disabled={disabled || isSavingName}
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                </p>
+              )}
               <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                 {isEditing ? (
                   <select
