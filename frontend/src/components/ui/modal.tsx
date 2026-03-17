@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { X } from 'lucide-react'
 
 interface ModalProps {
   open: boolean
@@ -57,9 +58,19 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         className="relative z-50 w-full max-w-lg bg-background rounded-lg shadow-lg border mx-4 max-h-[90vh] overflow-y-auto"
       >
         <div className="p-6">
-          <h2 id="modal-title" className="text-lg font-semibold mb-4">
-            {title}
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 id="modal-title" className="text-lg font-semibold">
+              {title}
+            </h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              aria-label="Закрыть"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
           {children}
         </div>
       </div>

@@ -1,14 +1,19 @@
 """Tests for attendance (absences) endpoints."""
 
-from datetime import date, timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from httpx import AsyncClient
 
+from src.config import settings
+
+_tz = ZoneInfo(settings.timezone)
+
 
 def _past_entry(subject_name: str = "Математический анализ", **kwargs) -> dict:
     """Create a schedule entry with a past lesson_date."""
-    yesterday = str(date.today() - timedelta(days=1))
+    yesterday = str((datetime.now(_tz) - timedelta(days=1)).date())
     data = {
         "day_of_week": 1,
         "start_time": "09:00:00",
@@ -23,7 +28,7 @@ def _past_entry(subject_name: str = "Математический анализ",
 
 def _future_entry() -> dict:
     """Create a schedule entry with a future lesson_date."""
-    tomorrow = str(date.today() + timedelta(days=1))
+    tomorrow = str((datetime.now(_tz) + timedelta(days=1)).date())
     return {
         "day_of_week": 3,
         "start_time": "09:00:00",
@@ -47,8 +52,9 @@ async def _create_semester_with_dates(
     client: AsyncClient, headers: dict[str, str]
 ) -> int:
     """Create a semester with start_date and end_date for testing."""
-    start = date.today() - timedelta(days=30)
-    end = date.today() + timedelta(days=30)
+    today = datetime.now(_tz).date()
+    start = today - timedelta(days=30)
+    end = today + timedelta(days=30)
     resp = await client.post(
         "/api/v1/semesters",
         json={
@@ -153,7 +159,7 @@ class TestMarkAbsent:
         self, client: AsyncClient, auth_headers: dict[str, str]
     ) -> None:
         """Test marking today's lesson as absent succeeds."""
-        today = str(date.today())
+        today = str(datetime.now(_tz).date())
         entry_id = await _create_entry(
             client, auth_headers, _past_entry(lesson_date=today)
         )
@@ -597,7 +603,7 @@ class TestGetSubjectStats:
         subj_id = subj_resp.json()["id"]
 
         # Create entries linked to this subject
-        yesterday = str(date.today() - timedelta(days=1))
+        yesterday = str((datetime.now(_tz) - timedelta(days=1)).date())
         entry_id = await _create_entry(
             client,
             auth_headers,

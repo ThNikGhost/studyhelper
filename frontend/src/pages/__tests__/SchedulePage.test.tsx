@@ -69,13 +69,31 @@ describe('SchedulePage', () => {
   })
 
   it('shows next lesson indicator', async () => {
+    // Override schedule/week to return a week that includes today, so isCurrentWeek=true
+    const today = new Date()
+    const weekStart = new Date(today)
+    weekStart.setDate(today.getDate() - today.getDay() + 1) // Monday
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekStart.getDate() + 6) // Sunday
+    const fmt = (d: Date) => d.toISOString().slice(0, 10)
+
+    server.use(
+      http.get('/api/v1/schedule/week', () => {
+        return HttpResponse.json({
+          ...testWeekSchedule,
+          week_start: fmt(weekStart),
+          week_end: fmt(weekEnd),
+        })
+      }),
+    )
+
     renderSchedulePage()
 
     await waitFor(() => {
       expect(screen.getByText('Следующая:')).toBeInTheDocument()
     })
 
-    expect(screen.getByText(testCurrentLesson.next!.subject_name)).toBeInTheDocument()
+    expect(screen.getAllByText(testCurrentLesson.next!.subject_name).length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders navigation buttons', async () => {
