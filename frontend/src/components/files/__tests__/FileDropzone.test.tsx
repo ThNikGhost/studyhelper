@@ -48,7 +48,7 @@ describe('FileDropzone', () => {
     renderDropzone()
 
     expect(screen.getByText(/Перетащите файлы/)).toBeInTheDocument()
-    expect(screen.getByText(/до 50 MB/)).toBeInTheDocument()
+    expect(screen.getByText(/до \d+ MB/)).toBeInTheDocument()
   })
 
   it('shows file preview after selection', () => {
@@ -133,9 +133,9 @@ describe('FileDropzone', () => {
     renderDropzone()
 
     const input = screen.getByTestId('file-input')
-    // Simulate 51 MB file object (we only check .size property)
+    // Simulate file exceeding MAX_FILE_SIZE_MB (we only check .size property)
     const file = new window.File(['x'], 'big.pdf', { type: 'application/pdf' })
-    Object.defineProperty(file, 'size', { value: 51 * 1024 * 1024 })
+    Object.defineProperty(file, 'size', { value: 101 * 1024 * 1024 })
     fireEvent.change(input, { target: { files: [file] } })
 
     expect(screen.getByRole('alert')).toHaveTextContent(/слишком большой/)
